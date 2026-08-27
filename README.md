@@ -1,26 +1,30 @@
-# Network Evidence Core (NEC)
+# Network Evidence
 
-NEC asks what an underlying network independently supports about an exact
-action. It is evidence infrastructure: it observes, normalizes, replays, and
-evaluates evidence. It is not a wallet, signer, transaction-submission tool,
-or authority for an action.
+Independent network evidence for exact networks, capabilities and actions.
 
-NEC reports explicit verdicts: `supported`, `contradicted`, `insufficient`,
-or `ambiguous`. Every conclusion records its evidence basis. Execution,
-observed effect, settlement, and finality are separate questions; support for
-one is not support for another.
+Network Evidence provides deterministic evidence infrastructure for two
+related questions:
 
-This first capsule contains only `@nec/core`, `@nec/resolver-evm`,
+- Discovery: what can an exact network or deployment support, and what is
+  currently observable or usable with evidence?
+- Resolution: what does the underlying network itself independently support
+  about this exact action?
+
+Discovery support is distinct from current availability. Manifest membership
+is not proof of current support or availability, and an unknown required
+capability is not eligible.
+
+Network Evidence observes, normalizes, replays, and evaluates evidence. It is
+not a wallet, signer, transaction-submission tool, or authority for an action.
+It reports explicit verdicts: `supported`, `contradicted`, `insufficient`, or
+`ambiguous`. Every conclusion records its evidence basis. Execution, observed
+effect, settlement, and finality are separate questions; support for one is
+not support for another.
+
+This first source capsule contains only `@nec/core`, `@nec/resolver-evm`,
 `@nec/adapter-x402`, and `@nec/resolver-opstack`. Package manifests retain
 `private: true` to prevent accidental npm publication.
 
 This repository intentionally has fresh history. Its selected package content
-comes from frozen private source snapshots, but private Git history is not
-imported. The source license has not yet been selected, so this private
-staging tree is not publication-ready.
-
-```text
-LICENSE_GATE = OPEN
-PUBLICATION_READY = NO
-PUBLICATION_EXECUTED = NO
-```
+comes from frozen source snapshots, but private Git history is not imported.
+It is licensed under [Apache-2.0](LICENSE).
