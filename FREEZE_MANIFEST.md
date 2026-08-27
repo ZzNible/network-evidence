@@ -3,9 +3,15 @@
 ```text
 LICENSE = Apache-2.0
 LICENSE_GATE = MET
-PUBLICATION_READY = YES
-PUBLICATION_EXECUTED = NO
+PUBLIC_RELEASE_TAG = v0.1.0
+PUBLIC_RELEASE_COMMIT = ab30a5d3e00dc80a7da2785fdffc667b0ffd35f8
+PUBLICATION_EXECUTED = YES
 ```
+
+`v0.1.0` intentionally remains pinned to the verified release commit above. The
+tagged manifest captured the final pre-push staging state and therefore still
+contains the historical line `PUBLICATION_EXECUTED = NO`; this main-branch
+documentation cleanup does not move or rewrite that release tag.
 
 ## SOURCE_PROVENANCE
 
