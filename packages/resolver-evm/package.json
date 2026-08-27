@@ -1,0 +1,20 @@
+{
+  "name": "@nec/resolver-evm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "NEC generic EVM evidence pipeline: Viem JSON-RPC source adapters, raw capture, deterministic normalization, offline fixture replay, pure proposition evaluation into NetworkEvidenceFragment, and BEFORE capability/manifest/preflight derivation. Evidence infrastructure only — no signing, execution authority or payment-protocol code.",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@nec/core": "*",
+    "viem": "^2.21.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@nec/adapter-x402",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "NEC x402 v2 EVM payment-evidence assessment adapter: pure correlation of x402 exact-scheme payment claims to generic NEC NetworkEvidenceFragment evidence. Matching only - no facilitator, no wallet, no signing, no submission.",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@nec/core": "*"
+  }
+}

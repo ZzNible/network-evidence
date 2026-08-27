@@ -1,0 +1,20 @@
+{
+  "name": "@nec/resolver-opstack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "NEC OP Stack network-specific finality resolver: explicit family configuration, single-source L2 block finality observation over the finalized/safe/latest RPC heads with a bounded parentHash ancestry walk, raw capture, offline deterministic replay, and pure evaluation into a finality-only NetworkEvidenceFragment on a source_observation-only basis. L2 BLOCK FINALITY ONLY — never withdrawal/output finalization after a fault-proof dispute period.",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@nec/core": "*",
+    "@nec/resolver-evm": "*"
+  }
+}

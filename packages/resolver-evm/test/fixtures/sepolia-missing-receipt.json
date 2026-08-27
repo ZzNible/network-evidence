@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "nec-resolver-evm-fixture-v1",
+  "acquiredAt": "2026-03-14T09:26:53.589Z",
+  "source": {
+    "sourceId": "src.sepolia.primary",
+    "sourceType": "evm_rpc",
+    "networkId": "eip155:11155111",
+    "chainId": 11155111,
+    "independenceGroup": "sepolia-rpc-a"
+  },
+  "subject": {
+    "txHash": "0x1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "captures": [
+    {
+      "rpcMethod": "eth_chainId",
+      "rpcParams": [],
+      "httpStatus": 200,
+      "resultJson": "\"0xaa36a7\""
+    },
+    {
+      "rpcMethod": "eth_getTransactionReceipt",
+      "rpcParams": [
+        "0x1111111111111111111111111111111111111111111111111111111111111111"
+      ],
+      "httpStatus": 200,
+      "resultJson": "null"
+    }
+  ]
+}

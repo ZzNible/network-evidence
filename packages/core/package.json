@@ -1,0 +1,16 @@
+{
+  "name": "@nec/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "NEC v0.1 core: contracts, verdict semantics, canonicalization, digests. Pure and I/O-free.",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  }
+}
