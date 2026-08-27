@@ -64,3 +64,19 @@ tree byte-identical:      YES
 The ERC-4337 adapter's private semantic provenance is distinct from public
 Git history. Its reviewed package tree is copied into this public repository
 without importing private commits, refs, tags, or ancestry.
+
+## SOLANA_AND_X402_SVM_V0_3_SOURCE_PROVENANCE
+
+```text
+private source repository:             ZzNible/network-evidence-core
+source commit:                         173283288789f129470c09f1d5b9aa7814eed01c
+private provenance labels:             solana-v0.1-freeze, x402-svm-v0.1-freeze
+resolver-solana source/public tree:    d0e4d72e1a8fce838e3cbee2cb3234a5df77c818
+adapter-x402-svm source/public tree:   784b7bb28af7c0a0b6aca68d4b20d2a39e899a99
+resolver-solana byte-identical:        YES
+adapter-x402-svm byte-identical:       YES
+```
+
+The private semantic provenance labels are not public Git history. The public
+release contains only fresh public commit and tag objects; no private commits,
+refs, or tag objects were imported or reused.

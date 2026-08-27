@@ -22,10 +22,12 @@ effect, settlement, and finality are separate questions; support for one is
 not support for another.
 
 This source capsule contains `@nec/core`, `@nec/resolver-evm`,
-`@nec/adapter-x402`, `@nec/resolver-opstack`, and `@nec/adapter-erc4337`.
-The ERC-4337 package is a narrow evidence-correlation adapter above generic
-EVM evidence. Package manifests retain `private: true` to prevent accidental
-npm publication.
+`@nec/adapter-x402`, `@nec/resolver-opstack`, `@nec/adapter-erc4337`,
+`@nec/resolver-solana`, and `@nec/adapter-x402-svm`. The Solana resolver is
+generic post-fact Solana network evidence; the x402 SVM adapter is x402 v2
+exact-SVM interpretation above that generic Solana evidence. The ERC-4337
+package is a narrow evidence-correlation adapter above generic EVM evidence.
+Package manifests retain `private: true` to prevent accidental npm publication.
 
 This repository intentionally has fresh history. Its selected package content
 comes from frozen source snapshots, but private Git history is not imported.

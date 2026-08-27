@@ -1,0 +1,16 @@
+{
+  "name": "@nec/adapter-x402-svm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure x402 v2 exact-SVM requirement correlation and payment-effect assessment over generic Solana NEC evidence.",
+  "engines": { "node": ">=20" },
+  "exports": {
+    ".": { "types": "./src/index.ts", "default": "./src/index.ts" }
+  },
+  "dependencies": {
+    "@nec/core": "*",
+    "@nec/resolver-solana": "*",
+    "@noble/curves": "1.9.1"
+  }
+}

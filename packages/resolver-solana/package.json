@@ -1,0 +1,14 @@
+{
+  "name": "@nec/resolver-solana",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generic post-fact Solana RPC evidence acquisition, strict TransferChecked decoding, deterministic fixture replay, and NEC fragment evaluation.",
+  "engines": { "node": ">=20" },
+  "exports": {
+    ".": { "types": "./src/index.ts", "default": "./src/index.ts" }
+  },
+  "dependencies": {
+    "@nec/core": "*"
+  }
+}
