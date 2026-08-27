@@ -21,9 +21,11 @@ It reports explicit verdicts: `supported`, `contradicted`, `insufficient`, or
 effect, settlement, and finality are separate questions; support for one is
 not support for another.
 
-This first source capsule contains only `@nec/core`, `@nec/resolver-evm`,
-`@nec/adapter-x402`, and `@nec/resolver-opstack`. Package manifests retain
-`private: true` to prevent accidental npm publication.
+This source capsule contains `@nec/core`, `@nec/resolver-evm`,
+`@nec/adapter-x402`, `@nec/resolver-opstack`, and `@nec/adapter-erc4337`.
+The ERC-4337 package is a narrow evidence-correlation adapter above generic
+EVM evidence. Package manifests retain `private: true` to prevent accidental
+npm publication.
 
 This repository intentionally has fresh history. Its selected package content
 comes from frozen source snapshots, but private Git history is not imported.

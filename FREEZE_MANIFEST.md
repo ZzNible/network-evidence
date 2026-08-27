@@ -50,3 +50,17 @@ root package.json:    b8cc5610e6d266ab97e84047de8ad3f563cdbbb9 (intentionally di
 
 The patched `resolver-opstack` staging tree is not byte-identical to its
 source tree.
+
+## ERC4337_ADAPTER_V0_2_SOURCE_PROVENANCE
+
+```text
+source repository:        ZzNible/network-evidence-core
+source commit:            c12ea56d4a482fd9bafabb119b747edc1f0209e5
+source/public package tree:
+                           329f9999f838ee5b8ccd69d002ceb60fe878f432
+tree byte-identical:      YES
+```
+
+The ERC-4337 adapter's private semantic provenance is distinct from public
+Git history. Its reviewed package tree is copied into this public repository
+without importing private commits, refs, tags, or ancestry.

@@ -1,0 +1,22 @@
+{
+  "name": "@nec/adapter-erc4337",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "NEC ERC-4337 UserOperation evidence assessment adapter: pure correlation of an exact expected UserOperation (and optional expected ERC-1155 burn) to generic NEC NetworkEvidenceFragment evidence for one EntryPoint bundle transaction. Matching only - no wallet, no bundler, no paymaster policy, no signing, no submission, no finality claim.",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@nec/core": "*"
+  },
+  "devDependencies": {
+    "@nec/resolver-evm": "*"
+  }
+}
