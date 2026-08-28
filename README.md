@@ -23,11 +23,20 @@ not support for another.
 
 This source capsule contains `@nec/core`, `@nec/resolver-evm`,
 `@nec/adapter-x402`, `@nec/resolver-opstack`, `@nec/adapter-erc4337`,
-`@nec/resolver-solana`, and `@nec/adapter-x402-svm`. The Solana resolver is
-generic post-fact Solana network evidence; the x402 SVM adapter is x402 v2
-exact-SVM interpretation above that generic Solana evidence. The ERC-4337
-package is a narrow evidence-correlation adapter above generic EVM evidence.
-Package manifests retain `private: true` to prevent accidental npm publication.
+`@nec/resolver-solana`, `@nec/adapter-x402-svm`, and `@nec/resolver-zksys`.
+The Solana resolver is generic post-fact Solana network evidence; the x402 SVM
+adapter is x402 v2 exact-SVM interpretation above that generic Solana evidence.
+The ERC-4337 package is a narrow evidence-correlation adapter above generic EVM
+evidence.
+
+The zkSYS resolver is a thin zkSYS Tanenbaum BEFORE profile for pure historical
+replay v0.1. Support does not imply current availability; archived replay gives
+current availability `unknown`. It adds only a narrow provider-reported block
+height-to-batch/range capability. It does not establish block-hash-to-batch
+membership, Gateway settlement, data or PoDA availability, proof verification,
+Syscoin inclusion, or finality. It is not wallet, signing, funding, paymaster,
+or submission infrastructure. Package manifests retain `private: true` to
+prevent accidental npm publication.
 
 This repository intentionally has fresh history. Its selected package content
 comes from frozen source snapshots, but private Git history is not imported.

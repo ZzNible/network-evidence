@@ -1,0 +1,15 @@
+{
+  "name": "@nec/resolver-zksys",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Thin zkSYS Tanenbaum BEFORE capability profile composed over the generic EVM resolver.",
+  "engines": { "node": ">=20" },
+  "exports": {
+    ".": { "types": "./src/index.ts", "default": "./src/index.ts" }
+  },
+  "dependencies": {
+    "@nec/core": "*",
+    "@nec/resolver-evm": "*"
+  }
+}

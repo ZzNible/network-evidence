@@ -80,3 +80,24 @@ adapter-x402-svm byte-identical:       YES
 The private semantic provenance labels are not public Git history. The public
 release contains only fresh public commit and tag objects; no private commits,
 refs, or tag objects were imported or reused.
+
+## ZKSYS_BEFORE_V0_1_SOURCE_PROVENANCE
+
+```text
+private source repository:                  ZzNible/network-evidence-core
+private frozen commit:                      98fd081cdbd6d299bbed99f2037a2750e04f3608
+private freeze tag name (provenance only):  zksys-before-v0.1-freeze
+private freeze tag object SHA:              96eb2980a1e03b8008fffc6fd7067d3d60fa73f0
+private freeze peeled target:               98fd081cdbd6d299bbed99f2037a2750e04f3608
+resolver-zksys private tree:                63bda66bd957cc15ffc1ea228f2614c6031d0fee
+resolver-zksys candidate public tree:       63bda66bd957cc15ffc1ea228f2614c6031d0fee
+resolver-zksys byte-identical:              YES
+review gates summary:                       PASS
+  npm ci, typecheck, full and targeted tests, zero-network replay
+  privacy, provenance, frozen-tree identity and bounded-delta gates
+```
+
+The private freeze name and object identifiers above are textual provenance
+only. This public candidate imports the frozen package tree, not private commit
+ancestry, refs, branches, or the private tag object. The next public release
+version remains undecided.
