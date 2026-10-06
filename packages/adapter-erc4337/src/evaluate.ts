@@ -161,16 +161,24 @@ export const ERC4337_WARNING_CODES = Object.freeze({
 });
 
 /**
- * Claim labels by composed verdict. The supported label deliberately claims
+ * Claim labels by composed verdict. The supported labels deliberately claim
  * only what the evidence establishes: the claimed bundle independently
  * supports the exact expected (successful) UserOperation and — when
  * expected — the exact burn effect.
+ *
+ *   - `supported`: a supported claim WITH an `expectedEffect` (operation and
+ *     exact effect co-observed in the same bundle);
+ *   - `supportedUserOperationOnly`: a supported claim WITHOUT an
+ *     `expectedEffect` — asserts nothing about any effect.
  */
 export const ERC4337_CLAIM_LABELS: Readonly<Record<EvidenceVerdict, string>> & {
   readonly undetermined: string;
+  readonly supportedUserOperationOnly: string;
 } = Object.freeze({
   supported:
     "OBSERVED_ENTRYPOINT_EVIDENCE_SUPPORTS_SUCCESSFUL_SELECTED_USEROPERATION_AND_EXPECTED_EFFECT_CO_OBSERVED_IN_SAME_BUNDLE_CAUSAL_ATTRIBUTION_NOT_ESTABLISHED",
+  supportedUserOperationOnly:
+    "OBSERVED_ENTRYPOINT_EVIDENCE_SUPPORTS_SUCCESSFUL_SELECTED_USEROPERATION_IN_EXACT_BUNDLE",
   contradicted: "BUNDLE_EVIDENCE_CONTRADICTS_EXPECTED_USEROPERATION_OR_EXPECTED_EFFECT",
   ambiguous: "EVIDENCE_CONFLICT_PREVENTS_DETERMINISTIC_ERC4337_CONCLUSION",
   insufficient: "INSUFFICIENT_EVIDENCE_FOR_EXPECTED_USEROPERATION_OR_EFFECT",
@@ -1385,7 +1393,11 @@ function assessInternal(claim: Erc4337Claim, view: FragmentView): Erc4337Evaluat
       ...(execReport.verdict === undefined ? {} : { verdict: execReport.verdict }),
     },
     claimLabel:
-      verdict === undefined ? ERC4337_CLAIM_LABELS.undetermined : ERC4337_CLAIM_LABELS[verdict],
+      verdict === undefined
+        ? ERC4337_CLAIM_LABELS.undetermined
+        : verdict === "supported" && claim.expectedEffect === undefined
+          ? ERC4337_CLAIM_LABELS.supportedUserOperationOnly
+          : ERC4337_CLAIM_LABELS[verdict],
     nonClaims: ERC4337_NON_CLAIMS,
     ...(userOpLayer.selected === undefined ? {} : { selectedUserOperation: userOpLayer.selected }),
     ...(userOpLayer.failure === undefined

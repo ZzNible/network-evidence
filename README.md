@@ -41,3 +41,27 @@ prevent accidental npm publication.
 This repository intentionally has fresh history. Its selected package content
 comes from frozen source snapshots, but private Git history is not imported.
 It is licensed under [Apache-2.0](LICENSE).
+
+## Reproducible Core -> Hub -> Lens demo
+
+A zero-secret public integration path is included for the reviewed Base Sepolia
+ERC-4337 v0.6 case.
+
+Requires Node.js 20.12 or newer.
+
+~~~sh
+git clone https://github.com/ZzNible/network-evidence.git
+cd network-evidence
+npm ci
+npm run demo:core-hub-lens
+~~~
+
+The command replays a checksum-pinned public fixture through
+@nec/resolver-evm, evaluates the exact UserOperation through
+@nec/adapter-erc4337, binds that runtime result to the reviewed F2 Hub
+reference, and emits the browser-safe Lens case.
+
+The demo is exact-fixture and deterministic. It does not add wallet/signing/
+submission, bundler attribution, settlement, finality, confidence scoring or
+policy authority. See examples/core-hub-lens/README.md and
+examples/core-hub-lens/PROVENANCE.md.

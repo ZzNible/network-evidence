@@ -101,3 +101,38 @@ The private freeze name and object identifiers above are textual provenance
 only. This public candidate imports the frozen package tree, not private commit
 ancestry, refs, branches, or the private tag object. The next public release
 version remains undecided.
+
+## ERC4337_F2_INTEGRATION_SOURCE_PROVENANCE
+
+private reviewed technical checkpoint:
+  0c45bcab8a51beba05b7be979b10ff659669978a
+reviewed package tree:
+  e3e4bae3bbd0db734efa8af54bfe273ec28f471b
+previous public tree:
+  329f9999f838ee5b8ccd69d002ceb60fe878f432
+candidate public tree:
+  e3e4bae3bbd0db734efa8af54bfe273ec28f471b
+tree byte-identical:
+  YES
+fixture SHA-256:
+  37f7da5719220a16a2841a08360eff4738aab9bbc4873dcbf79307847f4131a3
+
+The package update exports the already-reviewed operation-only claim label
+behavior and the exact Base Sepolia v0.6 public replay fixture/test. It does
+not modify @nec/core or import private Git ancestry.
+
+## HUB_LENS_F2_DEMO_SOURCE_PROVENANCE
+
+Hub/Lens reviewed authority:
+  fbc5b2a1f8a58bae43fa90e7ecf1569d672a998e
+private demo source:
+  30de7b0b639acda121102fa5d63d07580b0c2b4b
+exported Hub files:
+  h1.mjs + f2.mjs + frozen F2 reference
+Hub files byte-identical:
+  YES
+TARGET_CORE_MUTATIONS:
+  0
+
+The demo source is exported as a curated file tree only. Private branches,
+commit ancestry and tag objects are not imported into public Git history.

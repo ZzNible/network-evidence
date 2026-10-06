@@ -212,6 +212,15 @@ machine), `execution` (separate generic bundle-execution semantics),
 `excludedCandidates`, `transactionHashMismatches`, `claimLabel`,
 `nonClaims`.
 
+`claimLabel` is taken from `ERC4337_CLAIM_LABELS` by verdict. A SUPPORTED
+claim WITH an `expectedEffect` gets `supported` (operation and exact effect
+co-observed in the same bundle, causal attribution not established); a
+SUPPORTED claim WITHOUT an `expectedEffect` gets
+`supportedUserOperationOnly`
+(`OBSERVED_ENTRYPOINT_EVIDENCE_SUPPORTS_SUCCESSFUL_SELECTED_USEROPERATION_IN_EXACT_BUNDLE`),
+which asserts nothing about any effect. All other verdict labels are
+unchanged.
+
 Fail-closed intake: untrusted claims are parsed strictly (EIP-55 checksums
 verified on mixed-case addresses via local keccak256; amounts compared as
 BigInt only; unknown fields rejected); fragments/results are fully
@@ -285,6 +294,42 @@ Narrow non-claims of this fixture (it proves only a real canonical
 - it does NOT establish UserOperation causality, Nevermined linkage, service
   completion, settlement, L2 finality or economic irreversibility;
 - it is not forced into any ERC-4337 UserOperation proposition.
+
+### External public v0.6 fixture (Base Sepolia, offline replay)
+
+`test/fixtures/base-sepolia-external-v06-userop.json` is an EXTERNALLY
+SUPPLIED public ERC-4337 example. Only the transaction reference came from a
+public response to our Rundler outreach; the raw on-chain captures were
+reacquired independently, read-only, through the FROZEN `@nec/resolver-evm`
+pipeline from one source (chainId + receipt + block by hash + transaction by
+hash, byte-exact raw result text, no credentials, no endpoint URLs). Neither
+the reference nor the captures prove any Rundler/Alchemy provenance, and the
+outreach response does not authenticate the chain data. This is one-source
+on-chain evidence; no claim of cross-source independence is made. Bundle
+`0xde8916c81ef6a7b36ddf9f7b44d1ca096e4db4818eddfd5e16eda8a7c292ed45` on
+`eip155:84532`, block `12168926` /
+`0x18cb57a710d328ea6304fc3be9ec47a34fbc54480cc42af59195d5a8e4763cbc`, sent to
+EntryPoint v0.6 `0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789`.
+
+The receipt carries SEVEN `UserOperationEvent`s from that EntryPoint, so
+exact `userOpHash` selection matters. Tests assert the v0.6 claim for
+`userOpHash 0x5f1e12031272034de5460796bd5cabe903a8ee6845fcab5fde18c4de632acfcf`,
+sender `0xfef5b40ab4c543137262253dbaf7843bd9b3e5b6` (no expected effect) is
+SUPPORTED (label `supportedUserOperationOnly`) with the selected event's
+paymaster, nonce, success and gas fields re-derived from raw data; an unknown hash is INSUFFICIENT; a wrong sender for
+the exact hash is CONTRADICTED; sender-only selection for a sender with two
+ops in the bundle is AMBIGUOUS. As a test-only raw sanity check, the
+captured transaction input begins with the canonical v0.6 `handleOps`
+selector `0x1fad948c` (derived with the local keccak256 from the 11-field
+UserOperation tuple signature); calldata is not otherwise parsed and the
+adapter does not recompute `userOpHash` from it.
+
+Boundary: the on-chain receipt supports ONLY that this exact UserOperation
+was included and executed successfully in this exact bundle. It does NOT
+establish which bundler software (Rundler or otherwise) built or submitted
+the bundle — that would need an off-chain bundler trace, which is not part
+of this fixture. The bundle transaction's sender is an observed EOA and is
+not labelled as any bundler. Finality stays NOT ESTABLISHED.
 
 ### Duplicate exact burns across carriers fail closed (ambiguous)
 

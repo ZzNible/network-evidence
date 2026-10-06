@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "hub.frozen-network-evidence-reference/v0.1",
+  "fixtureClass": "real_public_partial",
+  "fixtureArtifactId": "f2-nec-erc4337-base-sepolia-v06-reference",
+  "repository": "ZzNible/network-evidence-core",
+  "branchCheckpoint": "9781af576c60800346580e8413f23bc0bf7bafb8",
+  "technicalReviewCheckpoint": "0c45bcab8a51beba05b7be979b10ff659669978a",
+  "path": "packages/adapter-erc4337/test/fixtures/base-sepolia-external-v06-userop.json",
+  "sha256": "37f7da5719220a16a2841a08360eff4738aab9bbc4873dcbf79307847f4131a3",
+  "sourceAdapter": "@nec/adapter-erc4337",
+  "network": "eip155:84532",
+  "subject": {
+    "bundleTransactionHash": "0xde8916c81ef6a7b36ddf9f7b44d1ca096e4db4818eddfd5e16eda8a7c292ed45",
+    "userOpHash": "0x5f1e12031272034de5460796bd5cabe903a8ee6845fcab5fde18c4de632acfcf",
+    "sender": "0xfef5b40ab4c543137262253dbaf7843bd9b3e5b6",
+    "entryPoint": "0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789"
+  },
+  "provenance": {
+    "transactionReferenceFromExternalResponse": true,
+    "rawChainCaptureReacquiredIndependently": true,
+    "captureIndependenceGroup": "base-sepolia-rpc-a",
+    "crossSourceIndependenceEstablished": false,
+    "rundlerProvenanceEstablished": false,
+    "bundlerIdentityEstablished": false
+  },
+  "authorityBoundaries": {
+    "finalityEstablished": false,
+    "causalAttributionEstablished": false,
+    "settlementClaimed": false,
+    "serviceCompletionClaimed": false,
+    "targetCoreMutations": 0
+  }
+}

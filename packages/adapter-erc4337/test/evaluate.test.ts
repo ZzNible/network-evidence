@@ -75,7 +75,9 @@ describe("assessErc4337UserOperation — supported paths", () => {
     expect(evaluation.outcome.verdict).toBe("supported");
     expect(evaluation.subjectMatchesClaim).toBe(true);
     expect(evaluation.selectedUserOperation?.userOpHash).toBe(USER_OP_HASH);
-    expect(evaluation.claimLabel).toBe(ERC4337_CLAIM_LABELS.supported);
+    // No expectedEffect: operation-only label, never an effect co-observation.
+    expect(evaluation.claimLabel).toBe(ERC4337_CLAIM_LABELS.supportedUserOperationOnly);
+    expect(evaluation.claimLabel).not.toMatch(/EXPECTED_EFFECT|CO_OBSERVED/);
   });
 
   it("supports op + exact burn when both are observed", () => {
@@ -86,6 +88,20 @@ describe("assessErc4337UserOperation — supported paths", () => {
     expect(evaluation.outcome.verdict).toBe("supported");
     expect(evaluation.matchingBurns).toHaveLength(1);
     expect(evaluation.unrelatedEffectCount).toBe(1);
+  });
+
+  it("regression: a supported claim WITH expectedEffect keeps the unchanged supported label", () => {
+    const fragment = buildFragment({
+      effects: [userOpEventEffect("uop"), transferSingleEffect("burn")],
+    });
+    const evaluation = assessErc4337UserOperation({ ...CLAIM, expectedEffect: BURN }, fragment);
+    expect(evaluation.outcome.verdict).toBe("supported");
+    expect(evaluation.claim.expectedEffect).toBeDefined();
+    expect(evaluation.claimLabel).toBe(ERC4337_CLAIM_LABELS.supported);
+    // Pinned literal: effect-bearing consumers must not be silently redefined.
+    expect(evaluation.claimLabel).toBe(
+      "OBSERVED_ENTRYPOINT_EVIDENCE_SUPPORTS_SUCCESSFUL_SELECTED_USEROPERATION_AND_EXPECTED_EFFECT_CO_OBSERVED_IN_SAME_BUNDLE_CAUSAL_ATTRIBUTION_NOT_ESTABLISHED",
+    );
   });
 
   it("selects by sender when no userOpHash is supplied", () => {
@@ -504,6 +520,8 @@ describe("compatibility wrapper over NetworkEvidenceResult", () => {
     const viaFragment = assessErc4337UserOperation(CLAIM, fragment);
     expect(viaResult.outcome.verdict).toBe("supported");
     expect(viaResult.outcome).toEqual(viaFragment.outcome);
+    expect(viaResult.claimLabel).toBe(ERC4337_CLAIM_LABELS.supportedUserOperationOnly);
+    expect(viaResult.claimLabel).toBe(viaFragment.claimLabel);
   });
 
   it("result subject binding works identically through the wrapper", () => {
@@ -514,5 +532,6 @@ describe("compatibility wrapper over NetworkEvidenceResult", () => {
     expect(evaluation.outcome.verdict).toBe("supported");
     expect(evaluation.subjectMatchesClaim).toBe(true);
     expect(evaluation.matchingBurns).toHaveLength(1);
+    expect(evaluation.claimLabel).toBe(ERC4337_CLAIM_LABELS.supported);
   });
 });
