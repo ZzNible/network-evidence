@@ -115,6 +115,11 @@ export async function buildDemoResult() {
 
   assert.equal(lensAssessment?.value, evaluation.outcome.verdict);
   assert.equal(lensAssessment?.supportedLabel, evaluation.claimLabel);
+  assert.deepEqual(
+    [...(lensAssessment?.basis ?? [])].sort(),
+    [...evaluation.outcome.basis].sort(),
+    "reviewed Lens basis must equal the fresh Core evaluation basis",
+  );
   const lensBundleContext = plain(browserCase.propositions)
     .find((proposition: { propositionId?: string }) => proposition.propositionId === "p-bundle-context")
     ?.context;
@@ -123,8 +128,12 @@ export async function buildDemoResult() {
   assert.equal(lensBundleContext?.blockNumber, BLOCK_NUMBER);
   assert.equal(lensBundleContext?.blockHash, BLOCK_HASH);
   assert.equal(lensBundleContext?.entryPoint, ENTRY_POINT_V06);
+  assert.equal(browserCase.exactReviewedSemantics.selectedUserOperation.userOpHash, evaluation.selectedUserOperation?.userOpHash);
+  assert.equal(browserCase.exactReviewedSemantics.selectedUserOperation.sender, evaluation.selectedUserOperation?.sender);
   assert.equal(browserCase.exactReviewedSemantics.selectedUserOperation.paymaster, evaluation.selectedUserOperation?.paymaster);
   assert.equal(browserCase.exactReviewedSemantics.selectedUserOperation.success, evaluation.selectedUserOperation?.success);
+  assert.equal(browserCase.exactReviewedSemantics.selectedUserOperation.actualGasCost, evaluation.selectedUserOperation?.actualGasCost);
+  assert.equal(browserCase.exactReviewedSemantics.selectedUserOperation.actualGasUsed, evaluation.selectedUserOperation?.actualGasUsed);
   assert.equal(TARGET_CORE_MUTATIONS, 0);
 
   return {
@@ -162,11 +171,11 @@ export async function buildDemoResult() {
       },
     },
     hub: {
-      mode: "exact-reviewed-f2-runtime-binding",
+      mode: "exact-reviewed-f2-runtime-equality-gate",
       authoritySha: HUB_AUTHORITY_SHA,
       referenceSha256: F2_REFERENCE_SHA256,
-      runtimeBindingChecks: "passed",
-      runtimeBinding: {
+      runtimeEqualityChecks: "passed",
+      runtimeReplay: {
         localRecomputation: "performed",
         publicFixturePath: PUBLIC_FIXTURE_PATH,
         publicFixtureSha256: PUBLIC_FIXTURE_SHA256,
@@ -189,7 +198,7 @@ export async function buildDemoResult() {
       verdict: lensAssessment?.value ?? null,
       supportedLabel: lensAssessment?.supportedLabel ?? null,
       openQuestions: plain(browserCase.openQuestions),
-      provenanceNote: "The embedded Lens evaluator provenance records the reviewed imported F2 authority. The fresh public replay performed by this demo is recorded separately in hub.runtimeBinding.",
+      provenanceNote: "The embedded Lens evaluator provenance records the reviewed imported F2 authority. The fresh public replay performed by this demo is recorded separately in hub.runtimeReplay; the reviewed Lens case is emitted only after explicit equality checks pass.",
       browserSafeCase: plain(browserCase),
     },
   };

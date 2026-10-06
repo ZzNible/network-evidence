@@ -53,13 +53,14 @@ Requires Node.js 20.12 or newer.
 git clone https://github.com/ZzNible/network-evidence.git
 cd network-evidence
 npm ci
-npm run demo:core-hub-lens
+npm run -s demo:core-hub-lens
 ~~~
 
 The command replays a checksum-pinned public fixture through
 @nec/resolver-evm, evaluates the exact UserOperation through
-@nec/adapter-erc4337, binds that runtime result to the reviewed F2 Hub
-reference, and emits the browser-safe Lens case.
+@nec/adapter-erc4337, equality-checks that fresh runtime result against the
+reviewed exact-fixture F2 Hub projection, then emits the existing browser-safe
+Lens case.
 
 The demo is exact-fixture and deterministic. It does not add wallet/signing/
 submission, bundler attribution, settlement, finality, confidence scoring or
