@@ -1,0 +1,5 @@
+ddb7ea558b383e2d02634fe79aa0e241e8055815b5dcf0c852fe592d3d8eb047  01-frozen-network-evidence-reference.json
+4700932cf1756c57ad98c5fb9ef368ab8f69688a5c8625221a5d0fdff4a1b677  02-expected-lens-semantics.json
+c33e6202afa07bbc73f7237ee7691d3d28d8f1887c955c7d0a923bda0d97ca13  03-expected-demo-output.sha256
+79856c85fafd9722f63c726cb10092486db8458104a8cfd566fd549487940ac3  README.md
+ce2f4eb570df3f2ebb264127e5a570746cb677cb68165c76dbbcf5ef1e9d21ff  source/04-frozen-core-runtime.json

@@ -1,0 +1,95 @@
+{
+  "fixtureEnvelopeVersion": "hub-fixture/v0.1",
+  "fixtureArtifactId": "f0-network-evidence-1",
+  "realityClass": "real_frozen_evidence_projection",
+  "sourceSchema": "hub.network-evidence-frozen-projection/v0.1",
+  "payloadMediaType": "application/json",
+  "provenance": {
+    "sourceRepository": "ZzNible/network-evidence-core",
+    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+    "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze",
+    "projectionMethod": "deterministic field-preserving projection from frozen replay output",
+    "sourceFixtures": {
+      "transfer": {
+        "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+        "sha256": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813"
+      },
+      "finality": {
+        "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+        "sha256": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9"
+      }
+    }
+  },
+  "subject": {
+    "type": "transaction",
+    "networkId": "eip155:8453",
+    "txId": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696"
+  },
+  "networkEvidence": {
+    "execution": {
+      "applicability": "applicable",
+      "verdict": "supported",
+      "basis": [
+        "source_observation"
+      ],
+      "evidence": [
+        "evm-receipt-5da7c80be4f43c1c"
+      ],
+      "reason": "Supported by this source's receipt observation alone; not a settlement or finality claim."
+    },
+    "dataBinding": {
+      "applicability": "applicable",
+      "verdict": "supported",
+      "basis": [
+        "deterministic_derivation",
+        "source_observation"
+      ],
+      "evidence": [
+        "evm-receipt-5da7c80be4f43c1c",
+        "evm-transaction-f861e8e21ba27f6d"
+      ]
+    },
+    "observedEffects": [
+      {
+        "type": "erc20.transfer",
+        "effectId": "evm-log-88ae0203460a0f03",
+        "asset": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+        "from": "0xcece62f8d998ce55cb81b36c9e8271abcb349431",
+        "to": "0xd34411a70effbdd000c529bbf572082ffdcf1794",
+        "amountAtomic": "2000",
+        "transactionHash": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696",
+        "blockNumber": "41551053",
+        "logIndex": "187",
+        "evidenceIds": [
+          "evm-receipt-5da7c80be4f43c1c"
+        ]
+      }
+    ],
+    "finality": {
+      "applicability": "applicable",
+      "verdict": "insufficient",
+      "basis": [
+        "source_observation"
+      ],
+      "evidence": [
+        "opstack-canonical-block-5f9423f92eb0efa4",
+        "opstack-finalized-head-812d4eea588916ec"
+      ],
+      "reason": "The finalized-head ancestry required by the pinned ruleset could not be established within one bounded observation burst; finality fails closed.",
+      "limitationCode": "OP_ANCESTRY_DEPTH_EXCEEDED",
+      "ancestryRequiredDepth": "8916502",
+      "maxAncestryDepth": 10000
+    }
+  },
+  "limitations": [
+    "One configured public Base RPC source is not independent cross-source consensus.",
+    "Full OP Stack L1 derivation was not independently replayed.",
+    "L2 finalized-head evidence is not withdrawal finalization.",
+    "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+    "This imported projection does not create new Network Evidence authority."
+  ],
+  "sourceConformanceClaim": "hub-owned-projection-only",
+  "unavailableDimensions": [
+    "settlement"
+  ]
+}

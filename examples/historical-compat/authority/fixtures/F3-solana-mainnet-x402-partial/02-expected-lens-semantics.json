@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "hub.f3-solana-expected-lens/v0.1",
+  "fixtureClass": "real_public_partial",
+  "caseId": "f3-case-solana-mainnet-x402-partial",
+  "expected": {
+    "transactionExecution": "supported",
+    "paymentOutcome": "supported",
+    "networkFinality": "supported",
+    "historicalX402Correlation": "insufficient",
+    "historicalCorrelationEvaluator": "hub_correlation",
+    "historicalCorrelationReviewClass": "operator_reviewed_public_documentation_limit",
+    "settlementAvailability": "unavailable",
+    "economicIrreversibilityEstablished": false,
+    "targetCoreMutations": 0
+  },
+  "missingHistoricalPublicArtifacts": [
+    "PaymentRequirements",
+    "PaymentPayload",
+    "VerifyResponse",
+    "SettlementResponse"
+  ],
+  "forbiddenInferences": [
+    "reviewed requirement context is a historical PaymentRequirements artifact",
+    "public documentation saying an artifact is not public proves the artifact never existed",
+    "observed payment proves facilitator verify success",
+    "observed payment proves facilitator settle success",
+    "Solana RPC finalized observation proves generic economic irreversibility",
+    "network finality proves x402 settlement",
+    "service delivery proven",
+    "global case verdict"
+  ]
+}

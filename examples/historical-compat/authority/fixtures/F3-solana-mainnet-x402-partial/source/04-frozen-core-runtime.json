@@ -1,0 +1,189 @@
+{
+  "subject": {
+    "type": "transaction",
+    "networkId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+    "txId": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71"
+  },
+  "networkEvidence": {
+    "execution": {
+      "applicability": "applicable",
+      "verdict": "supported",
+      "basis": [
+        "source_observation"
+      ],
+      "evidence": [
+        "solana-transaction-24deec52bddf847a"
+      ]
+    },
+    "observedEffects": [
+      {
+        "id": "solana-transfer-checked-ce276d84a060fd3e",
+        "type": "solana.token.transfer_checked",
+        "fields": {
+          "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "source": "DMJ2By4ZCnStePpyt82gYMNYbsur1iE1YmVG2GmEdU6x",
+          "destination": "3pkdujCUZ9GWXe8V3cG2wWygBMB57xCHt6nFmWw5zzdz",
+          "authority": "5Quv32NFLRPvZGtuGrT9AGasz6U8x29jF6kxLCeFznrz",
+          "amount": "5000",
+          "decimals": 6,
+          "location": {
+            "kind": "topLevel",
+            "topLevelIndex": 2,
+            "stackHeight": 1
+          },
+          "transactionSignature": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71"
+        },
+        "basis": [
+          "source_observation",
+          "deterministic_derivation"
+        ],
+        "evidence": [
+          "solana-transaction-24deec52bddf847a"
+        ]
+      }
+    ],
+    "dataBinding": {
+      "applicability": "applicable",
+      "verdict": "supported",
+      "basis": [
+        "deterministic_derivation",
+        "source_observation"
+      ],
+      "evidence": [
+        "solana-genesishash-341842e77ac27df0",
+        "solana-signaturestatuses-698afbc476acbc0c",
+        "solana-transaction-24deec52bddf847a"
+      ],
+      "metadata": {
+        "instructionTraceComplete": true,
+        "signature": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71",
+        "slot": "418897974"
+      }
+    },
+    "finality": {
+      "applicability": "applicable",
+      "verdict": "supported",
+      "basis": [
+        "source_observation"
+      ],
+      "evidence": [
+        "solana-block-aec93744ed3c2620",
+        "solana-signaturestatuses-698afbc476acbc0c",
+        "solana-transaction-24deec52bddf847a"
+      ],
+      "metadata": {
+        "basis": "source_observation",
+        "commitment": "finalized",
+        "economicIrreversibilityEstablished": false
+      }
+    }
+  },
+  "conflicts": [],
+  "claimContext": {
+    "requirement": {
+      "x402Version": 2,
+      "scheme": "exact",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "payTo": "CNkB2jCHvnjF6zzmK2QeL9qEWBcq2oSq5t1DBnD59yJj",
+      "amount": "5000",
+      "maxTimeoutSeconds": 300,
+      "extra": {
+        "feePayer": "BENrLoUbndxoNMUS5JXApGMtNykLjFXXixMtpDwDR9SP"
+      }
+    },
+    "paymentSignature": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71"
+  },
+  "payment": {
+    "adapterProfile": "nec-adapter-x402-svm-v0.1",
+    "requirementDigest": "sha256:a362835f5f3468baaa5edbaeb11e22dedcd0013ec84ef8da98273043c020a3a2",
+    "requirement": {
+      "x402Version": "2",
+      "scheme": "exact",
+      "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "payTo": "CNkB2jCHvnjF6zzmK2QeL9qEWBcq2oSq5t1DBnD59yJj",
+      "amount": "5000",
+      "maxTimeoutSeconds": 300,
+      "extra": {
+        "feePayer": "BENrLoUbndxoNMUS5JXApGMtNykLjFXXixMtpDwDR9SP"
+      }
+    },
+    "paymentSignature": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71",
+    "subjectMatchesClaim": true,
+    "outcome": {
+      "applicability": "applicable",
+      "verdict": "supported",
+      "basis": [
+        "deterministic_derivation",
+        "source_observation"
+      ],
+      "evidence": [
+        "solana-genesishash-341842e77ac27df0",
+        "solana-signaturestatuses-698afbc476acbc0c",
+        "solana-transaction-24deec52bddf847a"
+      ],
+      "materialConflictIds": []
+    },
+    "execution": {
+      "providedByFragment": true,
+      "applicability": "applicable",
+      "verdict": "supported"
+    },
+    "networkFinality": {
+      "providedByFragment": true,
+      "applicability": "applicable",
+      "verdict": "supported",
+      "basis": [
+        "source_observation"
+      ]
+    },
+    "settlementInferred": false,
+    "claim": "ONE_OBSERVED_TRANSFER_CHECKED_MATCHES_EXPECTED_X402_SVM_PAYMENT_OUTCOME",
+    "nonClaims": [
+      "FACILITATOR_VERIFY_OUTCOME_NOT_ESTABLISHED",
+      "FACILITATOR_SETTLE_OUTCOME_NOT_ESTABLISHED",
+      "PROTOCOL_SUCCESS_CLAIM_NOT_ESTABLISHED",
+      "SETTLEMENT_RESPONSE_NOT_FINALITY",
+      "SPONSOR_ACCEPTANCE_POLICY_NOT_NETWORK_FACT",
+      "FEE_PAYER_ISOLATION_NOT_A_PAYMENT_OUTCOME",
+      "ECONOMIC_IRREVERSIBILITY_NOT_ESTABLISHED"
+    ],
+    "matchingTransfers": [
+      {
+        "effectId": "solana-transfer-checked-ce276d84a060fd3e",
+        "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "source": "DMJ2By4ZCnStePpyt82gYMNYbsur1iE1YmVG2GmEdU6x",
+        "destination": "3pkdujCUZ9GWXe8V3cG2wWygBMB57xCHt6nFmWw5zzdz",
+        "authority": "5Quv32NFLRPvZGtuGrT9AGasz6U8x29jF6kxLCeFznrz",
+        "amount": "5000",
+        "decimals": 6,
+        "location": {
+          "kind": "topLevel",
+          "topLevelIndex": 2,
+          "stackHeight": 1
+        },
+        "transactionSignature": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71",
+        "evidenceIds": [
+          "solana-transaction-24deec52bddf847a"
+        ]
+      }
+    ],
+    "qualifyingCandidateCount": 1,
+    "inspectedTransferCheckedCount": 1,
+    "excludedCandidates": [],
+    "conflicts": [],
+    "warnings": [
+      {
+        "code": "SOLANA_SETTLEMENT_NOT_EVALUATED",
+        "message": "Generic Solana acquisition does not evaluate protocol settlement."
+      },
+      {
+        "code": "SOLANA_SOURCE_OBSERVATION_LIMIT",
+        "message": "Finalized commitment is a source observation, not independent cryptographic verification or economic irreversibility."
+      }
+    ]
+  }
+}

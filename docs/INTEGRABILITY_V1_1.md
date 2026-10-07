@@ -1,6 +1,6 @@
 # Network Evidence Suite v1.1 integrability contract freeze
 
-**Status:** LOT 2 GENERIC HUB/LENS RUNTIME IMPLEMENTED / MAPS BEHAVIOR PENDING
+**Status:** LOT 3 HISTORICAL F1/F2/F3 COMPATIBILITY PROMOTED / MAPS BEHAVIOR PENDING
 **Historical release:** `v1.0.0` remains unchanged.
 **Target:** a future `v1.1.0` only after the full integrability DoD passes.
 **Core rule:** `TARGET_CORE_MUTATIONS = 0`.
@@ -155,6 +155,19 @@ The public H1 and F2 copies at the v1.0.0 code are byte-identical to that author
 
 F1/F2/F3 exact-fixture adapters remain valid compatibility adapters. Generic integration does not replace the case-specific facts they established.
 
+### LOT 3 historical compatibility path
+
+`examples/historical-compat/` promotes the reviewed F1/F2/F3 adapters byte-for-byte from authority `586a81a` (`lib/h1.mjs`, `lib/f1.mjs`, `lib/f2.mjs`, `lib/f3.mjs` plus the minimal pinned fixture subset; see its `PROVENANCE.md`). For each case:
+
+```text
+pinned bytes -> fresh offline public Core replay -> fail-closed equality with reviewed frozen semantics
+-> promoted authority adapter -> validateLensBrowserSafeCaseV01 -> serializeLensBrowserSafeV01
+```
+
+The resulting browser projections are semantically and byte-identical to the reviewed projections pinned in `examples/ne-maps/data/cases.json`; the F3 authority demo digest and the existing F2 public demo projection are reproduced; the four reviewed F2 selector outcomes agree between fresh Core and the adapter. `compareHistoricalProjectionV01` is the regression guard for strengthened/changed verdicts, lost limitations/provenance, unauthorized browser fields and exact-action identity changes.
+
+Case-specific semantics remain in the promoted adapters. No `@nec/hub`/`@nec/lens` change was required: the historical projections already satisfy the public `lens-case/v0.1` browser validator under their reviewed legacy projection labels, and the public serializer produces their deterministic bytes. Historical internal revisions remain under their reviewed authority serializers; only the browser projection is the public contract surface. `npm run demo:historical-compat` reproduces the checked-in outputs.
+
 ## 5A. Minimal LOT 2 contract corrections
 
 Implementation exposed one frozen-type mismatch without requiring Core change:
@@ -199,3 +212,5 @@ Core object/wire
 ```
 
 LOT 2 does not modify Maps behavior or migrate F1/F2/F3.
+
+LOT 3 adds only the historical compatibility path described in section 5. It does not modify Core, `@nec/hub`, `@nec/lens`, Maps behavior or the frozen v1.0.0 `examples/core-hub-lens/` export.

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "hub.frozen-network-evidence-reference/v0.1",
+  "fixtureClass": "real_public_partial",
+  "fixtureArtifactId": "f3-nec-solana-mainnet-x402-reference",
+  "repository": "ZzNible/network-evidence",
+  "branchCheckpoint": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+  "path": "packages/resolver-solana/test/fixtures/solana-mainnet-x402-real.json",
+  "sha256": "62b5191f62b61e9514f4be785d480828c496c199ef88ca763db51caf667d720a",
+  "sourceResolver": "@nec/resolver-solana",
+  "sourceAdapter": "@nec/adapter-x402-svm",
+  "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  "subject": {
+    "signature": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71",
+    "slot": "418897974"
+  },
+  "requirementContextSource": {
+    "path": "packages/adapter-x402-svm/test/adapter.test.ts",
+    "sha256": "5e95d96f0df32b47631a46f814e7c4b371bfd8bed52f4545486b6492a81a932c"
+  },
+  "publicDocumentation": {
+    "path": "packages/adapter-x402-svm/README.md",
+    "sha256": "add79be23de53b21ce8f80fa24a3e6e66c51c44554bc280688dc93d4ea2a4b1d"
+  },
+  "reviewedRequirementContext": {
+    "contextClass": "reviewed_fixture_requirement_not_historical_artifact",
+    "x402Version": "2",
+    "scheme": "exact",
+    "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "payTo": "CNkB2jCHvnjF6zzmK2QeL9qEWBcq2oSq5t1DBnD59yJj",
+    "amount": "5000",
+    "maxTimeoutSeconds": 300,
+    "feePayer": "BENrLoUbndxoNMUS5JXApGMtNykLjFXXixMtpDwDR9SP"
+  },
+  "observedTransfer": {
+    "effectId": "solana-transfer-checked-ce276d84a060fd3e",
+    "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "source": "DMJ2By4ZCnStePpyt82gYMNYbsur1iE1YmVG2GmEdU6x",
+    "destination": "3pkdujCUZ9GWXe8V3cG2wWygBMB57xCHt6nFmWw5zzdz",
+    "authority": "5Quv32NFLRPvZGtuGrT9AGasz6U8x29jF6kxLCeFznrz",
+    "amount": "5000",
+    "decimals": 6
+  },
+  "historicalCorrelation": {
+    "reviewClass": "operator_reviewed_public_documentation_limit",
+    "adapterContextLabel": "STRONG_BUT_ONE_FIELD_MISSING",
+    "missingHistoricalPublicArtifacts": [
+      "PaymentRequirements",
+      "PaymentPayload",
+      "VerifyResponse",
+      "SettlementResponse"
+    ],
+    "absenceStatementScope": "public_documentation_states_not_public_not_nonexistence"
+  },
+  "finalityBoundary": {
+    "rpcCommitment": "finalized",
+    "networkEvidenceVerdict": "supported",
+    "basis": ["source_observation"],
+    "economicIrreversibilityEstablished": false
+  },
+  "frozenCoreProjection": {
+    "path": "source/04-frozen-core-runtime.json",
+    "sha256": "ce2f4eb570df3f2ebb264127e5a570746cb677cb68165c76dbbcf5ef1e9d21ff"
+  },
+  "authorityBoundaries": {
+    "settlementClaimed": false,
+    "facilitatorVerifyOutcomeEstablished": false,
+    "facilitatorSettleOutcomeEstablished": false,
+    "historicalExactX402CorrelationEstablished": false,
+    "targetCoreMutations": 0
+  }
+}

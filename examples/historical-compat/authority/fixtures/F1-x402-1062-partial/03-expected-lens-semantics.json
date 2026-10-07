@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "lens-case-expected-fixture/v0.1",
+  "fixtureClass": "real_public_partial",
+  "fixtureArtifactId": "f1-expected-lens-semantics-1062",
+  "implementationStatus": "fixture_semantics_only_no_adapter",
+  "purpose": "prove that incomplete public x402 correlation remains incomplete",
+  "expectedPropositions": [
+    {
+      "statementKey": "application_facilitator_timeout_reported",
+      "domain": "service_response/payment_context",
+      "kind": "source_claim",
+      "factClass": "ISSUE_REPORTED_FACT",
+      "value": "reported_timeout",
+      "sourceArtifactRef": "f1-public-issue-claim-1062",
+      "assertionScope": "source_claim_only"
+    },
+    {
+      "statementKey": "base_transaction_execution",
+      "domain": "network",
+      "kind": "exact_frozen_network_evidence_projection",
+      "networkEvidenceDimension": "execution",
+      "verdict": "supported",
+      "basis": ["source_observation"],
+      "sourceArtifactRef": "source/hub-frozen-ne-projection/05-network-evidence-result.json"
+    },
+    {
+      "statementKey": "exact_observed_erc20_transfer",
+      "domain": "network",
+      "kind": "exact_frozen_network_evidence_projection",
+      "networkEvidenceDimension": "observedEffects",
+      "sourceArtifactRef": "source/hub-frozen-ne-projection/05-network-evidence-result.json"
+    },
+    {
+      "statementKey": "base_transaction_data_binding",
+      "domain": "network",
+      "kind": "exact_frozen_network_evidence_projection",
+      "networkEvidenceDimension": "dataBinding",
+      "verdict": "supported",
+      "basis": ["deterministic_derivation", "source_observation"],
+      "sourceArtifactRef": "source/hub-frozen-ne-projection/05-network-evidence-result.json"
+    },
+    {
+      "statementKey": "full_exact_x402_claim_to_transaction_correlation",
+      "domain": "payment",
+      "kind": "correlation_limit",
+      "value": "insufficient",
+      "reason": "public issue material lacks independently present exact fields required for a complete correlation",
+      "missingRequiredPublicFields": [
+        "payTo",
+        "payer",
+        "assetContractAddress",
+        "amountAtomic",
+        "x402Version"
+      ]
+    },
+    {
+      "statementKey": "historical_opstack_finality_under_pinned_ruleset",
+      "domain": "network/finality",
+      "kind": "exact_frozen_network_evidence_projection",
+      "networkEvidenceDimension": "finality",
+      "verdict": "insufficient",
+      "basis": ["source_observation"],
+      "limitationCode": "OP_ANCESTRY_DEPTH_EXCEEDED",
+      "sourceArtifactRef": "source/hub-frozen-ne-projection/05-network-evidence-result.json"
+    },
+    {
+      "statementKey": "settlement",
+      "domain": "settlement",
+      "kind": "exact_frozen_network_evidence_projection",
+      "verdict": "unavailable",
+      "sourceArtifactRef": "source/hub-frozen-ne-projection/05-network-evidence-result.json"
+    }
+  ],
+  "forbiddenInferences": [
+    "application timeout means no later network execution",
+    "observed transfer proves an attested x402 authorization",
+    "full x402 claim correlation established",
+    "settlement proven",
+    "service delivery proven",
+    "economic refund retry or compensation decision",
+    "withdrawal finality proven",
+    "global success or failure case verdict"
+  ]
+}

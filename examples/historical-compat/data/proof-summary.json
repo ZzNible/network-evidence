@@ -1,0 +1,520 @@
+{
+  "schemaVersion": "ne-historical-compat-proof/v0.1",
+  "compatibilityVersion": "ne-historical-compat/v0.1",
+  "authority": {
+    "repository": "ZzNible/agent-evidence-hub",
+    "branch": "autonomy/authority-v1",
+    "commit": "586a81a39c8da4d3a0dc0e879b605aabfd3f8d1d"
+  },
+  "reviewedExport": {
+    "path": "examples/ne-maps/data/cases.json",
+    "sha256": "eef096d0e774bef6ce2b9c111218b52be19d00613c75eb538ce8f936ccf580e1"
+  },
+  "constructionMetadata": {
+    "namespace": "ne-maps-v1",
+    "createdAt": "2026-10-07T00:00:00.000Z"
+  },
+  "cases": [
+    {
+      "id": "f1",
+      "exactAction": {
+        "kind": "transaction",
+        "networkId": "eip155:8453",
+        "id": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696"
+      },
+      "coreReplay": {
+        "packages": [
+          "@nec/resolver-evm",
+          "@nec/resolver-opstack",
+          "@nec/adapter-x402"
+        ],
+        "sources": [
+          {
+            "path": "examples/historical-compat/authority/fixtures/F1-x402-1062-partial/source/network-evidence/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+            "sha256": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813"
+          },
+          {
+            "path": "examples/historical-compat/authority/fixtures/F1-x402-1062-partial/source/network-evidence/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+            "sha256": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9"
+          }
+        ],
+        "reviewedReference": {
+          "path": "examples/historical-compat/authority/fixtures/F1-x402-1062-partial/source/hub-frozen-ne-projection/05-network-evidence-result.json",
+          "sha256": "724493778e217047a00b6ee18fc20177b3ab115f902ed773659336701be44e45"
+        },
+        "localRecomputation": "performed",
+        "reviewedEquality": "passed"
+      },
+      "semantics": {
+        "caseId": "f1-case-x402-1062-partial-v0.1",
+        "propositions": [
+          {
+            "propositionId": "source-p-f1-public-issue-claim-1062",
+            "kind": "source_claim",
+            "availability": null,
+            "assessments": [],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-execution",
+            "kind": "exact_frozen_network_evidence_projection",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-execution",
+                "evaluatorType": "network_evidence",
+                "provenanceClass": "operator_imported",
+                "verificationMode": "operator_imported_frozen_result",
+                "localRecomputation": "not_performed",
+                "networkEvidenceAuthority": null,
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "source_observation"
+                ]
+              }
+            ],
+            "limitationCount": 5
+          },
+          {
+            "propositionId": "p-dataBinding",
+            "kind": "exact_frozen_network_evidence_projection",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-dataBinding",
+                "evaluatorType": "network_evidence",
+                "provenanceClass": "operator_imported",
+                "verificationMode": "operator_imported_frozen_result",
+                "localRecomputation": "not_performed",
+                "networkEvidenceAuthority": null,
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "deterministic_derivation",
+                  "source_observation"
+                ]
+              }
+            ],
+            "limitationCount": 5
+          },
+          {
+            "propositionId": "p-finality",
+            "kind": "exact_frozen_network_evidence_projection",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-finality",
+                "evaluatorType": "network_evidence",
+                "provenanceClass": "operator_imported",
+                "verificationMode": "operator_imported_frozen_result",
+                "localRecomputation": "not_performed",
+                "networkEvidenceAuthority": null,
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "insufficient",
+                "basis": [
+                  "source_observation"
+                ]
+              }
+            ],
+            "limitationCount": 5
+          },
+          {
+            "propositionId": "p-observed-transfer",
+            "kind": "exact_observed_effect",
+            "availability": null,
+            "assessments": [],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-x402-correlation",
+            "kind": "correlation_limit",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-x402-correlation",
+                "evaluatorType": "hub_correlation",
+                "provenanceClass": "hub_local_derivation",
+                "verificationMode": "local_deterministic_field_presence_check",
+                "localRecomputation": "performed",
+                "networkEvidenceAuthority": "none",
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "insufficient",
+                "basis": [
+                  "deterministic_derivation"
+                ]
+              }
+            ],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-settlement",
+            "kind": "exact_frozen_network_evidence_projection",
+            "availability": "unavailable",
+            "assessments": [],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-service-delivery",
+            "kind": "unresolved",
+            "availability": null,
+            "assessments": [],
+            "limitationCount": 1
+          }
+        ],
+        "openQuestions": [
+          {
+            "questionId": "q-x402-correlation",
+            "status": "unresolved"
+          },
+          {
+            "questionId": "q-finality",
+            "status": "unresolved"
+          },
+          {
+            "questionId": "q-settlement",
+            "status": "unresolved"
+          },
+          {
+            "questionId": "q-service-delivery",
+            "status": "unresolved"
+          }
+        ],
+        "relations": [
+          {
+            "relationId": "r-1",
+            "relationType": "candidate_same_transaction",
+            "basis": "source_declared_binding"
+          },
+          {
+            "relationId": "r-2",
+            "relationType": "transcription_source_pinned_by",
+            "basis": "deterministic_binding"
+          },
+          {
+            "relationId": "r-3",
+            "relationType": "pins_exact_frozen_bytes",
+            "basis": "deterministic_binding"
+          }
+        ],
+        "caseLimitationCount": 10
+      },
+      "browser": {
+        "projectionPolicy": "hub-f1-browser/v0.1",
+        "revisionDigest": null,
+        "validator": "@nec/lens validateLensBrowserSafeCaseV01",
+        "serializer": "@nec/lens serializeLensBrowserSafeV01",
+        "bytesSha256": "088a63492bd45c2696177c2a9dfbe3e6a1c9738c577898a5119f890f1982926d"
+      },
+      "reviewedEquality": {
+        "reviewedProjection": "examples/ne-maps/data/cases.json",
+        "semanticViolations": 0,
+        "browserBytes": "identical"
+      }
+    },
+    {
+      "id": "f2",
+      "exactAction": {
+        "kind": "user_operation",
+        "networkId": "eip155:84532",
+        "id": "0x5f1e12031272034de5460796bd5cabe903a8ee6845fcab5fde18c4de632acfcf",
+        "bundleTransactionHash": "0xde8916c81ef6a7b36ddf9f7b44d1ca096e4db4818eddfd5e16eda8a7c292ed45",
+        "sender": "0xfef5b40ab4c543137262253dbaf7843bd9b3e5b6"
+      },
+      "coreReplay": {
+        "packages": [
+          "@nec/resolver-evm",
+          "@nec/adapter-erc4337"
+        ],
+        "sources": [
+          {
+            "path": "packages/adapter-erc4337/test/fixtures/base-sepolia-external-v06-userop.json",
+            "sha256": "37f7da5719220a16a2841a08360eff4738aab9bbc4873dcbf79307847f4131a3"
+          }
+        ],
+        "reviewedReference": {
+          "path": "examples/historical-compat/authority/fixtures/F2-erc4337-base-sepolia-v06/01-frozen-network-evidence-reference.json",
+          "sha256": "33cb0a2e85e0380a898364e7c4d02e072f7d13fe0e5818643b98d40bf9f2a39d"
+        },
+        "localRecomputation": "performed",
+        "reviewedEquality": "passed"
+      },
+      "reviewedSelectorChecks": [
+        {
+          "label": "Exact userOpHash + sender",
+          "coreVerdict": "supported",
+          "lensVerdict": "supported"
+        },
+        {
+          "label": "Unknown userOpHash",
+          "coreVerdict": "insufficient",
+          "lensVerdict": "insufficient"
+        },
+        {
+          "label": "Exact userOpHash + wrong sender",
+          "coreVerdict": "contradicted",
+          "lensVerdict": "contradicted"
+        },
+        {
+          "label": "Repeated sender only",
+          "coreVerdict": "ambiguous",
+          "lensVerdict": "ambiguous"
+        }
+      ],
+      "semantics": {
+        "caseId": "f2-case-erc4337-base-sepolia-v06",
+        "propositions": [
+          {
+            "propositionId": "p-userop-execution",
+            "kind": "exact_frozen_network_evidence_projection",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-userop-execution",
+                "evaluatorType": "network_evidence",
+                "provenanceClass": "operator_imported",
+                "verificationMode": "operator_imported_reviewed_exact_fixture_semantics",
+                "localRecomputation": "not_performed",
+                "networkEvidenceAuthority": null,
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "source_observation",
+                  "deterministic_derivation"
+                ]
+              }
+            ],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-bundle-context",
+            "kind": "context",
+            "availability": null,
+            "assessments": [],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-finality",
+            "kind": "unresolved",
+            "availability": "unavailable",
+            "assessments": [],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-bundler-provenance",
+            "kind": "unresolved",
+            "availability": "unavailable",
+            "assessments": [],
+            "limitationCount": 1
+          }
+        ],
+        "openQuestions": [
+          {
+            "questionId": "q-finality",
+            "status": "unresolved"
+          },
+          {
+            "questionId": "q-bundler",
+            "status": "unresolved"
+          }
+        ],
+        "relations": [
+          {
+            "relationId": "r-f2-pin",
+            "relationType": "pins_exact_frozen_bytes",
+            "basis": "deterministic_binding"
+          },
+          {
+            "relationId": "r-userop-bundle",
+            "relationType": "selected_useroperation_belongs_to_exact_bundle",
+            "basis": "deterministic_derivation"
+          }
+        ],
+        "caseLimitationCount": 3
+      },
+      "browser": {
+        "projectionPolicy": null,
+        "revisionDigest": null,
+        "validator": "@nec/lens validateLensBrowserSafeCaseV01",
+        "serializer": "@nec/lens serializeLensBrowserSafeV01",
+        "bytesSha256": "8f0aee5b1f9052f456f5669d3347d27c8e0487cf2b8d4067f235666327ee592b"
+      },
+      "reviewedEquality": {
+        "reviewedProjection": "examples/ne-maps/data/cases.json",
+        "semanticViolations": 0,
+        "browserBytes": "identical"
+      }
+    },
+    {
+      "id": "f3",
+      "exactAction": {
+        "kind": "transaction",
+        "networkId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "id": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71"
+      },
+      "coreReplay": {
+        "packages": [
+          "@nec/resolver-solana",
+          "@nec/adapter-x402-svm"
+        ],
+        "sources": [
+          {
+            "path": "packages/resolver-solana/test/fixtures/solana-mainnet-x402-real.json",
+            "sha256": "62b5191f62b61e9514f4be785d480828c496c199ef88ca763db51caf667d720a"
+          },
+          {
+            "path": "packages/adapter-x402-svm/test/adapter.test.ts",
+            "sha256": "5e95d96f0df32b47631a46f814e7c4b371bfd8bed52f4545486b6492a81a932c"
+          },
+          {
+            "path": "packages/adapter-x402-svm/README.md",
+            "sha256": "add79be23de53b21ce8f80fa24a3e6e66c51c44554bc280688dc93d4ea2a4b1d"
+          }
+        ],
+        "reviewedReference": {
+          "path": "examples/historical-compat/authority/fixtures/F3-solana-mainnet-x402-partial/source/04-frozen-core-runtime.json",
+          "sha256": "ce2f4eb570df3f2ebb264127e5a570746cb677cb68165c76dbbcf5ef1e9d21ff"
+        },
+        "localRecomputation": "performed",
+        "reviewedEquality": "passed"
+      },
+      "semantics": {
+        "caseId": "f3-case-solana-mainnet-x402-partial",
+        "propositions": [
+          {
+            "propositionId": "p-network-execution",
+            "kind": "exact_frozen_network_evidence_projection",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-network-execution",
+                "evaluatorType": "network_evidence",
+                "provenanceClass": "operator_imported",
+                "verificationMode": "operator_imported_reviewed_exact_fixture_semantics",
+                "localRecomputation": "not_performed",
+                "networkEvidenceAuthority": null,
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "source_observation"
+                ]
+              }
+            ],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-x402-svm-payment",
+            "kind": "exact_frozen_network_evidence_projection",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-x402-svm-payment",
+                "evaluatorType": "network_evidence",
+                "provenanceClass": "operator_imported",
+                "verificationMode": "operator_imported_reviewed_exact_fixture_semantics",
+                "localRecomputation": "not_performed",
+                "networkEvidenceAuthority": null,
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "deterministic_derivation",
+                  "source_observation"
+                ]
+              }
+            ],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-network-finality",
+            "kind": "exact_frozen_network_evidence_projection",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-network-finality",
+                "evaluatorType": "network_evidence",
+                "provenanceClass": "operator_imported",
+                "verificationMode": "operator_imported_reviewed_exact_fixture_semantics",
+                "localRecomputation": "not_performed",
+                "networkEvidenceAuthority": null,
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "source_observation"
+                ]
+              }
+            ],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-historical-x402-correlation",
+            "kind": "correlation_limit",
+            "availability": null,
+            "assessments": [
+              {
+                "assessmentId": "a-historical-x402-correlation",
+                "evaluatorType": "hub_correlation",
+                "provenanceClass": "operator_reviewed",
+                "verificationMode": "operator_reviewed_public_documentation_limit",
+                "localRecomputation": "not_performed",
+                "networkEvidenceAuthority": "none",
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "insufficient",
+                "basis": [
+                  "source_observation"
+                ]
+              }
+            ],
+            "limitationCount": 1
+          },
+          {
+            "propositionId": "p-settlement",
+            "kind": "unresolved",
+            "availability": "unavailable",
+            "assessments": [],
+            "limitationCount": 1
+          }
+        ],
+        "openQuestions": [
+          {
+            "questionId": "q-historical-x402-correlation",
+            "status": "unresolved"
+          },
+          {
+            "questionId": "q-settlement",
+            "status": "unresolved"
+          },
+          {
+            "questionId": "q-economic-irreversibility",
+            "status": "unresolved"
+          }
+        ],
+        "relations": [
+          {
+            "relationId": "r-transfer-in-transaction",
+            "relationType": "observed_transfer_in_exact_transaction",
+            "basis": "deterministic_derivation"
+          }
+        ],
+        "caseLimitationCount": 5
+      },
+      "browser": {
+        "projectionPolicy": null,
+        "revisionDigest": null,
+        "validator": "@nec/lens validateLensBrowserSafeCaseV01",
+        "serializer": "@nec/lens serializeLensBrowserSafeV01",
+        "bytesSha256": "e452c7080dd978573a51c6f76d591435143ca625c84cd7ce21197eb454e6eaea"
+      },
+      "reviewedEquality": {
+        "reviewedProjection": "examples/ne-maps/data/cases.json",
+        "semanticViolations": 0,
+        "browserBytes": "identical"
+      }
+    }
+  ],
+  "nonClaims": [
+    "No verdict is recomputed by Hub/Lens; reviewed verdicts are preserved and fresh Core replay is an equality gate only.",
+    "No global case verdict, confidence, trust score, policy decision, settlement, finality upgrade or service-delivery claim.",
+    "Exact-fixture compatibility only; not generic x402, ERC-4337 or Solana Hub ingestion."
+  ],
+  "TARGET_CORE_MUTATIONS": 0
+}

@@ -1,0 +1,50 @@
+{
+  "fixtureEnvelopeVersion": "hub-fixture/v0.1",
+  "fixtureClass": "real_public_partial",
+  "realityClass": "hub_documentary_transcription",
+  "fixtureArtifactId": "f1-public-issue-claim-1062",
+  "artifactKind": "hub_documentary_transcription_of_frozen_case_constants",
+  "sourceSchema": "hub.documentary-transcription/public-issue-constants/v0.1",
+  "sourceConformanceClaim": "none",
+  "fixtureEncoding": "hub_fixture_envelope_only",
+  "provenance": {
+    "frozenNetworkEvidenceReference": {
+      "repository": "ZzNible/network-evidence-core",
+      "commit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+      "path": "examples/x402-base-late-settlement-1062/case.ts",
+      "blob": "6c2be3bddb655ed40df3bca35d375d039193596e",
+      "sha256": "6200f5d8be28a17adfdd4d1669218517447195f52aa0e841c0c23d7020d7499d",
+      "exactImportedCopy": "source/network-evidence/case.ts",
+      "extraction": "PUBLIC_ISSUE constants only; no on-chain observation is asserted by this artifact"
+    }
+  },
+  "documentaryTranscription": {
+    "method": "Hub transcription of the PUBLIC_ISSUE constants in the exact imported frozen case.ts",
+    "notAnIndependentlyCapturedSourceResponse": true,
+    "notADirectGithubIssueResponse": true
+  },
+  "issueReportedClaim": {
+    "factClass": "ISSUE_REPORTED_FACT",
+    "vocabulary": "public_issue",
+    "assertionScope": "source_claim_only",
+    "repository": "x402-foundation/x402",
+    "issueNumber": 1062,
+    "title": "Payment timeout race condition on Base network - facilitator timeout shorter than block confirmation time",
+    "openedAt": "2026-01-31",
+    "url": "https://github.com/x402-foundation/x402/issues/1062",
+    "reportedTransaction": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696",
+    "reportedBlockNumber": "41551053",
+    "reportedAmountHuman": "0.002 USDC",
+    "reportedFacilitator": "0x8f5cb67b49555e614892b7233cfddebfb746e531",
+    "reportedOutcome": "facilitator settle failed (\"transaction did not confirm in time: context deadline exceeded\", errorReason \"settle_exact_node_failure\") while the transaction later succeeded on-chain"
+  },
+  "notAssertedByThisArtifact": [
+    "network_execution",
+    "observed_transfer",
+    "x402_exact_claim_correlation",
+    "finality",
+    "settlement",
+    "service_delivery",
+    "economic_policy"
+  ]
+}

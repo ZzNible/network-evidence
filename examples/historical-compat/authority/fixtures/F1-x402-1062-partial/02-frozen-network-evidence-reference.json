@@ -1,0 +1,51 @@
+{
+  "fixtureEnvelopeVersion": "hub-fixture/v0.1",
+  "fixtureClass": "real_public_partial",
+  "realityClass": "hub_documentary_provenance_index",
+  "fixtureArtifactId": "f1-frozen-network-evidence-reference-1062",
+  "artifactKind": "hub_documentary_source_index",
+  "sourceConformanceClaim": "none",
+  "scope": "byte identities and local paths only; this index does not reproduce, reinterpret, or extend Network Evidence conclusions",
+  "provenance": {
+    "sourceRepository": "ZzNible/network-evidence-core",
+    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+    "caseProfile": "nec-x402-base-late-settlement-1062-v1",
+    "exactFrozenSourceCopies": {
+      "readme": {
+        "path": "examples/x402-base-late-settlement-1062/README.md",
+        "localCopy": "source/network-evidence/README.md",
+        "blob": "f667192c3676abc5b1e869d3663da79f1dfafc81",
+        "sha256": "000d115948f41b616b21448e681bdc4a92ef21877f2d599d784adf5f75dd3349"
+      },
+      "case": {
+        "path": "examples/x402-base-late-settlement-1062/case.ts",
+        "localCopy": "source/network-evidence/case.ts",
+        "blob": "6c2be3bddb655ed40df3bca35d375d039193596e",
+        "sha256": "6200f5d8be28a17adfdd4d1669218517447195f52aa0e841c0c23d7020d7499d"
+      },
+      "fixtureManifest": {
+        "path": "examples/x402-base-late-settlement-1062/fixtures/MANIFEST.sha256",
+        "localCopy": "source/network-evidence/fixtures/MANIFEST.sha256",
+        "blob": "322fbb8f5a633910d65500791645c12a4d3f16bb",
+        "sha256": "9c0afe8b9526a2cc548d047fd775cd8da38597c86d604bda939cb0f81edb28b4"
+      },
+      "transferFixture": {
+        "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+        "localCopy": "source/network-evidence/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+        "blob": "b4b1547dabbd57c15ac25964b8fe145c8f06c18a",
+        "sha256": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813"
+      },
+      "finalityFixture": {
+        "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+        "localCopy": "source/network-evidence/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+        "blob": "66bdf74c4d07451f2851ff87d89fd556daa1e876",
+        "sha256": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9"
+      }
+    },
+    "exactHubFrozenNetworkEvidenceProjection": {
+      "sourcePath": "fixtures/F0-positive/05-network-evidence-result.json",
+      "localCopy": "source/hub-frozen-ne-projection/05-network-evidence-result.json",
+      "sha256": "724493778e217047a00b6ee18fc20177b3ab115f902ed773659336701be44e45"
+    }
+  }
+}

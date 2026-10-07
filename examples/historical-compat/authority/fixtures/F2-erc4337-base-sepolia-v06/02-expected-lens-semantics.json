@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "hub.f2-erc4337-expected-lens/v0.1",
+  "exactSelector": {
+    "userOpHash": "0x5f1e12031272034de5460796bd5cabe903a8ee6845fcab5fde18c4de632acfcf",
+    "sender": "0xfef5b40ab4c543137262253dbaf7843bd9b3e5b6"
+  },
+  "expectedVerdict": "supported",
+  "supportedLabel": "OBSERVED_ENTRYPOINT_EVIDENCE_SUPPORTS_SUCCESSFUL_SELECTED_USEROPERATION_IN_EXACT_BUNDLE",
+  "negativeCases": {
+    "unknownUserOpHash": "insufficient",
+    "exactHashWrongSender": "contradicted",
+    "senderOnlyRepeatedSender": "ambiguous"
+  },
+  "unresolved": [
+    "finality",
+    "bundler_software_or_operator_identity",
+    "settlement",
+    "service_completion",
+    "cross_source_independence"
+  ],
+  "senderOnlyUniqueTarget": "supported"
+}
