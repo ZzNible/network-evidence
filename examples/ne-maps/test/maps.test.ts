@@ -24,7 +24,7 @@ describe("NE Maps minimal export", () => {
     const actual = createHash("sha256").update(bytes).digest("hex");
     const manifest = (await readFile(join(root, "data/CASES.sha256"), "utf8")).trim();
     expect(manifest).toBe(actual + "  cases.json");
-    expect(actual).toBe("21486e34e268563c5186927b5b56b9c0346a55c9a0e2b2f34a1ff6a6bafb2d8b");
+    expect(actual).toBe("eef096d0e774bef6ce2b9c111218b52be19d00613c75eb538ce8f936ccf580e1");
   });
 
   it("pins exactly the three stable v1 cases and authority", () => {
@@ -68,8 +68,20 @@ describe("NE Maps minimal export", () => {
     expect(data.nonClaims).toContain("Maps does not resolve network evidence.");
   });
 
-  it("keeps F2 selector variants as frozen reviewed outcomes", () => {
+  it("keeps F1 Lens-only source context explicitly outside the network-action Trail order", () => {
+    const f1 = data.cases.find((item: { id: string }) => item.id === "f1");
+    expect(f1.trailContextNote).toMatch(/Lens-only context/);
+    expect(f1.trailPropositionOrder).not.toContain("source-p-f1-public-issue-claim-1062");
+  });
+
+  it("keeps F2 case statuses separate from frozen selector-check outcomes", () => {
     const f2 = data.cases.find((item: { id: string }) => item.id === "f2");
+    const propositionStates = new Set<string>();
+    for (const proposition of f2.lens.propositions) {
+      for (const assessment of proposition.assessments ?? []) propositionStates.add(assessment.value);
+      if (proposition.availability === "unavailable") propositionStates.add("unavailable");
+    }
+    expect([...propositionStates].sort()).toEqual(["supported", "unavailable"]);
     expect(f2.reviewedSelectorOutcomes).toEqual([
       { label: "Exact userOpHash + sender", verdict: "supported" },
       { label: "Unknown userOpHash", verdict: "insufficient" },

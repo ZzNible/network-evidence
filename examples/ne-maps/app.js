@@ -33,9 +33,6 @@ function caseStatuses(item) {
     const value = propositionStatus(proposition);
     if (value) found.add(value);
   }
-  for (const outcome of item.reviewedSelectorOutcomes ?? []) {
-    if (STATUS_SET.has(outcome.verdict)) found.add(outcome.verdict);
-  }
   return STATUS_ORDER.filter(value => found.has(value));
 }
 
@@ -119,8 +116,8 @@ function propositionItem(proposition) {
   } else {
     box.append(node("p", "", "No independent assessment in this projection."));
   }
-  const limitations = [...(proposition.limitations ?? []), ...(assessment?.limitations ?? [])];
-  if (limitations.length) box.append(node("p", "", "limit: " + limitations[0]));
+  const limitations = [...new Set([...(proposition.limitations ?? []), ...(assessment?.limitations ?? [])])];
+  for (const limitation of limitations) box.append(node("p", "", "limit: " + limitation));
   return box;
 }
 
@@ -183,7 +180,8 @@ function renderLens(item) {
 
 function renderTrail(item) {
   const section = detailShell(item, "Trail");
-  section.append(node("div", "notice", "Trail is an ordered presentation of existing case propositions. Order does not create a causal edge or stronger verdict."));
+  section.append(node("div", "notice", "Trail ordering is Maps-authored navigation metadata over existing case propositions. It is not a Hub-provided Trail route and does not create a causal edge or stronger verdict."));
+  if (item.trailContextNote) section.append(node("div", "notice", item.trailContextNote));
   const stack = node("div", "stack");
   stack.style.marginTop = "16px";
   const byId = new Map((item.lens.propositions ?? []).map(p => [p.propositionId, p]));
@@ -208,9 +206,11 @@ function renderAction(item) {
     right.append(node("p", "", "No relations exported in this projection."));
   }
   for (const relation of item.lens.relations ?? []) {
-    const row = node("div", "keyval");
-    row.append(node("dt", "", relation.relationType));
-    row.append(node("dd", "mono", relation.fromRef + " → " + relation.toRef));
+    const row = node("article", "item");
+    row.append(node("h3", "", relation.relationType));
+    row.append(node("p", "mono", relation.fromRef + " → " + relation.toRef));
+    row.append(node("p", "", "basis: " + (relation.basis ?? "not supplied")));
+    for (const limitation of relation.limitations ?? []) row.append(node("p", "", "limit: " + limitation));
     right.append(row);
   }
   grid.append(left, right);

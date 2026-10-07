@@ -37,7 +37,7 @@ Open `http://127.0.0.1:4177/`.
 Each case has three deterministic handoffs:
 
 - **Lens** — propositions, assessments, basis and limitations;
-- **Trail** — ordered presentation of the case propositions, without inventing causal edges;
+- **Trail** — Maps-authored network-action ordering of existing case propositions, without inventing causal edges; Lens-only context omissions are explicit;
 - **Exact action** — the source-backed transaction/UserOperation identity and exported case relations.
 
 No external network lookup is performed by Maps.

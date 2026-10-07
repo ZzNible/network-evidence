@@ -18,11 +18,11 @@ The public Suite checkpoint referenced by F2/F3 integration is:
 - F3 browser-safe Lens projection;
 - presentation-only labels, exact-action handoff identifiers and an ordered Trail presentation list.
 
-The Maps layer does not recompute any verdict. Trail ordering is navigation metadata only and creates no new causal edge.
+The Maps layer does not recompute any verdict. Trail ordering is written by Maps as navigation metadata only and creates no new causal edge. F1 intentionally keeps the source-reported application timeout in Lens only because the Trail handoff is network-action scoped; that omission is explicit in the exported `trailContextNote`.
 
 Pinned export digest:
 
-`21486e34e268563c5186927b5b56b9c0346a55c9a0e2b2f34a1ff6a6bafb2d8b  cases.json`
+`eef096d0e774bef6ce2b9c111218b52be19d00613c75eb538ce8f936ccf580e1  cases.json`
 
 The same value is stored in `data/CASES.sha256`.
 

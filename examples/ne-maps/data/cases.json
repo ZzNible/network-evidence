@@ -30,6 +30,7 @@
         "networkId": "eip155:8453",
         "id": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696"
       },
+      "trailContextNote": "F1 source-reported application timeout remains Lens-only context and is intentionally omitted from this network-action Trail presentation.",
       "trailPropositionOrder": [
         "p-execution",
         "p-dataBinding",
