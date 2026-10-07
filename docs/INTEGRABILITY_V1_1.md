@@ -100,6 +100,7 @@ Unknown evaluator vocabularies remain their own vocabularies.
 ### Browser-safe projection
 
 The browser projection is an explicit nested allowlist. It removes private locators and artifact digests, never carries raw `nativeSource.payload` bytes, omits source-native `value` payloads and assessment `inputRefs`, does not spread unknown nested fields, withholds the internal revision digest, and retains only safe provenance identifiers required for inspection. Projection never changes proposition meaning.
+The strict nested allowlist is enforced for generic `projectionPolicy: lens-browser/v0.1`; the three frozen historical projections remain accepted under their reviewed legacy/absent projection labels and are not rewritten.
 
 ### Deterministic serialization
 

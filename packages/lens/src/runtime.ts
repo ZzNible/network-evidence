@@ -90,6 +90,61 @@ function assertAllowedTopLevel(value: Record<string, unknown>, browser: boolean)
   }
 }
 
+function assertOnlyKeys(value: Record<string, unknown>, allowed: ReadonlySet<string>, path: string): void {
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) throw new TypeError(`@nec/lens: unknown ${path} field ${key}`);
+  }
+}
+
+function optionalString(value: unknown, path: string, allowNull = false): void {
+  if (value === undefined || (allowNull && value === null)) return;
+  string(value, path, true);
+}
+
+const GENERIC_BROWSER_TOP_LEVEL_FIELDS = new Set([
+  "schemaVersion", "caseId", "namespace", "createdAt", "constructionTimeMeaning",
+  "fixture", "fixtureClass", "realityClass", "syntheticArtifactCount", "artifacts",
+  "sourceClaims", "propositions", "relations", "openQuestions", "limitations",
+  "coreResultPreservation", "revisionDigest", "revisionDigestVisibility",
+  "TARGET_CORE_MUTATIONS", "projectionPolicy",
+]);
+const BROWSER_ARTIFACT_FIELDS = new Set([
+  "artifactId", "artifactType", "sourceSchema", "mediaType", "artifactDigest",
+  "artifactDigestVisibility", "locatorClass", "locatorRef", "sourceObservedAt",
+  "capturedAt", "fixtureObservedAt", "availability", "redaction", "realityClass",
+  "fixture", "fixtureClass", "limitations",
+]);
+const BROWSER_REDACTION_FIELDS = new Set([
+  "state", "derivedFromArtifactId", "derivativeArtifactId", "transformation", "sourceArtifactRef",
+]);
+const BROWSER_CLAIM_FIELDS = new Set([
+  "claimId", "artifactId", "claimType", "vocabulary", "extractionBasis", "basis",
+  "evidenceRefs", "limitations",
+]);
+const BROWSER_PROPOSITION_FIELDS = new Set([
+  "propositionId", "domain", "statement", "kind", "subjectRefs", "sourceClaimRefs",
+  "assessments", "availability", "limitations",
+]);
+const BROWSER_ASSESSMENT_FIELDS = new Set([
+  "assessmentId", "propositionId", "evaluator", "vocabulary", "value", "basis",
+  "evidenceRefs", "evaluatedAt", "limitations",
+]);
+const BROWSER_EVALUATOR_FIELDS = new Set([
+  "type", "version", "buildRef", "verificationMode", "provenanceClass",
+]);
+const BROWSER_RELATION_FIELDS = new Set([
+  "relationId", "fromRef", "toRef", "relationType", "basis", "assertedBy",
+  "evidenceRefs", "limitations",
+]);
+const BROWSER_QUESTION_FIELDS = new Set([
+  "questionId", "domain", "statement", "status", "relatedPropositionRefs", "reason",
+]);
+const BROWSER_CORE_PRESERVATION_FIELDS = new Set([
+  "sourceSemanticDigest", "sourceArtifactDigest", "subject", "resolver",
+  "observedEffectIds", "warningCodes", "conflictIds",
+]);
+const BROWSER_RESOLVER_FIELDS = new Set(["id", "version", "digest"]);
+
 function digestToLens(digest: string, digestOf: string): LensDigestV01 {
   if (!isDigest(digest)) throw new TypeError(`@nec/lens: invalid Core digest for ${digestOf}`);
   return { algorithm: "sha256", value: digest.slice("sha256:".length), digestOf };
@@ -97,6 +152,7 @@ function digestToLens(digest: string, digestOf: string): LensDigestV01 {
 
 function assertLensDigest(value: unknown, path: string): void {
   const d = record(value, path);
+  assertOnlyKeys(d, new Set(["algorithm", "value", "digestOf", "canonicalization", "schemaVersion", "byteLength"]), path);
   if (d.algorithm !== "sha256") throw new TypeError(`@nec/lens: ${path}.algorithm must be sha256`);
   if (typeof d.value !== "string" || !/^[0-9a-f]{64}$/.test(d.value)) throw new TypeError(`@nec/lens: ${path}.value must be 64 lowercase hex`);
   string(d.digestOf, `${path}.digestOf`);
@@ -129,17 +185,41 @@ function assertLensSubject(value: unknown, path: string): void {
   const s = record(value, path);
   const type = string(s.type, `${path}.type`);
   string(s.networkId, `${path}.networkId`);
-  if (type === "transaction") string(s.txId, `${path}.txId`);
-  else if (type === "block") {
+  if (type === "transaction") {
+    assertOnlyKeys(s, new Set(["type", "networkId", "txId"]), path);
+    string(s.txId, `${path}.txId`);
+  } else if (type === "block") {
+    assertOnlyKeys(s, new Set(["type", "networkId", "blockNumber", "blockId"]), path);
     if (s.blockNumber !== undefined && (typeof s.blockNumber !== "string" || !/^(?:0|[1-9][0-9]*)$/.test(s.blockNumber))) {
       throw new TypeError(`@nec/lens: ${path}.blockNumber must be a canonical decimal string`);
     }
     if (s.blockId !== undefined) string(s.blockId, `${path}.blockId`);
-  } else if (type === "batch") string(s.batchId, `${path}.batchId`);
-  else if (type === "custom") {
+  } else if (type === "batch") {
+    assertOnlyKeys(s, new Set(["type", "networkId", "batchId"]), path);
+    string(s.batchId, `${path}.batchId`);
+  } else if (type === "custom") {
+    assertOnlyKeys(s, new Set(["type", "networkId", "namespace", "value"]), path);
     string(s.namespace, `${path}.namespace`);
     string(s.value, `${path}.value`, true);
   } else throw new TypeError(`@nec/lens: ${path}.type is unsupported`);
+}
+
+function copyLensSubject(value: LensSubjectRefV01): LensSubjectRefV01 {
+  switch (value.type) {
+    case "transaction":
+      return { type: value.type, networkId: value.networkId, txId: value.txId };
+    case "block":
+      return {
+        type: value.type,
+        networkId: value.networkId,
+        ...(value.blockNumber === undefined ? {} : { blockNumber: value.blockNumber }),
+        ...(value.blockId === undefined ? {} : { blockId: value.blockId }),
+      };
+    case "batch":
+      return { type: value.type, networkId: value.networkId, batchId: value.batchId };
+    case "custom":
+      return { type: value.type, networkId: value.networkId, namespace: value.namespace, value: value.value };
+  }
 }
 
 function evidenceArtifactId(id: string): string {
@@ -225,7 +305,27 @@ function validateArtifacts(value: unknown, browser: boolean): void {
     if (seen.has(id)) throw new TypeError(`@nec/lens: duplicate artifactId ${id}`);
     seen.add(id);
     string(a.artifactType, `artifacts[${index}].artifactType`);
-    if (a.sourceSchema !== undefined && a.sourceSchema !== null) string(a.sourceSchema, `artifacts[${index}].sourceSchema`);
+    optionalString(a.sourceSchema, `artifacts[${index}].sourceSchema`, true);
+    optionalString(a.mediaType, `artifacts[${index}].mediaType`);
+    optionalString(a.locatorClass, `artifacts[${index}].locatorClass`);
+    optionalString(a.locatorRef, `artifacts[${index}].locatorRef`, true);
+    optionalString(a.sourceObservedAt, `artifacts[${index}].sourceObservedAt`, true);
+    optionalString(a.capturedAt, `artifacts[${index}].capturedAt`, true);
+    optionalString(a.fixtureObservedAt, `artifacts[${index}].fixtureObservedAt`, true);
+    optionalString(a.realityClass, `artifacts[${index}].realityClass`);
+    optionalString(a.fixtureClass, `artifacts[${index}].fixtureClass`);
+    if (a.fixture !== undefined && typeof a.fixture !== "boolean") throw new TypeError(`@nec/lens: artifacts[${index}].fixture must be boolean`);
+    if (a.limitations !== undefined) strings(a.limitations, `artifacts[${index}].limitations`);
+    if (a.redaction !== undefined) {
+      const redaction = record(a.redaction, `artifacts[${index}].redaction`);
+      string(redaction.state, `artifacts[${index}].redaction.state`);
+      if (redaction.derivedFromArtifactId !== null) {
+        string(redaction.derivedFromArtifactId, `artifacts[${index}].redaction.derivedFromArtifactId`);
+      }
+      optionalString(redaction.derivativeArtifactId, `artifacts[${index}].redaction.derivativeArtifactId`, true);
+      optionalString(redaction.transformation, `artifacts[${index}].redaction.transformation`, true);
+      optionalString(redaction.sourceArtifactRef, `artifacts[${index}].redaction.sourceArtifactRef`, true);
+    }
     if (!AVAILABILITIES.has(string(a.availability, `artifacts[${index}].availability`))) throw new TypeError("@nec/lens: invalid artifact availability");
     if (a.artifactDigest !== undefined && a.artifactDigest !== null) assertLensDigest(a.artifactDigest, `artifacts[${index}].artifactDigest`);
     if (browser && a.locatorRef !== null) throw new TypeError("@nec/lens: browser artifact locatorRef must be null");
@@ -240,6 +340,9 @@ function validateSourceClaims(value: unknown): void {
     string(c.claimType, `sourceClaims[${index}].claimType`);
     string(c.vocabulary, `sourceClaims[${index}].vocabulary`);
     string(c.extractionBasis, `sourceClaims[${index}].extractionBasis`);
+    if (c.basis !== undefined) strings(c.basis, `sourceClaims[${index}].basis`);
+    if (c.evidenceRefs !== undefined) strings(c.evidenceRefs, `sourceClaims[${index}].evidenceRefs`);
+    if (c.limitations !== undefined) strings(c.limitations, `sourceClaims[${index}].limitations`);
   }
 }
 
@@ -252,7 +355,9 @@ function validatePropositions(value: unknown): void {
     seen.add(propositionId);
     string(p.domain, `propositions[${index}].domain`);
     string(p.statement, `propositions[${index}].statement`);
+    optionalString(p.kind, `propositions[${index}].kind`);
     strings(p.subjectRefs, `propositions[${index}].subjectRefs`);
+    if (p.sourceClaimRefs !== undefined) strings(p.sourceClaimRefs, `propositions[${index}].sourceClaimRefs`);
     strings(p.limitations, `propositions[${index}].limitations`);
     if (p.availability !== undefined && !PROP_AVAILABILITIES.has(string(p.availability, `propositions[${index}].availability`))) {
       throw new TypeError("@nec/lens: invalid proposition availability");
@@ -263,10 +368,15 @@ function validatePropositions(value: unknown): void {
       if (a.propositionId !== propositionId) throw new TypeError("@nec/lens: assessment propositionId mismatch");
       const evaluator = record(a.evaluator, "assessment.evaluator");
       const evaluatorType = string(evaluator.type, "assessment.evaluator.type");
+      optionalString(evaluator.version, "assessment.evaluator.version", true);
+      optionalString(evaluator.buildRef, "assessment.evaluator.buildRef", true);
+      optionalString(evaluator.verificationMode, "assessment.evaluator.verificationMode");
+      optionalString(evaluator.provenanceClass, "assessment.evaluator.provenanceClass");
       const vocabulary = string(a.vocabulary, "assessment.vocabulary");
       const assessmentValue = string(a.value, "assessment.value");
       const basis = strings(a.basis, "assessment.basis");
       strings(a.evidenceRefs, "assessment.evidenceRefs");
+      optionalString(a.evaluatedAt, "assessment.evaluatedAt", true);
       strings(a.limitations, "assessment.limitations");
       if (evaluatorType === "network_evidence" || vocabulary === "network_evidence_verdict/v0.1") {
         if (vocabulary !== "network_evidence_verdict/v0.1") throw new TypeError("@nec/lens: Network Evidence vocabulary mismatch");
@@ -281,6 +391,8 @@ function validateRelations(value: unknown): void {
   for (const [index, item] of array(value, "relations").entries()) {
     const r = record(item, `relations[${index}]`);
     for (const key of ["relationId", "fromRef", "toRef", "relationType", "basis"] as const) string(r[key], `relations[${index}].${key}`);
+    optionalString(r.assertedBy, `relations[${index}].assertedBy`);
+    if (r.evidenceRefs !== undefined) strings(r.evidenceRefs, `relations[${index}].evidenceRefs`);
     strings(r.limitations, `relations[${index}].limitations`);
   }
 }
@@ -290,6 +402,7 @@ function validateQuestions(value: unknown): void {
     const q = record(item, `openQuestions[${index}]`);
     string(q.questionId, `openQuestions[${index}].questionId`);
     string(q.domain, `openQuestions[${index}].domain`);
+    optionalString(q.statement, `openQuestions[${index}].statement`);
     const status = string(q.status, `openQuestions[${index}].status`);
     if (!QUESTION_STATUSES.has(status)) throw new TypeError("@nec/lens: invalid open-question status");
     strings(q.relatedPropositionRefs, `openQuestions[${index}].relatedPropositionRefs`);
@@ -303,6 +416,7 @@ function validateCorePreservation(value: unknown, browser: boolean): void {
   if (!isDigest(p.sourceSemanticDigest) || !isDigest(p.sourceArtifactDigest)) throw new TypeError("@nec/lens: invalid preserved Core digest");
   assertLensSubject(p.subject, "coreResultPreservation.subject");
   const resolver = record(p.resolver, "coreResultPreservation.resolver");
+  assertOnlyKeys(resolver, new Set(["id", "version", "digest"]), "coreResultPreservation.resolver");
   string(resolver.id, "coreResultPreservation.resolver.id");
   string(resolver.version, "coreResultPreservation.resolver.version");
   if (!isDigest(resolver.digest)) throw new TypeError("@nec/lens: invalid resolver digest");
@@ -311,9 +425,54 @@ function validateCorePreservation(value: unknown, browser: boolean): void {
     strings(p.warningCodes, "coreResultPreservation.warningCodes");
     strings(p.conflictIds, "coreResultPreservation.conflictIds");
   } else {
-    array(p.observedEffects, "coreResultPreservation.observedEffects");
-    array(p.warnings, "coreResultPreservation.warnings");
-    array(p.conflicts, "coreResultPreservation.conflicts");
+    for (const [index, item] of array(p.observedEffects, "coreResultPreservation.observedEffects").entries()) {
+      string(record(item, `coreResultPreservation.observedEffects[${index}]`).id, `coreResultPreservation.observedEffects[${index}].id`);
+    }
+    for (const [index, item] of array(p.warnings, "coreResultPreservation.warnings").entries()) {
+      string(record(item, `coreResultPreservation.warnings[${index}]`).code, `coreResultPreservation.warnings[${index}].code`);
+    }
+    for (const [index, item] of array(p.conflicts, "coreResultPreservation.conflicts").entries()) {
+      string(record(item, `coreResultPreservation.conflicts[${index}]`).id, `coreResultPreservation.conflicts[${index}].id`);
+    }
+  }
+}
+
+function validateGenericBrowserAllowlist(value: Record<string, unknown>): void {
+  assertOnlyKeys(value, GENERIC_BROWSER_TOP_LEVEL_FIELDS, "browserCase");
+  for (const [index, item] of array(value.artifacts, "artifacts").entries()) {
+    const artifact = record(item, `artifacts[${index}]`);
+    assertOnlyKeys(artifact, BROWSER_ARTIFACT_FIELDS, `artifacts[${index}]`);
+    if (artifact.artifactDigest !== null) throw new TypeError(`@nec/lens: artifacts[${index}].artifactDigest must be null in lens-browser/v0.1`);
+    if (artifact.artifactDigestVisibility !== "withheld_by_browser_policy" && artifact.artifactDigestVisibility !== "not_available") {
+      throw new TypeError(`@nec/lens: artifacts[${index}].artifactDigestVisibility is invalid`);
+    }
+    if (artifact.redaction !== undefined) {
+      assertOnlyKeys(record(artifact.redaction, `artifacts[${index}].redaction`), BROWSER_REDACTION_FIELDS, `artifacts[${index}].redaction`);
+    }
+  }
+  for (const [index, item] of array(value.sourceClaims, "sourceClaims").entries()) {
+    assertOnlyKeys(record(item, `sourceClaims[${index}]`), BROWSER_CLAIM_FIELDS, `sourceClaims[${index}]`);
+  }
+  for (const [pIndex, item] of array(value.propositions, "propositions").entries()) {
+    const proposition = record(item, `propositions[${pIndex}]`);
+    assertOnlyKeys(proposition, BROWSER_PROPOSITION_FIELDS, `propositions[${pIndex}]`);
+    for (const [aIndex, aItem] of array(proposition.assessments, `propositions[${pIndex}].assessments`).entries()) {
+      const assessment = record(aItem, `propositions[${pIndex}].assessments[${aIndex}]`);
+      assertOnlyKeys(assessment, BROWSER_ASSESSMENT_FIELDS, `propositions[${pIndex}].assessments[${aIndex}]`);
+      assertOnlyKeys(record(assessment.evaluator, `propositions[${pIndex}].assessments[${aIndex}].evaluator`), BROWSER_EVALUATOR_FIELDS, `propositions[${pIndex}].assessments[${aIndex}].evaluator`);
+    }
+  }
+  for (const [index, item] of array(value.relations, "relations").entries()) {
+    assertOnlyKeys(record(item, `relations[${index}]`), BROWSER_RELATION_FIELDS, `relations[${index}]`);
+  }
+  for (const [index, item] of array(value.openQuestions, "openQuestions").entries()) {
+    assertOnlyKeys(record(item, `openQuestions[${index}]`), BROWSER_QUESTION_FIELDS, `openQuestions[${index}]`);
+  }
+  if (value.coreResultPreservation !== undefined) {
+    const preserved = record(value.coreResultPreservation, "coreResultPreservation");
+    assertOnlyKeys(preserved, BROWSER_CORE_PRESERVATION_FIELDS, "coreResultPreservation");
+    assertOnlyKeys(record(preserved.resolver, "coreResultPreservation.resolver"), BROWSER_RESOLVER_FIELDS, "coreResultPreservation.resolver");
+    assertLensSubject(preserved.subject, "coreResultPreservation.subject");
   }
 }
 
@@ -324,6 +483,13 @@ function validateCommon(value: unknown, browser: boolean): Record<string, unknow
   string(c.caseId, "caseId");
   string(c.namespace, "namespace");
   assertIso(c.createdAt, "createdAt");
+  optionalString(c.constructionTimeMeaning, "constructionTimeMeaning");
+  if (c.fixture !== undefined && typeof c.fixture !== "boolean") throw new TypeError("@nec/lens: fixture must be boolean");
+  optionalString(c.fixtureClass, "fixtureClass");
+  optionalString(c.realityClass, "realityClass");
+  if (c.syntheticArtifactCount !== undefined && (!Number.isSafeInteger(c.syntheticArtifactCount) || (c.syntheticArtifactCount as number) < 0)) {
+    throw new TypeError("@nec/lens: syntheticArtifactCount must be a non-negative safe integer");
+  }
   if (c.TARGET_CORE_MUTATIONS !== 0) throw new TypeError("@nec/lens: TARGET_CORE_MUTATIONS must be 0");
   validateArtifacts(c.artifacts, browser);
   validateSourceClaims(c.sourceClaims);
@@ -356,6 +522,7 @@ export function validateLensBrowserSafeCaseV01(value: unknown): asserts value is
   if (c.revisionDigest !== null || c.revisionDigestVisibility !== "withheld_by_browser_policy") {
     throw new TypeError("@nec/lens: browser revision digest must be withheld");
   }
+  if (c.projectionPolicy === LENS_BROWSER_PROJECTION_VERSION) validateGenericBrowserAllowlist(c);
   canonicalHubJsonV01(c);
 }
 
@@ -535,8 +702,12 @@ export function projectLensBrowserSafeV01(value: LensCaseV01): LensBrowserSafeCa
       coreResultPreservation: {
         sourceSemanticDigest: value.coreResultPreservation.sourceSemanticDigest,
         sourceArtifactDigest: value.coreResultPreservation.sourceArtifactDigest,
-        subject: { ...value.coreResultPreservation.subject },
-        resolver: { ...value.coreResultPreservation.resolver },
+        subject: copyLensSubject(value.coreResultPreservation.subject),
+        resolver: {
+          id: value.coreResultPreservation.resolver.id,
+          version: value.coreResultPreservation.resolver.version,
+          digest: value.coreResultPreservation.resolver.digest,
+        },
         observedEffectIds: value.coreResultPreservation.observedEffects.map((effect) => effect.id),
         warningCodes: value.coreResultPreservation.warnings.map((warning) => warning.code),
         conflictIds: value.coreResultPreservation.conflicts.map((conflict) => conflict.id),

@@ -128,6 +128,55 @@ describe("@nec/lens v0.1 generic runtime", () => {
     expect(projectedBytes).not.toContain("<raw>");
     expect(projectedBytes).not.toContain("confidence");
     expect("inputRefs" in projected.propositions[0]!.assessments[0]!).toBe(false);
+
+    const resolverExtra = structuredClone(fromObject()) as any;
+    resolverExtra.coreResultPreservation.resolver.endpoint = "https://rpc.example/?key=SECRET";
+    const { revisionDigest: _resolverDigest, ...resolverBody } = resolverExtra;
+    resolverExtra.revisionDigest = hubRevisionDigestV01(resolverBody);
+    expect(() => validateLensCaseV01(resolverExtra)).toThrow(/unknown coreResultPreservation\.resolver field endpoint/);
+
+    const objectLimitation = structuredClone(fromObject()) as any;
+    objectLimitation.artifacts[0].limitations = [{ payload: "<raw>" }];
+    const { revisionDigest: _limitationDigest, ...limitationBody } = objectLimitation;
+    objectLimitation.revisionDigest = hubRevisionDigestV01(limitationBody);
+    expect(() => validateLensCaseV01(objectLimitation)).toThrow(/limitations\[0\].*string/);
+
+    const craftedBrowser = structuredClone(browser) as any;
+    craftedBrowser.propositions[0].assessments[0].confidence = 0.99;
+    expect(() => serializeLensBrowserSafeV01(craftedBrowser)).toThrow(
+      /unknown propositions\[0\]\.assessments\[0\] field confidence/,
+    );
+
+    for (const [field, badValue] of [
+      ["constructionTimeMeaning", { payload: "<raw>" }],
+      ["fixture", { payload: "<raw>" }],
+      ["fixtureClass", { locatorRef: "https://rpc.example/?key=SECRET" }],
+      ["realityClass", { payload: "<raw>" }],
+      ["syntheticArtifactCount", { payload: "<raw>" }],
+    ] as const) {
+      const unsafe = structuredClone(browser) as any;
+      unsafe[field] = badValue;
+      expect(() => serializeLensBrowserSafeV01(unsafe)).toThrow();
+    }
+
+    const unsafeVisibility = structuredClone(browser) as any;
+    unsafeVisibility.artifacts[0].artifactDigestVisibility = { payload: "<raw>" };
+    expect(() => serializeLensBrowserSafeV01(unsafeVisibility)).toThrow(/artifactDigestVisibility/);
+
+    const unsafeDigest = structuredClone(browser) as any;
+    unsafeDigest.artifacts[0].artifactDigest = {
+      algorithm: "sha256",
+      value: "0".repeat(64),
+      digestOf: "x",
+      payload: "<raw>",
+    };
+    expect(() => serializeLensBrowserSafeV01(unsafeDigest)).toThrow(/artifactDigest/);
+
+    const subjectExtra = structuredClone(fromObject()) as any;
+    subjectExtra.coreResultPreservation.subject.secret = "SECRET";
+    const { revisionDigest: _subjectDigest, ...subjectBody } = subjectExtra;
+    subjectExtra.revisionDigest = hubRevisionDigestV01(subjectBody);
+    expect(() => validateLensCaseV01(subjectExtra)).toThrow(/unknown coreResultPreservation\.subject field secret/);
   });
 
   it("enforces the browser serialization byte budget before unbounded accumulation", () => {

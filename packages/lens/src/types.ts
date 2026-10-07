@@ -190,6 +190,11 @@ export interface LensBrowserArtifactRefV01 extends Omit<LensArtifactRefV01, "loc
 
 /** Generic browser projection deliberately omits source-native `value`. */
 export type LensBrowserSourceClaimV01 = Omit<LensSourceClaimV01, "value">;
+/** Generic browser assessments deliberately omit potentially opaque/untrusted inputRefs. */
+export type LensBrowserAssessmentV01 = Omit<LensAssessmentV01, "inputRefs">;
+export interface LensBrowserPropositionV01 extends Omit<LensPropositionV01, "assessments"> {
+  assessments: readonly LensBrowserAssessmentV01[];
+}
 
 export interface LensBrowserCoreResultPreservationV01 {
   sourceSemanticDigest: NetworkEvidenceResult["semanticDigest"];
@@ -204,10 +209,11 @@ export interface LensBrowserCoreResultPreservationV01 {
 export interface LensBrowserSafeCaseV01
   extends Omit<
     LensCaseV01,
-    "artifacts" | "sourceClaims" | "coreResultPreservation" | "revisionDigest" | "extensions"
+    "artifacts" | "sourceClaims" | "propositions" | "coreResultPreservation" | "revisionDigest" | "extensions"
   > {
   artifacts: readonly LensBrowserArtifactRefV01[];
   sourceClaims: readonly LensBrowserSourceClaimV01[];
+  propositions: readonly LensBrowserPropositionV01[];
   coreResultPreservation?: LensBrowserCoreResultPreservationV01;
   revisionDigest: null;
   revisionDigestVisibility: "withheld_by_browser_policy";
