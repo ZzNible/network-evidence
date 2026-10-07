@@ -76,3 +76,15 @@ npm run maps:serve
 ~~~
 
 Then open `http://127.0.0.1:4177/`. `TARGET_CORE_MUTATIONS = 0`.
+
+## Release and reproducibility
+
+- [RELEASE.md](RELEASE.md) — release status, package/version inventory and
+  release artifacts. The next public version is undecided; no package is
+  published to npm.
+- [docs/release/REPRODUCTION.md](docs/release/REPRODUCTION.md) — clean-machine
+  reproduction with expected digests.
+- [docs/release/DEPENDENCY_ADVISORIES.md](docs/release/DEPENDENCY_ADVISORIES.md)
+  — open `npm audit` advisories in the development/test toolchain.
+- [SECURITY_BOUNDARIES.md](SECURITY_BOUNDARIES.md) — evidence boundaries and
+  the public/private boundary.

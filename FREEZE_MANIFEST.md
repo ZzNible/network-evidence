@@ -13,6 +13,10 @@ tagged manifest captured the final pre-push staging state and therefore still
 contains the historical line `PUBLICATION_EXECUTED = NO`; this main-branch
 documentation cleanup does not move or rewrite that release tag.
 
+`PUBLICATION_EXECUTED = YES` above refers to `v0.1.0`. It does not describe
+the release state of the current candidate source commit, which is recorded in
+[RELEASE.md](RELEASE.md).
+
 ## SOURCE_PROVENANCE
 
 ```text
