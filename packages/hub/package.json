@@ -1,0 +1,14 @@
+{
+  "name": "@nec/hub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Public source contract for the minimal Network Evidence Hub normalization layer. No hosted service, storage, policy, wallet, signing, or submission.",
+  "engines": { "node": ">=20" },
+  "exports": {
+    ".": { "types": "./src/index.ts", "default": "./src/index.ts" }
+  },
+  "dependencies": {
+    "@nec/core": "*"
+  }
+}

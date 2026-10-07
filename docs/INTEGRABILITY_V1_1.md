@@ -1,0 +1,189 @@
+# Network Evidence Suite v1.1 integrability contract freeze
+
+**Status:** LOT 1 CONTRACT FREEZE / BEHAVIORAL IMPLEMENTATION PENDING
+**Historical release:** `v1.0.0` remains unchanged.
+**Target:** a future `v1.1.0` only after the full integrability DoD passes.
+**Core rule:** `TARGET_CORE_MUTATIONS = 0`.
+
+## 1. Required reusable path
+
+A third-party developer must be able to compose:
+
+```text
+NetworkEvidenceResult or nec-wire-json-v1
+-> @nec/hub
+-> @nec/lens
+-> ne-maps-case/v0.1
+-> NE Maps
+```
+
+without a Core change and without case-specific code in `examples/ne-maps/app.js`.
+
+The three historical F1/F2/F3 cases remain compatibility fixtures. Their verdicts, limitations, provenance, missing/unavailable states, and evidence boundaries must not be strengthened or rewritten by the generic path.
+
+## 2. @nec/hub v0.1 — minimum public contract
+
+Source contract: `packages/hub/src/types.ts`.
+
+Accepted inputs are exactly:
+
+1. a Core `NetworkEvidenceResult` runtime object; or
+2. a Core `nec-wire-json-v1` string with wire type `network-evidence-result`.
+
+LOT 2 implementation requirements:
+
+- object input -> call Core `validateNetworkEvidenceResult`;
+- wire input -> call Core `decodeNecWireJson("network-evidence-result", wire)`;
+- fail closed on invalid/unsupported input;
+- emit `hub-network-evidence-record/v0.1`;
+- retain the **complete validated Core result unchanged** in the Hub record.
+
+Keeping the complete Core result is the preservation mechanism. Hub must not recompute or translate:
+
+- `semanticDigest` / `artifactDigest`;
+- subject/action/network identity;
+- execution/dataBinding/settlement/finality verdicts;
+- evidence bases;
+- observed effects;
+- evidence refs;
+- warnings/conflicts;
+- resolver/request/policy/snapshot provenance.
+
+Hub v0.1 adds no generic A2A/MCP ingestion, live fetching, DB/service layer, correlation engine, policy decision, wallet/signing/submission, confidence or trust score.
+
+## 3. @nec/lens v0.1 — minimum public contract
+
+Source contract: `packages/lens/src/types.ts`.
+
+Public schema identity remains `lens-case/v0.1`; the design is promoted from the existing reviewed Lens contract rather than replaced.
+
+LOT 2 implements exactly four runtime surfaces:
+
+```text
+validateLensCaseV01(unknown)
+buildLensCaseFromHubV01(input)
+projectLensBrowserSafeV01(case)
+serializeLensCaseV01(case)
+```
+
+### Generic mapping rule
+
+The builder is mechanical, not an evaluator:
+
+- create one network proposition for each Core evidence dimension (`execution`, `dataBinding`, `settlement`, `finality`);
+- when Core carries a verdict, copy that exact verdict and exact Core evidence bases into a `network_evidence_verdict/v0.1` assessment;
+- when Core does not carry a verdict, do **not** invent one; preserve applicability/reason as unresolved/not-applicable context;
+- preserve observed effects as Network Evidence material without assigning them a new verdict;
+- preserve warnings/conflicts and both Core digests in the internal Lens `coreResultPreservation` field;
+- do not repurpose the historical F1 `networkEvidence` field; F1/F2/F3 browser-safe projections remain valid unchanged;
+- preserve resolver/subject identity;
+- never translate another evaluator vocabulary into Network Evidence vocabulary;
+- never derive settlement/finality/service delivery/policy consequences from execution or observed effects.
+
+`lens-case/v0.1` has no global case verdict, confidence, trust score, hidden ranking, wallet/signing/submission authority, or Core authority.
+
+### Runtime validator
+
+The validator must accept the current reviewed F1/F2/F3 projections unchanged, accept the documented generic fields above, reject unknown new top-level semantic fields unless they are carried in `extensions`, and fail closed on malformed contract fields. It also enforces the conditional Network Evidence rule:
+
+```text
+evaluator.type == network_evidence
+=> vocabulary == network_evidence_verdict/v0.1
+=> value is exactly supported|contradicted|insufficient|ambiguous
+=> basis values are Core EvidenceBasis values only
+```
+
+Unknown evaluator vocabularies remain their own vocabularies.
+
+### Browser-safe projection
+
+The browser projection is an allowlist. It must remove private locators and raw `nativeSource.payload` bytes, withhold the internal revision digest by default, and retain only safe provenance/digest identifiers required for inspection. Projection never changes proposition meaning.
+
+### Deterministic serialization
+
+Serialization uses the existing Hub-owned `hub-json-sorted-keys/v0.1` canonicalization profile. It is for Lens-owned records only; it is not a source-byte canonicalization rule.
+
+## 4. NE Maps case envelope v0.1
+
+Source contract: `examples/ne-maps/contracts/case-envelope.ts`.
+
+Required fields for each new generic case:
+
+```text
+schemaVersion = ne-maps-case/v0.1
+id
+display { networkLabel, title, shape }
+exactAction { networkId, id, kind? }
+trailPropositionOrder[]
+lens = browser-safe lens-case/v0.1
+```
+
+Optional presentation-only extensions may include the historical F1 Trail context note or F2 reviewed selector outcomes. Existing collection-level `sourceAuthority`, `publicSuite`, and `nonClaims` provenance/non-claim metadata is retained by the v0.1 collection contract. A new generic case must require none of the case-specific extensions.
+
+The current frozen `cases.json` is a historical export and does not yet carry per-case `ne-maps-case/v0.1` schema markers. LOT 4 adds collection/envelope validation and a compatibility loader so F1/F2/F3 remain semantically and provenance-identical while new generic cases use the versioned envelope.
+
+Maps may:
+
+- render Lens propositions/relations/limitations;
+- order existing proposition ids for navigation;
+- display exact-action identity.
+
+Maps may not:
+
+- resolve network evidence;
+- create a new assessment/relation basis;
+- turn missing/unavailable into success/failure;
+- strengthen `insufficient`/`ambiguous`;
+- infer settlement/finality/causality;
+- score/rank cases.
+
+LOT 4 will remove the historical `cases.length === 3` / `[f1,f2,f3]` structural freeze and add runtime envelope validation while retaining dedicated regression assertions for F1/F2/F3.
+
+## 5. Historical compatibility
+
+Existing authority remains:
+
+```text
+ZzNible/agent-evidence-hub autonomy/authority-v1
+586a81a39c8da4d3a0dc0e879b605aabfd3f8d1d
+```
+
+The public H1 and F2 copies at the v1.0.0 code are byte-identical to that authority. LOT 2/3 should promote/reuse reviewed algorithms rather than reimplement them where applicable.
+
+F1/F2/F3 exact-fixture adapters remain valid compatibility adapters. Generic integration does not replace the case-specific facts they established.
+
+## 6. Synthetic/local proof fixture
+
+Prepared in `examples/integrability-fixture/README.md` from the independent literal golden world in `packages/core/test/golden.test.ts`. It deliberately proves the generic plumbing, not a new network/protocol feature.
+
+LOT 2 must demonstrate both Core object and Core wire inputs produce the same preserved Hub/Lens semantics.
+
+## 7. Integrability Definition of Done for v1.1.0
+
+Before a future `v1.1.0`:
+
+1. Core remains unchanged and directly reusable.
+2. `@nec/hub` exposes and documents the public v0.1 normalization contract and runtime implementation.
+3. `@nec/lens` exposes and documents `lens-case/v0.1`, runtime validation, generic Hub builder, browser-safe projection and deterministic serialization.
+4. NE Maps consumes a versioned case collection and accepts an additional conforming case without case-specific `app.js` logic.
+5. The prepared synthetic/local fixture demonstrates Core -> Hub -> Lens -> Maps with `TARGET_CORE_MUTATIONS = 0`.
+6. F1/F2/F3 preserve their reviewed verdicts, limitations, provenance and missing/unavailable states.
+7. Tests, typecheck, fixture/manifests and fresh-clone gate are green.
+8. Integration docs let a third-party developer use each layer without chat history.
+9. Independent review is CLEAN.
+10. No cloud service, DB, graph engine, generic A2A/MCP layer, wallet/signing/submission, policy engine, trust/confidence scoring, or new Core abstraction is introduced to satisfy this DoD.
+
+## 8. Lot boundaries
+
+LOT 1 freezes these contracts only. The exported function types exist, but their behavioral implementations are intentionally absent.
+
+LOT 2 is limited to:
+
+```text
+Core object/wire
+-> @nec/hub runtime normalization
+-> @nec/lens validator + generic builder + browser-safe projection + serialization
+-> materialized synthetic/local proof artifacts
+```
+
+LOT 2 does not modify Maps behavior or migrate F1/F2/F3.
