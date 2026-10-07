@@ -1,4 +1,7 @@
+import { validateNeMapsCollectionV01 } from "./collection.js";
+
 const app = document.querySelector("#app");
+const COLLECTION_URL = "./data/collection.json";
 const STATUS_ORDER = ["supported", "contradicted", "insufficient", "ambiguous", "unavailable"];
 const STATUS_SET = new Set(STATUS_ORDER);
 
@@ -36,6 +39,10 @@ function caseStatuses(item) {
   return STATUS_ORDER.filter(value => found.has(value));
 }
 
+function caseCount(data) {
+  return data.cases.length + (data.cases.length === 1 ? " case" : " cases");
+}
+
 function badge(value) {
   return node("span", "badge " + value, value);
 }
@@ -69,7 +76,7 @@ function card(item) {
 
 function renderAtlas(data) {
   const wrap = node("section");
-  const intro = node("div", "notice", "Three stable v1 cases, rendered from browser-safe Lens projections. Maps changes presentation only; evidence authority remains with the pinned source outputs.");
+  const intro = node("div", "notice", caseCount(data) + " from a versioned " + data.schemaVersion + ", rendered from browser-safe Lens projections. Maps changes presentation only; evidence authority remains with each case's pinned source outputs.");
   wrap.append(intro);
   const grid = node("div", "atlas-grid");
   grid.style.marginTop = "16px";
@@ -122,11 +129,12 @@ function propositionItem(proposition) {
 }
 
 function selectorPanel(item) {
-  if (!item.reviewedSelectorOutcomes?.length) return null;
+  const outcomes = item.extensions?.reviewedSelectorOutcomes ?? [];
+  if (!outcomes.length) return null;
   const box = node("section", "item");
   box.append(node("p", "meta-title", "Reviewed selector outcomes"));
   const stack = node("div", "stack");
-  for (const outcome of item.reviewedSelectorOutcomes) {
+  for (const outcome of outcomes) {
     const row = node("div", "item-top");
     row.append(node("span", "", outcome.label));
     row.append(badge(outcome.verdict));
@@ -181,7 +189,7 @@ function renderLens(item) {
 function renderTrail(item) {
   const section = detailShell(item, "Trail");
   section.append(node("div", "notice", "Trail ordering is Maps-authored navigation metadata over existing case propositions. It is not a Hub-provided Trail route and does not create a causal edge or stronger verdict."));
-  if (item.trailContextNote) section.append(node("div", "notice", item.trailContextNote));
+  if (item.extensions?.trailContextNote) section.append(node("div", "notice", item.extensions.trailContextNote));
   const stack = node("div", "stack");
   stack.style.marginTop = "16px";
   const byId = new Map((item.lens.propositions ?? []).map(p => [p.propositionId, p]));
@@ -199,6 +207,10 @@ function renderAction(item) {
   const left = node("section", "item");
   left.append(node("p", "meta-title", "Source-backed identity"));
   left.append(keyValueList(Object.entries(item.exactAction)));
+  if (item.extensions?.provenance) {
+    left.append(node("p", "meta-title", "Case provenance"));
+    left.append(keyValueList(Object.entries(item.extensions.provenance)));
+  }
 
   const right = node("section", "item");
   right.append(node("p", "meta-title", "Case relations"));
@@ -231,15 +243,16 @@ function route(data) {
 
 async function boot() {
   try {
-    const response = await fetch("./data/cases.json", { cache: "no-store" });
-    if (!response.ok) throw new Error("case data unavailable");
-    const data = await response.json();
-    if (data.TARGET_CORE_MUTATIONS !== 0 || data.cases?.length !== 3) throw new Error("unexpected case export");
+    const response = await fetch(COLLECTION_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error("case collection unavailable");
+    const data = validateNeMapsCollectionV01(await response.json());
+    const counter = document.querySelector("#case-count");
+    if (counter) counter.textContent = caseCount(data) + " · " + data.schemaVersion;
     const render = () => app.replaceChildren(route(data));
     window.addEventListener("hashchange", render);
     render();
   } catch (error) {
-    app.replaceChildren(node("p", "error", "NE Maps could not load the reviewed case export: " + error.message));
+    app.replaceChildren(node("p", "error", "NE Maps could not load the case collection: " + error.message));
   }
 }
 

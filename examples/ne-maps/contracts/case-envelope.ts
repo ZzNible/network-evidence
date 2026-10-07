@@ -37,6 +37,8 @@ export interface NeMapsCaseEnvelopeV01 {
   extensions?: {
     trailContextNote?: string;
     reviewedSelectorOutcomes?: readonly NeMapsReviewedSelectorOutcomeV01[];
+    /** Presentation-only source references for this case (string values). */
+    provenance?: Readonly<Record<string, string>>;
     [name: string]: unknown;
   };
 }

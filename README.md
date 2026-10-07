@@ -69,7 +69,7 @@ examples/core-hub-lens/PROVENANCE.md.
 
 ## Minimal NE Maps atlas
 
-`examples/ne-maps/` presents the three stable Suite v1 cases as a small generic/multichain evidence atlas. It consumes pinned browser-safe Lens projections; it does not resolve network evidence or add a graph engine, policy layer or stronger claim. Each case exposes Lens, Trail and exact-action handoffs while preserving `supported`, `contradicted`, `insufficient`, `ambiguous` and `unavailable` states when present.
+`examples/ne-maps/` presents a versioned `ne-maps-case-collection/v0.1` — the three stable Suite v1 cases plus the clearly labelled synthetic/local integrability case — as a small generic/multichain evidence atlas. It validates the collection fail-closed and consumes pinned browser-safe Lens projections; it does not resolve network evidence or add a graph engine, policy layer or stronger claim. Each case exposes Lens, Trail and exact-action handoffs while preserving `supported`, `contradicted`, `insufficient`, `ambiguous` and `unavailable` states when present.
 
 ~~~sh
 npm run maps:serve

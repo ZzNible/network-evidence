@@ -5,7 +5,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const data = JSON.parse(await readFile(join(root, "data/cases.json"), "utf8"));
+const legacy = JSON.parse(await readFile(join(root, "data/cases.json"), "utf8"));
+const data = JSON.parse(await readFile(join(root, "data/collection.json"), "utf8"));
 const app = await readFile(join(root, "app.js"), "utf8");
 const readme = await readFile(join(root, "README.md"), "utf8");
 
@@ -19,7 +20,7 @@ function keys(value: unknown, out = new Set<string>()): Set<string> {
 }
 
 describe("NE Maps minimal export", () => {
-  it("pins the exported case bytes", async () => {
+  it("pins the frozen reviewed legacy export bytes", async () => {
     const bytes = await readFile(join(root, "data/cases.json"));
     const actual = createHash("sha256").update(bytes).digest("hex");
     const manifest = (await readFile(join(root, "data/CASES.sha256"), "utf8")).trim();
@@ -27,12 +28,16 @@ describe("NE Maps minimal export", () => {
     expect(actual).toBe("eef096d0e774bef6ce2b9c111218b52be19d00613c75eb538ce8f936ccf580e1");
   });
 
-  it("pins exactly the three stable v1 cases and authority", () => {
-    expect(data.schemaVersion).toBe("ne-maps/v0.1");
-    expect(data.sourceAuthority.commit).toBe("586a81a39c8da4d3a0dc0e879b605aabfd3f8d1d");
-    expect(data.publicSuite.commit).toBe("e536ca1c63465ebb2de46c855a01bac71e4dc768");
+  it("keeps the reviewed legacy export pinned to its authority while Maps loads the versioned collection", () => {
+    expect(legacy.schemaVersion).toBe("ne-maps/v0.1");
+    expect(legacy.sourceAuthority.commit).toBe("586a81a39c8da4d3a0dc0e879b605aabfd3f8d1d");
+    expect(legacy.publicSuite.commit).toBe("e536ca1c63465ebb2de46c855a01bac71e4dc768");
+    expect(legacy.TARGET_CORE_MUTATIONS).toBe(0);
+    expect(legacy.cases.map((item: { id: string }) => item.id)).toEqual(["f1", "f2", "f3"]);
+    expect(data.schemaVersion).toBe("ne-maps-case-collection/v0.1");
     expect(data.TARGET_CORE_MUTATIONS).toBe(0);
-    expect(data.cases.map((item: { id: string }) => item.id)).toEqual(["f1", "f2", "f3"]);
+    expect(app).toContain("./data/collection.json");
+    expect(app).not.toContain("cases.json");
   });
 
   it("keeps exact-action and Trail handoffs internally consistent", () => {
@@ -54,7 +59,7 @@ describe("NE Maps minimal export", () => {
         for (const assessment of proposition.assessments ?? []) values.add(assessment.value);
         if (proposition.availability === "unavailable") values.add("unavailable");
       }
-      for (const outcome of item.reviewedSelectorOutcomes ?? []) values.add(outcome.verdict);
+      for (const outcome of item.extensions?.reviewedSelectorOutcomes ?? []) values.add(outcome.verdict);
     }
     expect([...values].sort()).toEqual(["ambiguous", "contradicted", "insufficient", "supported", "unavailable"]);
     const forbiddenKeys = ["caseVerdict", "confidence", "trustScore"];
@@ -70,7 +75,7 @@ describe("NE Maps minimal export", () => {
 
   it("keeps F1 Lens-only source context explicitly outside the network-action Trail order", () => {
     const f1 = data.cases.find((item: { id: string }) => item.id === "f1");
-    expect(f1.trailContextNote).toMatch(/Lens-only context/);
+    expect(f1.extensions.trailContextNote).toMatch(/Lens-only context/);
     expect(f1.trailPropositionOrder).not.toContain("source-p-f1-public-issue-claim-1062");
   });
 
@@ -82,7 +87,7 @@ describe("NE Maps minimal export", () => {
       if (proposition.availability === "unavailable") propositionStates.add("unavailable");
     }
     expect([...propositionStates].sort()).toEqual(["supported", "unavailable"]);
-    expect(f2.reviewedSelectorOutcomes).toEqual([
+    expect(f2.extensions.reviewedSelectorOutcomes).toEqual([
       { label: "Exact userOpHash + sender", verdict: "supported" },
       { label: "Unknown userOpHash", verdict: "insufficient" },
       { label: "Exact userOpHash + wrong sender", verdict: "contradicted" },

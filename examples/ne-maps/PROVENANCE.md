@@ -26,4 +26,15 @@ Pinned export digest:
 
 The same value is stored in `data/CASES.sha256`.
 
+## Versioned collection (v1.1 LOT 4)
+
+Maps loads `data/collection.json` (`ne-maps-case-collection/v0.1`), derived deterministically by `build-collection.ts` from:
+
+- `data/cases.json` above (byte-unchanged; each nested F1/F2/F3 Lens is also required to serialize byte-identically to `examples/historical-compat/data/<id>.lens-browser.json`);
+- `examples/integrability-fixture/data/lens-browser.json` (SHA-256 `2daf7f598a5032ab786b698192ffd08c2142681ab7729f37936f7724185fc44f`), rebuilt live from the synthetic Core golden world through `@nec/hub` and `@nec/lens` and required to match byte-for-byte.
+
+The F1/F2/F3 migration is envelope-only. The legacy collection-level `sourceAuthority`/`publicSuite` values are carried per case in `extensions.provenance`; the synthetic/local case carries its own fixture provenance and is labelled "synthetic/local fixture — not a network observation".
+
+Pinned collection digest is stored in `data/COLLECTION.sha256`.
+
 `TARGET_CORE_MUTATIONS = 0`.

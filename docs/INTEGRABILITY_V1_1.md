@@ -1,6 +1,6 @@
 # Network Evidence Suite v1.1 integrability contract freeze
 
-**Status:** LOT 3 HISTORICAL F1/F2/F3 COMPATIBILITY PROMOTED / MAPS BEHAVIOR PENDING
+**Status:** LOT 4 GENERIC MAPS COLLECTION CANDIDATE (local; review pending)
 **Historical release:** `v1.0.0` remains unchanged.
 **Target:** a future `v1.1.0` only after the full integrability DoD passes.
 **Core rule:** `TARGET_CORE_MUTATIONS = 0`.
@@ -121,9 +121,16 @@ trailPropositionOrder[]
 lens = browser-safe lens-case/v0.1
 ```
 
-Optional presentation-only extensions may include the historical F1 Trail context note or F2 reviewed selector outcomes. Existing collection-level `sourceAuthority`, `publicSuite`, and `nonClaims` provenance/non-claim metadata is retained by the v0.1 collection contract. A new generic case must require none of the case-specific extensions.
+Optional presentation-only extensions may include the historical F1 Trail context note, F2 reviewed selector outcomes, or per-case `provenance` (string values). The v0.1 collection contract keeps optional collection-level `sourceAuthority`/`publicSuite` and required `nonClaims`. A new generic case must require none of the case-specific extensions.
 
-The current frozen `cases.json` is a historical export and does not yet carry per-case `ne-maps-case/v0.1` schema markers. LOT 4 adds collection/envelope validation and a compatibility loader so F1/F2/F3 remain semantically and provenance-identical while new generic cases use the versioned envelope.
+### LOT 4 generic collection
+
+Maps loads only `examples/ne-maps/data/collection.json` (`ne-maps-case-collection/v0.1`) and validates it with the Maps-only runtime validator `examples/ne-maps/collection.js` before rendering. It fails closed on unsupported collection/case `schemaVersion`, unknown collection/case/display fields, invalid URL-unsafe or duplicate case ids, non-string exact-action values, Trail ids that are not Lens propositions, malformed known extensions, forbidden authority/ranking keys anywhere (`caseVerdict`, `confidence`, `trustScore`, `score`, `policyDecision`, `rank`, `ranking`), non-withheld browser revision digests, non-null artifact `locatorRef`, and empty or over-bound (>64) collections. There is no exactly-three or case-id dependency. Unknown extension keys are tolerated per contract and never rendered. In Node, callers additionally inject the public `@nec/lens` `validateLensBrowserSafeCaseV01`; the browser check only covers what Maps renders and does not restate Lens semantics.
+
+The frozen reviewed `data/cases.json` (legacy `ne-maps/v0.1`, SHA-256 `eef096d0…`) is unchanged and remains the input pinned by `examples/historical-compat`. `examples/ne-maps/build-collection.ts` derives the collection deterministically (`npm run maps:collection`):
+
+- F1/F2/F3: envelope-only migration. The nested Lens, `display`, `exactAction` and `trailPropositionOrder` are carried unchanged; legacy top-level `trailContextNote` / `reviewedSelectorOutcomes` move to `extensions`; the legacy collection-level `sourceAuthority`/`publicSuite` values move to per-case `extensions.provenance` because the mixed collection no longer shares one authority. Each nested Lens must serialize byte-identically to the LOT 3 `examples/historical-compat/data/<id>.lens-browser.json`.
+- Synthetic/local: the LOT 2 fixture is rebuilt live (Core object -> `@nec/hub` -> `@nec/lens` -> `lens-browser/v0.1`) and must equal `examples/integrability-fixture/data/lens-browser.json` byte-for-byte; it is wrapped only by presentation metadata whose display labels and `exactAction.realityClass` state "synthetic/local fixture — not a network observation".
 
 Maps may:
 
@@ -140,7 +147,7 @@ Maps may not:
 - infer settlement/finality/causality;
 - score/rank cases.
 
-LOT 4 will remove the historical `cases.length === 3` / `[f1,f2,f3]` structural freeze and add runtime envelope validation while retaining dedicated regression assertions for F1/F2/F3.
+LOT 4 removes the historical `cases.length === 3` / `[f1,f2,f3]` structural freeze and adds runtime envelope validation while retaining dedicated regression assertions for F1/F2/F3.
 
 ## 5. Historical compatibility
 
@@ -214,3 +221,5 @@ Core object/wire
 LOT 2 does not modify Maps behavior or migrate F1/F2/F3.
 
 LOT 3 adds only the historical compatibility path described in section 5. It does not modify Core, `@nec/hub`, `@nec/lens`, Maps behavior or the frozen v1.0.0 `examples/core-hub-lens/` export.
+
+LOT 4 changes only `examples/ne-maps/**` (generic loader/validator, derived collection, tests, docs), the typing of the optional `extensions.provenance` in the Maps envelope contract, and a root `maps:collection` script. It does not modify Core, `@nec/hub`, `@nec/lens`, `examples/historical-compat`, `examples/integrability-fixture` or the frozen reviewed `cases.json`.
