@@ -4,7 +4,6 @@ import type {
   NetworkEvidenceResult,
   ObservedEffect,
   ResolverManifestRef,
-  SubjectRef,
   Warning,
 } from "@nec/core";
 import type { HubNetworkEvidenceRecordV01 } from "@nec/hub";
@@ -74,7 +73,7 @@ export interface LensEvaluatorV01 {
 }
 
 /**
- * Runtime validation in LOT 2 applies the conditional Network Evidence rule:
+ * Runtime validation applies the conditional Network Evidence rule:
  * evaluator.type === "network_evidence" requires vocabulary
  * network_evidence_verdict/v0.1, one of the four Core verdicts, and only Core
  * EvidenceBasis values. Other vocabularies are never coerced into it.
@@ -130,11 +129,18 @@ export interface LensOpenQuestionV01 {
   reason: string;
 }
 
-/** Exact Core material retained internally by the NEW generic builder. */
+/** JSON/wire-safe subject projection. Core blockNumber bigint is decimal text here. */
+export type LensSubjectRefV01 =
+  | { type: "transaction"; networkId: string; txId: string }
+  | { type: "block"; networkId: string; blockNumber?: string; blockId?: string }
+  | { type: "batch"; networkId: string; batchId: string }
+  | { type: "custom"; networkId: string; namespace: string; value: string };
+
+/** Exact Core semantics retained internally by the NEW generic builder. */
 export interface LensCoreResultPreservationV01 {
   sourceSemanticDigest: NetworkEvidenceResult["semanticDigest"];
   sourceArtifactDigest: NetworkEvidenceResult["artifactDigest"];
-  subject: SubjectRef;
+  subject: LensSubjectRefV01;
   resolver: ResolverManifestRef;
   observedEffects: readonly ObservedEffect[];
   conflicts: readonly Conflict[];
@@ -143,9 +149,9 @@ export interface LensCoreResultPreservationV01 {
 
 /**
  * Public lens-case/v0.1 contract. Known historical optional fields are kept
- * explicitly because the existing reviewed F1/F2/F3 projections must remain
- * valid byte-for-byte. New generic code should use `coreResultPreservation`
- * and `extensions`; it must not repurpose historical fields.
+ * because the reviewed F1/F2/F3 projections must remain valid unchanged.
+ * New generic code uses `coreResultPreservation` and `extensions`; it never
+ * repurposes the historical F1 `networkEvidence` field.
  */
 export interface LensCaseV01 {
   schemaVersion: typeof LENS_CASE_SCHEMA_VERSION;
@@ -167,7 +173,7 @@ export interface LensCaseV01 {
   revisionDigest: LensDigestV01;
   TARGET_CORE_MUTATIONS: 0;
   extensions?: Readonly<Record<string, unknown>>;
-  // Known legacy F0/F1/F2/F3 fields accepted unchanged by the future validator.
+  // Known legacy F0/F1/F2/F3 fields accepted unchanged by the runtime validator.
   networkEvidence?: unknown;
   frozenSourceIndex?: unknown;
   publicSourceIndex?: unknown;
@@ -182,10 +188,13 @@ export interface LensBrowserArtifactRefV01 extends Omit<LensArtifactRefV01, "loc
   artifactDigestVisibility?: string;
 }
 
+/** Generic browser projection deliberately omits source-native `value`. */
+export type LensBrowserSourceClaimV01 = Omit<LensSourceClaimV01, "value">;
+
 export interface LensBrowserCoreResultPreservationV01 {
   sourceSemanticDigest: NetworkEvidenceResult["semanticDigest"];
   sourceArtifactDigest: NetworkEvidenceResult["artifactDigest"];
-  subject: SubjectRef;
+  subject: LensSubjectRefV01;
   resolver: ResolverManifestRef;
   observedEffectIds: readonly string[];
   warningCodes: readonly string[];
@@ -193,12 +202,16 @@ export interface LensBrowserCoreResultPreservationV01 {
 }
 
 export interface LensBrowserSafeCaseV01
-  extends Omit<LensCaseV01, "artifacts" | "coreResultPreservation" | "revisionDigest"> {
+  extends Omit<
+    LensCaseV01,
+    "artifacts" | "sourceClaims" | "coreResultPreservation" | "revisionDigest" | "extensions"
+  > {
   artifacts: readonly LensBrowserArtifactRefV01[];
+  sourceClaims: readonly LensBrowserSourceClaimV01[];
   coreResultPreservation?: LensBrowserCoreResultPreservationV01;
   revisionDigest: null;
   revisionDigestVisibility: "withheld_by_browser_policy";
-  /** Generic LOT 2 output uses lens-browser/v0.1; historical F1/F2/F3 may carry another reviewed value or none. */
+  /** Generic output is lens-browser/v0.1; historical reviewed projections may carry another value or none. */
   projectionPolicy?: string;
 }
 
@@ -210,8 +223,9 @@ export interface BuildLensCaseFromHubInputV01 {
   limitations?: readonly string[];
 }
 
-/** Contract signatures only in LOT 1. Behavioral implementations are LOT 2. */
 export type BuildLensCaseFromHubV01 = (input: BuildLensCaseFromHubInputV01) => LensCaseV01;
 export type ValidateLensCaseV01 = (value: unknown) => asserts value is LensCaseV01;
+export type ValidateLensBrowserSafeCaseV01 = (value: unknown) => asserts value is LensBrowserSafeCaseV01;
 export type ProjectLensBrowserSafeV01 = (value: LensCaseV01) => LensBrowserSafeCaseV01;
 export type SerializeLensCaseV01 = (value: LensCaseV01) => string;
+export type SerializeLensBrowserSafeV01 = (value: LensBrowserSafeCaseV01) => string;

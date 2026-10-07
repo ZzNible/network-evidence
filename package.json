@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "demo:core-hub-lens": "tsx examples/core-hub-lens/run.ts",
     "maps:serve": "node examples/ne-maps/serve.mjs",
-    "test:maps": "vitest run examples/ne-maps/test/maps.test.ts"
+    "test:maps": "vitest run examples/ne-maps/test/maps.test.ts",
+    "demo:integrability": "tsx examples/integrability-fixture/run.ts --verify"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

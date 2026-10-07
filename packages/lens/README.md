@@ -1,14 +1,40 @@
 # @nec/lens
 
-Public **source contract scaffold** for `lens-case/v0.1` targeted by Network Evidence Suite v1.1.0.
+Minimal public Lens runtime for Network Evidence Suite v1.1 integrability.
 
-LOT 1 freezes the machine-facing TypeScript contract and function signatures only. LOT 2 implements:
+Public surfaces:
 
-- runtime validation;
-- generic `HubNetworkEvidenceRecordV01 -> LensCaseV01` composition;
-- deterministic serialization;
-- conservative browser-safe projection.
+```ts
+validateLensCaseV01(value)
+buildLensCaseFromHubV01(input)
+projectLensBrowserSafeV01(caseValue)
+validateLensBrowserSafeCaseV01(browserValue)
+serializeLensCaseV01(caseValue)
+serializeLensBrowserSafeV01(browserValue)
+```
 
-Network Evidence assessments must retain the exact four verdicts and Core evidence bases. Missing/unavailable evidence remains missing/unavailable. Other evaluator vocabularies are never coerced into Network Evidence vocabulary. No global verdict, confidence, trust score, policy decision, wallet/signing/submission, or Core mutation is admitted.
+`buildLensCaseFromHubV01` is mechanical. It copies a Core Network Evidence
+verdict only when Core supplied one, preserves the exact Core evidence bases,
+and does not manufacture a verdict for not-applicable/unknown dimensions or
+observed effects. There is no global case verdict, confidence/trust score,
+policy decision, wallet/signing/submission authority, settlement inference, or
+finality inference.
 
-See `../../docs/INTEGRABILITY_V1_1.md`.
+The generic runtime stores Core result identity in `coreResultPreservation`.
+Its subject is a wire-safe projection: Core `blockNumber: bigint`, when present,
+is represented as canonical decimal text so Lens-owned JSON is serializable.
+The historical F1 `networkEvidence` field is not repurposed.
+
+Browser projection is an explicit nested allowlist: raw locators and artifact
+digests are withheld, source-native `value` payloads and assessment `inputRefs`
+are omitted, unknown nested fields are not copied, and full observed effects,
+warning bodies and conflict bodies are replaced by identifiers/codes.
+
+Serialization uses `hub-json-sorted-keys/v0.1`, compatible with the reviewed Hub
+sorted-key algorithm on its valid domain but with a stricter JSON-safe input
+boundary (plain enumerable data only; no bigint, accessors, symbols, sparse
+arrays, non-finite/-0 numbers, cycles or unpaired surrogates). The 8 MiB output
+budget is enforced incrementally while serializing, before unbounded aggregate
+output can accumulate.
+
+`TARGET_CORE_MUTATIONS = 0`.

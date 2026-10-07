@@ -1,31 +1,60 @@
-# v1.1 generic integrability fixture plan
+# v1.1 generic integrability fixture
 
-LOT 1 prepares the proof fixture but intentionally does not implement the Hub/Lens/Maps pipeline yet.
+Synthetic/local proof of the reusable path, intentionally independent of the
+F1/F2/F3 builders:
 
-LOT 2 will extract one **synthetic/local** `NetworkEvidenceResult` from the already-reviewed Core golden world instead of inventing new network semantics:
+```text
+Core NetworkEvidenceResult object or nec-wire-json-v1
+-> @nec/hub
+-> @nec/lens
+-> lens-browser/v0.1
+```
 
-- source world: the independent literal golden vector in `packages/core/test/golden.test.ts` (`goldenResultContent()` + `goldenContext()`);
-- LOT 2 will extract/materialize that already-reviewed world into a public synthetic/local fixture rather than depend on private test helpers at runtime;
-- expected semantic digest: `sha256:ee7263927cf3470ecd524f6321287bd056b3f444e5285a5d355a07d8440bc1ef`;
-- expected artifact digest: `sha256:5569171adbbe7a31dd82c363134e21532e5ad0bd7b8f2cf80e97ad4a49f29f7d`.
+The Core world is copied from the independent literals in
+`packages/core/test/golden.test.ts`, preserving the reviewed golden digests:
 
-Coverage deliberately includes:
+```text
+semanticDigest = sha256:ee7263927cf3470ecd524f6321287bd056b3f444e5285a5d355a07d8440bc1ef
+artifactDigest = sha256:5569171adbbe7a31dd82c363134e21532e5ad0bd7b8f2cf80e97ad4a49f29f7d
+```
+
+It deliberately contains:
 
 - execution `supported` on `source_observation`;
 - one observed ERC-20 transfer effect;
 - data binding `not_applicable`;
 - settlement `unknown`;
-- finality `unknown` / not established;
+- finality `unknown`;
 - no policy/confidence score.
 
-LOT 2 must materialize both the object and `nec-wire-json-v1` form through existing Core APIs, then prove:
+## Reproduce
 
-```text
-Core result
--> @nec/hub validation/record
--> @nec/lens generic case
--> browser-safe Lens projection
--> ne-maps-case/v0.1 envelope
+From repository root after `npm ci`:
+
+```sh
+npm run typecheck
+npm run demo:integrability
 ```
 
-The proof passes only if the new case reaches Maps without modifying Core or adding case-specific logic to `examples/ne-maps/app.js`.
+`demo:integrability` rebuilds both object and wire paths and requires them to
+produce byte-identical Lens and browser projections. It then compares them
+against the checked-in files in `data/` and verifies `SHA256SUMS`.
+
+To regenerate the checked-in fixture deliberately while developing this exact
+contract:
+
+```sh
+npx tsx examples/integrability-fixture/run.ts --write
+```
+
+Regeneration is not a release step; changed bytes require review.
+
+The materialized artifacts are:
+
+- `core-result.wire.json` — Core public wire input;
+- `lens-case.json` — deterministic `lens-case/v0.1` output;
+- `lens-browser.json` — deterministic browser-safe projection;
+- `proof-summary.json` — stage identities and pinned hashes;
+- `SHA256SUMS` — exact fixture byte hashes.
+
+`TARGET_CORE_MUTATIONS = 0`.

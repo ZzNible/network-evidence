@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "ne-integrability-proof/v0.1",
+  "core": {
+    "semanticDigest": "sha256:ee7263927cf3470ecd524f6321287bd056b3f444e5285a5d355a07d8440bc1ef",
+    "artifactDigest": "sha256:5569171adbbe7a31dd82c363134e21532e5ad0bd7b8f2cf80e97ad4a49f29f7d",
+    "wireSha256": "614b58d5aa297d5cb9b9ba62623dc551d20f54740e521aa45f5e289c2a448bfe"
+  },
+  "hub": {
+    "objectAdmission": "validateNetworkEvidenceResult",
+    "wireAdmission": "decodeNecWireJson",
+    "schemaVersion": "hub-network-evidence-record/v0.1"
+  },
+  "lens": {
+    "schemaVersion": "lens-case/v0.1",
+    "revisionDigest": {
+      "algorithm": "sha256",
+      "value": "f420bc84f705353ebeff736d028e29952029f6092eb20f72e5e52848c913435c",
+      "digestOf": "hub_owned_case_revision",
+      "schemaVersion": "lens-case/v0.1",
+      "canonicalization": "hub-json-sorted-keys/v0.1",
+      "byteLength": 4215
+    },
+    "bytesSha256": "1e092cdb25f5a9e59d3ddcfdd42026544403b40aedcd0250f7b396827e2b151d"
+  },
+  "browser": {
+    "projectionPolicy": "lens-browser/v0.1",
+    "bytesSha256": "2daf7f598a5032ab786b698192ffd08c2142681ab7729f37936f7724185fc44f"
+  },
+  "TARGET_CORE_MUTATIONS": 0
+}

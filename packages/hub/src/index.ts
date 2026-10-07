@@ -1,2 +1,3 @@
-/** @nec/hub v0.1 public contract scaffold. Behavioral implementation starts in LOT 2. */
+/** @nec/hub v0.1 public source/runtime surface. */
 export * from "./types.js";
+export { normalizeNetworkEvidenceV01 } from "./runtime.js";

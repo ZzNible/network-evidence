@@ -1,6 +1,6 @@
 # Network Evidence Suite v1.1 integrability contract freeze
 
-**Status:** LOT 1 CONTRACT FREEZE / BEHAVIORAL IMPLEMENTATION PENDING
+**Status:** LOT 2 GENERIC HUB/LENS RUNTIME IMPLEMENTED / MAPS BEHAVIOR PENDING
 **Historical release:** `v1.0.0` remains unchanged.
 **Target:** a future `v1.1.0` only after the full integrability DoD passes.
 **Core rule:** `TARGET_CORE_MUTATIONS = 0`.
@@ -57,13 +57,15 @@ Source contract: `packages/lens/src/types.ts`.
 
 Public schema identity remains `lens-case/v0.1`; the design is promoted from the existing reviewed Lens contract rather than replaced.
 
-LOT 2 implements exactly four runtime surfaces:
+LOT 2 implements the four frozen runtime surfaces plus two additive browser verification helpers needed for deterministic materialization:
 
 ```text
 validateLensCaseV01(unknown)
 buildLensCaseFromHubV01(input)
 projectLensBrowserSafeV01(case)
 serializeLensCaseV01(case)
+validateLensBrowserSafeCaseV01(unknown)   # additive LOT 2 helper
+serializeLensBrowserSafeV01(browser)      # additive LOT 2 helper
 ```
 
 ### Generic mapping rule
@@ -97,11 +99,11 @@ Unknown evaluator vocabularies remain their own vocabularies.
 
 ### Browser-safe projection
 
-The browser projection is an allowlist. It must remove private locators and raw `nativeSource.payload` bytes, withhold the internal revision digest by default, and retain only safe provenance/digest identifiers required for inspection. Projection never changes proposition meaning.
+The browser projection is an explicit nested allowlist. It removes private locators and artifact digests, never carries raw `nativeSource.payload` bytes, omits source-native `value` payloads and assessment `inputRefs`, does not spread unknown nested fields, withholds the internal revision digest, and retains only safe provenance identifiers required for inspection. Projection never changes proposition meaning.
 
 ### Deterministic serialization
 
-Serialization uses the existing Hub-owned `hub-json-sorted-keys/v0.1` canonicalization profile. It is for Lens-owned records only; it is not a source-byte canonicalization rule.
+Serialization uses the existing Hub-owned `hub-json-sorted-keys/v0.1` sorted-key output profile. LOT 2 narrows its accepted runtime domain to strict JSON-safe plain data (no bigint, accessors, symbols, sparse arrays, cycles, non-finite/-0 numbers or unpaired surrogates); valid values retain the reviewed Hub byte ordering. The 8 MiB output budget is enforced incrementally during serialization rather than after complete output construction. It is for Lens-owned records only and is not a source-byte canonicalization rule.
 
 ## 4. NE Maps case envelope v0.1
 
@@ -152,11 +154,20 @@ The public H1 and F2 copies at the v1.0.0 code are byte-identical to that author
 
 F1/F2/F3 exact-fixture adapters remain valid compatibility adapters. Generic integration does not replace the case-specific facts they established.
 
+## 5A. Minimal LOT 2 contract corrections
+
+Implementation exposed one frozen-type mismatch without requiring Core change:
+
+1. Core `SubjectRef` may contain `blockNumber: bigint`. Lens-owned JSON/browser records therefore use `LensSubjectRefV01`, where block number is the same non-negative integer encoded as canonical decimal text. This is representation-only; Core subject semantics remain unchanged.
+2. `validateLensBrowserSafeCaseV01` and `serializeLensBrowserSafeV01` are additive helpers so the browser projection itself can be fail-closed validated and byte-reproduced. They add no evidence semantics.
+
+No other LOT 1 semantic boundary changed. `TARGET_CORE_MUTATIONS = 0`.
+
 ## 6. Synthetic/local proof fixture
 
 Prepared in `examples/integrability-fixture/README.md` from the independent literal golden world in `packages/core/test/golden.test.ts`. It deliberately proves the generic plumbing, not a new network/protocol feature.
 
-LOT 2 must demonstrate both Core object and Core wire inputs produce the same preserved Hub/Lens semantics.
+LOT 2 demonstrates both Core object and Core wire inputs produce byte-identical Lens and browser semantics. Checked-in materialized outputs and SHA-256 sums live under `examples/integrability-fixture/data/` and are reproduced by `npm run demo:integrability`.
 
 ## 7. Integrability Definition of Done for v1.1.0
 
@@ -175,7 +186,7 @@ Before a future `v1.1.0`:
 
 ## 8. Lot boundaries
 
-LOT 1 freezes these contracts only. The exported function types exist, but their behavioral implementations are intentionally absent.
+LOT 1 froze the contracts. LOT 2 implements only the generic Hub/Lens runtime and synthetic proof described below.
 
 LOT 2 is limited to:
 
