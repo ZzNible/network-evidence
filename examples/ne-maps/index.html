@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Network Evidence Maps — v1 cases</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="shell-header">
+    <div>
+      <p class="eyebrow">Network Evidence Suite v1</p>
+      <h1>NE Maps</h1>
+      <p class="subtitle">A minimal multichain evidence atlas. Presentation only — no resolving, ranking or claim strengthening.</p>
+    </div>
+    <div class="boundary">
+      <span>3 reviewed cases</span>
+      <span>TARGET_CORE_MUTATIONS = 0</span>
+    </div>
+  </header>
+
+  <nav class="legend" aria-label="Evidence status legend">
+    <span class="badge supported">supported</span>
+    <span class="badge contradicted">contradicted</span>
+    <span class="badge insufficient">insufficient</span>
+    <span class="badge ambiguous">ambiguous</span>
+    <span class="badge unavailable">unavailable</span>
+  </nav>
+
+  <main id="app" class="app-shell" aria-live="polite">
+    <p class="loading">Loading reviewed case projections…</p>
+  </main>
+
+  <footer>
+    Maps presents browser-safe Core / Hub / Lens outputs. Missing evidence remains a result.
+  </footer>
+  <script src="./app.js" defer></script>
+</body>
+</html>

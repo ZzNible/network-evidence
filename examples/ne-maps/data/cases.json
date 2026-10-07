@@ -1,0 +1,1644 @@
+{
+  "schemaVersion": "ne-maps/v0.1",
+  "presentationClass": "static_browser_safe_evidence_atlas",
+  "sourceAuthority": {
+    "repository": "ZzNible/agent-evidence-hub",
+    "branch": "autonomy/authority-v1",
+    "commit": "586a81a39c8da4d3a0dc0e879b605aabfd3f8d1d",
+    "export": "browser_safe_lens_projection"
+  },
+  "publicSuite": {
+    "repository": "ZzNible/network-evidence",
+    "commit": "e536ca1c63465ebb2de46c855a01bac71e4dc768"
+  },
+  "TARGET_CORE_MUTATIONS": 0,
+  "nonClaims": [
+    "Maps does not resolve network evidence.",
+    "Maps does not create a global case verdict, confidence score, trust score, policy decision, settlement claim, finality upgrade, or service-delivery claim.",
+    "Presentation order and display labels are navigation metadata, not evidence."
+  ],
+  "cases": [
+    {
+      "id": "f1",
+      "display": {
+        "title": "Base x402 — partial historical correlation",
+        "networkLabel": "Base mainnet",
+        "shape": "EVM · x402 · OP Stack"
+      },
+      "exactAction": {
+        "kind": "transaction",
+        "networkId": "eip155:8453",
+        "id": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696"
+      },
+      "trailPropositionOrder": [
+        "p-execution",
+        "p-dataBinding",
+        "p-observed-transfer",
+        "p-finality",
+        "p-x402-correlation",
+        "p-settlement",
+        "p-service-delivery"
+      ],
+      "lens": {
+        "schemaVersion": "lens-case/v0.1",
+        "caseId": "f1-case-x402-1062-partial-v0.1",
+        "namespace": "ne-maps-v1",
+        "createdAt": "2026-10-07T00:00:00.000Z",
+        "constructionTimeMeaning": "Lens construction only; not source event time.",
+        "fixture": true,
+        "fixtureClass": "real_public_partial",
+        "realityClass": "real_public_partial",
+        "syntheticArtifactCount": 0,
+        "relations": [
+          {
+            "relationId": "r-1",
+            "fromRef": "f1-public-issue-claim-1062",
+            "toRef": "f0-network-evidence-1",
+            "relationType": "candidate_same_transaction",
+            "basis": "source_declared_binding",
+            "assertedBy": "hub-f1-correlation/v0.1",
+            "evidenceRefs": [
+              "f1-public-issue-claim-1062",
+              "f0-network-evidence-1"
+            ],
+            "limitations": [
+              "Exact public transaction-identifier equality only; not full x402 claim correlation, authorization, execution proof, settlement, finality, or service delivery evidence."
+            ]
+          },
+          {
+            "relationId": "r-2",
+            "fromRef": "f1-public-issue-claim-1062",
+            "toRef": "f1-frozen-network-evidence-reference-1062",
+            "relationType": "transcription_source_pinned_by",
+            "basis": "deterministic_binding",
+            "assertedBy": "hub-f1-correlation/v0.1",
+            "evidenceRefs": [
+              "f1-public-issue-claim-1062",
+              "f1-frozen-network-evidence-reference-1062"
+            ],
+            "limitations": [
+              "Byte-identity pin of frozen source copies; not a re-verification or extension of Network Evidence conclusions."
+            ]
+          },
+          {
+            "relationId": "r-3",
+            "fromRef": "f1-frozen-network-evidence-reference-1062",
+            "toRef": "f0-network-evidence-1",
+            "relationType": "pins_exact_frozen_bytes",
+            "basis": "deterministic_binding",
+            "assertedBy": "hub-f1-correlation/v0.1",
+            "evidenceRefs": [
+              "f1-frozen-network-evidence-reference-1062",
+              "f0-network-evidence-1"
+            ],
+            "limitations": [
+              "Byte-identity pin of frozen source copies; not a re-verification or extension of Network Evidence conclusions."
+            ]
+          }
+        ],
+        "openQuestions": [
+          {
+            "questionId": "q-x402-correlation",
+            "domain": "payment",
+            "statement": "Is the full exact x402 claim correlated to the transaction?",
+            "status": "unresolved",
+            "relatedPropositionRefs": [
+              "p-x402-correlation"
+            ],
+            "reason": "Public issue material lacks independently present exact fields required for a complete x402 claim correlation; observed transfer parties are not attested terms.",
+            "missingRequiredPublicFields": [
+              "payTo",
+              "payer",
+              "assetContractAddress",
+              "amountAtomic",
+              "x402Version"
+            ]
+          },
+          {
+            "questionId": "q-finality",
+            "domain": "network/finality",
+            "statement": "Is historical OP Stack finality established under the pinned ruleset?",
+            "status": "unresolved",
+            "relatedPropositionRefs": [
+              "p-finality"
+            ],
+            "reason": "Imported finality verdict is insufficient; limitation code OP_ANCESTRY_DEPTH_EXCEEDED."
+          },
+          {
+            "questionId": "q-settlement",
+            "domain": "settlement",
+            "statement": "Was settlement established?",
+            "status": "unresolved",
+            "relatedPropositionRefs": [
+              "p-settlement"
+            ],
+            "reason": "The imported Network Evidence result declares settlement unavailable; unavailable is an availability state, not a verdict."
+          },
+          {
+            "questionId": "q-service-delivery",
+            "domain": "service_response",
+            "statement": "Was the external service delivered?",
+            "status": "unresolved",
+            "relatedPropositionRefs": [
+              "p-service-delivery"
+            ],
+            "reason": "No independent service delivery evidence; an observed transfer does not establish delivery."
+          }
+        ],
+        "limitations": [
+          "Exact-fixture support only: the adapter accepts the pinned F1 bytes and makes no generic x402 claim.",
+          "Public issue statement transcribed by the Hub; a source claim only, not network observation, execution proof, settlement, finality, service delivery, or policy evidence.",
+          "One configured public Base RPC source is not independent cross-source consensus.",
+          "Full OP Stack L1 derivation was not independently replayed.",
+          "L2 finalized-head evidence is not withdrawal finalization.",
+          "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+          "This imported projection does not create new Network Evidence authority.",
+          "Application timeout and later network execution are separate facts; neither is reconciled into a global success or failure verdict.",
+          "No authorization, refund, retry, compensation, withdrawal-finalization, or economic-policy consequence is inferred.",
+          "No Trail route is supplied by F1; drill-down retains the exact imported subject and immutable source references."
+        ],
+        "TARGET_CORE_MUTATIONS": 0,
+        "artifacts": [
+          {
+            "artifactId": "f1-public-issue-claim-1062",
+            "artifactType": "public_issue_claim_transcription",
+            "sourceSchema": "hub.documentary-transcription/public-issue-constants/v0.1",
+            "mediaType": "application/json",
+            "fixture": true,
+            "fixtureClass": "real_public_partial",
+            "realityClass": "hub_documentary_transcription",
+            "sourceObservedAt": null,
+            "fixtureObservedAt": null,
+            "capturedAt": null,
+            "locatorClass": "private_ref",
+            "locatorRef": null,
+            "availability": "available",
+            "redaction": {
+              "state": "none",
+              "derivedFromArtifactId": null,
+              "derivativeArtifactId": null,
+              "transformation": null,
+              "sourceArtifactRef": null,
+              "producedAt": null,
+              "producedAtAvailability": null,
+              "derivativeDigest": null,
+              "derivativeDigestVisibility": "not_applicable"
+            },
+            "artifactDigest": null,
+            "artifactDigestVisibility": "withheld_by_browser_policy"
+          },
+          {
+            "artifactId": "f1-frozen-network-evidence-reference-1062",
+            "artifactType": "frozen_source_provenance_index",
+            "sourceSchema": null,
+            "mediaType": "application/json",
+            "fixture": true,
+            "fixtureClass": "real_public_partial",
+            "realityClass": "hub_documentary_provenance_index",
+            "sourceObservedAt": null,
+            "fixtureObservedAt": null,
+            "capturedAt": null,
+            "locatorClass": "private_ref",
+            "locatorRef": null,
+            "availability": "available",
+            "redaction": {
+              "state": "none",
+              "derivedFromArtifactId": null,
+              "derivativeArtifactId": null,
+              "transformation": null,
+              "sourceArtifactRef": null,
+              "producedAt": null,
+              "producedAtAvailability": null,
+              "derivativeDigest": null,
+              "derivativeDigestVisibility": "not_applicable"
+            },
+            "artifactDigest": null,
+            "artifactDigestVisibility": "withheld_by_browser_policy"
+          },
+          {
+            "artifactId": "f0-network-evidence-1",
+            "artifactType": "network_evidence",
+            "sourceSchema": "hub.network-evidence-frozen-projection/v0.1",
+            "mediaType": "application/json",
+            "fixture": true,
+            "fixtureClass": "real_public_partial",
+            "realityClass": "real_frozen_evidence_projection",
+            "sourceObservedAt": null,
+            "fixtureObservedAt": null,
+            "capturedAt": null,
+            "locatorClass": "private_ref",
+            "locatorRef": null,
+            "availability": "available",
+            "redaction": {
+              "state": "none",
+              "derivedFromArtifactId": null,
+              "derivativeArtifactId": null,
+              "transformation": null,
+              "sourceArtifactRef": null,
+              "producedAt": null,
+              "producedAtAvailability": null,
+              "derivativeDigest": null,
+              "derivativeDigestVisibility": "not_applicable"
+            },
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "digestOf": "raw_bytes",
+              "value": "724493778e217047a00b6ee18fc20177b3ab115f902ed773659336701be44e45"
+            },
+            "artifactDigestVisibility": "public_network_reference"
+          }
+        ],
+        "sourceClaims": [
+          {
+            "claimId": "claim-f1-public-issue-claim-1062",
+            "artifactId": "f1-public-issue-claim-1062",
+            "claimType": "issue_reported_fact",
+            "factClass": "ISSUE_REPORTED_FACT",
+            "assertionScope": "source_claim_only",
+            "vocabulary": "public_issue",
+            "extractionBasis": "local_content_verification",
+            "provenance": {
+              "sourceArtifactId": "f1-public-issue-claim-1062",
+              "adapterType": "hub-f1-lens",
+              "adapterVersion": "hub-f1-lens/v0.1",
+              "sourcePath": "$.issueReportedClaim",
+              "transformation": "exact_json_value",
+              "sourceDigest": null,
+              "sourceDigestVisibility": "withheld_by_browser_policy"
+            },
+            "value": "reported_timeout",
+            "valueVisibility": "visible",
+            "reportedIdentifiers": {
+              "repository": "x402-foundation/x402",
+              "issueNumber": 1062,
+              "reportedTransaction": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696",
+              "reportedBlockNumber": "41551053"
+            },
+            "withheldReportedFields": [
+              "title",
+              "url",
+              "reportedOutcome",
+              "reportedAmountHuman",
+              "reportedFacilitator"
+            ],
+            "limitations": [
+              "Public issue statement transcribed by the Hub; a source claim only, not network observation, execution proof, settlement, finality, service delivery, or policy evidence."
+            ]
+          }
+        ],
+        "propositions": [
+          {
+            "propositionId": "source-p-f1-public-issue-claim-1062",
+            "domain": "service_response/payment_context",
+            "statement": "application_facilitator_timeout_reported",
+            "kind": "source_claim",
+            "subjectRefs": [
+              "f1-public-issue-claim-1062"
+            ],
+            "sourceClaimRefs": [
+              "claim-f1-public-issue-claim-1062"
+            ],
+            "assessments": [],
+            "limitations": [
+              "Public issue statement transcribed by the Hub; a source claim only, not network observation, execution proof, settlement, finality, service delivery, or policy evidence."
+            ]
+          },
+          {
+            "propositionId": "p-execution",
+            "domain": "network",
+            "statement": "base_transaction_execution",
+            "kind": "exact_frozen_network_evidence_projection",
+            "subjectRefs": [
+              "f0-network-evidence-1"
+            ],
+            "sourceClaimRefs": [],
+            "assessments": [
+              {
+                "assessmentId": "a-execution",
+                "propositionId": "p-execution",
+                "evaluator": {
+                  "type": "network_evidence",
+                  "version": null,
+                  "buildRef": null,
+                  "immutableSourceRef": {
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze"
+                  },
+                  "verificationMode": "operator_imported_frozen_result",
+                  "provenanceClass": "operator_imported",
+                  "localRecomputation": "not_performed",
+                  "replayCapability": "unavailable"
+                },
+                "verifierType": "network_evidence",
+                "verifierVersion": null,
+                "verifierVersionAvailability": "unavailable_in_frozen_artifact",
+                "verifierBuildRef": null,
+                "verifierImmutableSourceRef": {
+                  "sourceRepository": "ZzNible/network-evidence-core",
+                  "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                  "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze"
+                },
+                "verificationMode": "operator_imported_frozen_result",
+                "inputRefs": [
+                  {
+                    "type": "network_subject",
+                    "networkId": "eip155:8453",
+                    "txId": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696"
+                  },
+                  {
+                    "type": "immutable_source_fixture",
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json"
+                  },
+                  {
+                    "type": "immutable_source_fixture",
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json"
+                  }
+                ],
+                "inputDigests": [
+                  {
+                    "algorithm": "sha256",
+                    "digestOf": "source_fixture_bytes",
+                    "sourceFixture": "transfer",
+                    "value": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813",
+                    "digestClass": "public_network_reference"
+                  },
+                  {
+                    "algorithm": "sha256",
+                    "digestOf": "source_fixture_bytes",
+                    "sourceFixture": "finality",
+                    "value": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9",
+                    "digestClass": "public_network_reference"
+                  }
+                ],
+                "withheldInputDigestCount": 0,
+                "resultDigest": {
+                  "algorithm": "sha256",
+                  "digestOf": "raw_bytes",
+                  "value": "724493778e217047a00b6ee18fc20177b3ab115f902ed773659336701be44e45"
+                },
+                "resultVocabulary": "network_evidence_verdict/v0.1",
+                "producedAt": null,
+                "producedAtAvailability": "unavailable_in_frozen_artifact",
+                "provenance": {
+                  "sourceRepository": "ZzNible/network-evidence-core",
+                  "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                  "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze",
+                  "projectionMethod": "deterministic field-preserving projection from frozen replay output",
+                  "sourceFixtures": {
+                    "transfer": {
+                      "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+                      "sha256": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813"
+                    },
+                    "finality": {
+                      "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+                      "sha256": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9"
+                    }
+                  }
+                },
+                "provenanceClass": "operator_imported",
+                "localRecomputation": "not_performed",
+                "replayCapability": "unavailable",
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "source_observation"
+                ],
+                "evidenceRefs": [
+                  "evm-receipt-5da7c80be4f43c1c"
+                ],
+                "evaluatedAt": null,
+                "limitations": [
+                  "One configured public Base RPC source is not independent cross-source consensus.",
+                  "Full OP Stack L1 derivation was not independently replayed.",
+                  "L2 finalized-head evidence is not withdrawal finalization.",
+                  "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+                  "This imported projection does not create new Network Evidence authority."
+                ],
+                "limitationCode": null,
+                "importedDimension": {
+                  "applicability": "applicable",
+                  "verdict": "supported",
+                  "basis": [
+                    "source_observation"
+                  ],
+                  "evidence": [
+                    "evm-receipt-5da7c80be4f43c1c"
+                  ],
+                  "reason": "Supported by this source's receipt observation alone; not a settlement or finality claim."
+                }
+              }
+            ],
+            "limitations": [
+              "One configured public Base RPC source is not independent cross-source consensus.",
+              "Full OP Stack L1 derivation was not independently replayed.",
+              "L2 finalized-head evidence is not withdrawal finalization.",
+              "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+              "This imported projection does not create new Network Evidence authority."
+            ]
+          },
+          {
+            "propositionId": "p-dataBinding",
+            "domain": "network",
+            "statement": "base_transaction_data_binding",
+            "kind": "exact_frozen_network_evidence_projection",
+            "subjectRefs": [
+              "f0-network-evidence-1"
+            ],
+            "sourceClaimRefs": [],
+            "assessments": [
+              {
+                "assessmentId": "a-dataBinding",
+                "propositionId": "p-dataBinding",
+                "evaluator": {
+                  "type": "network_evidence",
+                  "version": null,
+                  "buildRef": null,
+                  "immutableSourceRef": {
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze"
+                  },
+                  "verificationMode": "operator_imported_frozen_result",
+                  "provenanceClass": "operator_imported",
+                  "localRecomputation": "not_performed",
+                  "replayCapability": "unavailable"
+                },
+                "verifierType": "network_evidence",
+                "verifierVersion": null,
+                "verifierVersionAvailability": "unavailable_in_frozen_artifact",
+                "verifierBuildRef": null,
+                "verifierImmutableSourceRef": {
+                  "sourceRepository": "ZzNible/network-evidence-core",
+                  "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                  "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze"
+                },
+                "verificationMode": "operator_imported_frozen_result",
+                "inputRefs": [
+                  {
+                    "type": "network_subject",
+                    "networkId": "eip155:8453",
+                    "txId": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696"
+                  },
+                  {
+                    "type": "immutable_source_fixture",
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json"
+                  },
+                  {
+                    "type": "immutable_source_fixture",
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json"
+                  }
+                ],
+                "inputDigests": [
+                  {
+                    "algorithm": "sha256",
+                    "digestOf": "source_fixture_bytes",
+                    "sourceFixture": "transfer",
+                    "value": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813",
+                    "digestClass": "public_network_reference"
+                  },
+                  {
+                    "algorithm": "sha256",
+                    "digestOf": "source_fixture_bytes",
+                    "sourceFixture": "finality",
+                    "value": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9",
+                    "digestClass": "public_network_reference"
+                  }
+                ],
+                "withheldInputDigestCount": 0,
+                "resultDigest": {
+                  "algorithm": "sha256",
+                  "digestOf": "raw_bytes",
+                  "value": "724493778e217047a00b6ee18fc20177b3ab115f902ed773659336701be44e45"
+                },
+                "resultVocabulary": "network_evidence_verdict/v0.1",
+                "producedAt": null,
+                "producedAtAvailability": "unavailable_in_frozen_artifact",
+                "provenance": {
+                  "sourceRepository": "ZzNible/network-evidence-core",
+                  "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                  "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze",
+                  "projectionMethod": "deterministic field-preserving projection from frozen replay output",
+                  "sourceFixtures": {
+                    "transfer": {
+                      "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+                      "sha256": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813"
+                    },
+                    "finality": {
+                      "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+                      "sha256": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9"
+                    }
+                  }
+                },
+                "provenanceClass": "operator_imported",
+                "localRecomputation": "not_performed",
+                "replayCapability": "unavailable",
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "deterministic_derivation",
+                  "source_observation"
+                ],
+                "evidenceRefs": [
+                  "evm-receipt-5da7c80be4f43c1c",
+                  "evm-transaction-f861e8e21ba27f6d"
+                ],
+                "evaluatedAt": null,
+                "limitations": [
+                  "One configured public Base RPC source is not independent cross-source consensus.",
+                  "Full OP Stack L1 derivation was not independently replayed.",
+                  "L2 finalized-head evidence is not withdrawal finalization.",
+                  "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+                  "This imported projection does not create new Network Evidence authority."
+                ],
+                "limitationCode": null,
+                "importedDimension": {
+                  "applicability": "applicable",
+                  "verdict": "supported",
+                  "basis": [
+                    "deterministic_derivation",
+                    "source_observation"
+                  ],
+                  "evidence": [
+                    "evm-receipt-5da7c80be4f43c1c",
+                    "evm-transaction-f861e8e21ba27f6d"
+                  ]
+                }
+              }
+            ],
+            "limitations": [
+              "One configured public Base RPC source is not independent cross-source consensus.",
+              "Full OP Stack L1 derivation was not independently replayed.",
+              "L2 finalized-head evidence is not withdrawal finalization.",
+              "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+              "This imported projection does not create new Network Evidence authority."
+            ]
+          },
+          {
+            "propositionId": "p-finality",
+            "domain": "network/finality",
+            "statement": "historical_opstack_finality_under_pinned_ruleset",
+            "kind": "exact_frozen_network_evidence_projection",
+            "subjectRefs": [
+              "f0-network-evidence-1"
+            ],
+            "sourceClaimRefs": [],
+            "assessments": [
+              {
+                "assessmentId": "a-finality",
+                "propositionId": "p-finality",
+                "evaluator": {
+                  "type": "network_evidence",
+                  "version": null,
+                  "buildRef": null,
+                  "immutableSourceRef": {
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze"
+                  },
+                  "verificationMode": "operator_imported_frozen_result",
+                  "provenanceClass": "operator_imported",
+                  "localRecomputation": "not_performed",
+                  "replayCapability": "unavailable"
+                },
+                "verifierType": "network_evidence",
+                "verifierVersion": null,
+                "verifierVersionAvailability": "unavailable_in_frozen_artifact",
+                "verifierBuildRef": null,
+                "verifierImmutableSourceRef": {
+                  "sourceRepository": "ZzNible/network-evidence-core",
+                  "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                  "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze"
+                },
+                "verificationMode": "operator_imported_frozen_result",
+                "inputRefs": [
+                  {
+                    "type": "network_subject",
+                    "networkId": "eip155:8453",
+                    "txId": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696"
+                  },
+                  {
+                    "type": "immutable_source_fixture",
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json"
+                  },
+                  {
+                    "type": "immutable_source_fixture",
+                    "sourceRepository": "ZzNible/network-evidence-core",
+                    "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                    "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json"
+                  }
+                ],
+                "inputDigests": [
+                  {
+                    "algorithm": "sha256",
+                    "digestOf": "source_fixture_bytes",
+                    "sourceFixture": "transfer",
+                    "value": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813",
+                    "digestClass": "public_network_reference"
+                  },
+                  {
+                    "algorithm": "sha256",
+                    "digestOf": "source_fixture_bytes",
+                    "sourceFixture": "finality",
+                    "value": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9",
+                    "digestClass": "public_network_reference"
+                  }
+                ],
+                "withheldInputDigestCount": 0,
+                "resultDigest": {
+                  "algorithm": "sha256",
+                  "digestOf": "raw_bytes",
+                  "value": "724493778e217047a00b6ee18fc20177b3ab115f902ed773659336701be44e45"
+                },
+                "resultVocabulary": "network_evidence_verdict/v0.1",
+                "producedAt": null,
+                "producedAtAvailability": "unavailable_in_frozen_artifact",
+                "provenance": {
+                  "sourceRepository": "ZzNible/network-evidence-core",
+                  "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+                  "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze",
+                  "projectionMethod": "deterministic field-preserving projection from frozen replay output",
+                  "sourceFixtures": {
+                    "transfer": {
+                      "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+                      "sha256": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813"
+                    },
+                    "finality": {
+                      "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+                      "sha256": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9"
+                    }
+                  }
+                },
+                "provenanceClass": "operator_imported",
+                "localRecomputation": "not_performed",
+                "replayCapability": "unavailable",
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "insufficient",
+                "basis": [
+                  "source_observation"
+                ],
+                "evidenceRefs": [
+                  "opstack-canonical-block-5f9423f92eb0efa4",
+                  "opstack-finalized-head-812d4eea588916ec"
+                ],
+                "evaluatedAt": null,
+                "limitations": [
+                  "One configured public Base RPC source is not independent cross-source consensus.",
+                  "Full OP Stack L1 derivation was not independently replayed.",
+                  "L2 finalized-head evidence is not withdrawal finalization.",
+                  "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+                  "This imported projection does not create new Network Evidence authority."
+                ],
+                "limitationCode": "OP_ANCESTRY_DEPTH_EXCEEDED",
+                "importedDimension": {
+                  "applicability": "applicable",
+                  "verdict": "insufficient",
+                  "basis": [
+                    "source_observation"
+                  ],
+                  "evidence": [
+                    "opstack-canonical-block-5f9423f92eb0efa4",
+                    "opstack-finalized-head-812d4eea588916ec"
+                  ],
+                  "reason": "The finalized-head ancestry required by the pinned ruleset could not be established within one bounded observation burst; finality fails closed.",
+                  "limitationCode": "OP_ANCESTRY_DEPTH_EXCEEDED",
+                  "ancestryRequiredDepth": "8916502",
+                  "maxAncestryDepth": 10000
+                }
+              }
+            ],
+            "limitations": [
+              "One configured public Base RPC source is not independent cross-source consensus.",
+              "Full OP Stack L1 derivation was not independently replayed.",
+              "L2 finalized-head evidence is not withdrawal finalization.",
+              "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+              "This imported projection does not create new Network Evidence authority."
+            ]
+          },
+          {
+            "propositionId": "p-observed-transfer",
+            "domain": "network",
+            "statement": "exact_observed_erc20_transfer",
+            "kind": "exact_observed_effect",
+            "subjectRefs": [
+              "f0-network-evidence-1"
+            ],
+            "sourceClaimRefs": [],
+            "assessments": [],
+            "limitations": [
+              "Exact observed on-chain effect preserved from the frozen projection; transfer parties are not attested x402 authorization terms; it carries no Network Evidence verdict and implies no settlement, service delivery, or economic consequence."
+            ],
+            "assessmentPolicy": "observed_effect_carries_no_network_evidence_verdict",
+            "observedEffects": [
+              {
+                "type": "erc20.transfer",
+                "effectId": "evm-log-88ae0203460a0f03",
+                "asset": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+                "from": "0xcece62f8d998ce55cb81b36c9e8271abcb349431",
+                "to": "0xd34411a70effbdd000c529bbf572082ffdcf1794",
+                "amountAtomic": "2000",
+                "transactionHash": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696",
+                "blockNumber": "41551053",
+                "logIndex": "187",
+                "evidenceIds": [
+                  "evm-receipt-5da7c80be4f43c1c"
+                ]
+              }
+            ]
+          },
+          {
+            "propositionId": "p-x402-correlation",
+            "domain": "payment",
+            "statement": "full_exact_x402_claim_to_transaction_correlation",
+            "kind": "correlation_limit",
+            "subjectRefs": [
+              "f1-public-issue-claim-1062",
+              "f0-network-evidence-1"
+            ],
+            "sourceClaimRefs": [
+              "claim-f1-public-issue-claim-1062"
+            ],
+            "assessments": [
+              {
+                "assessmentId": "a-x402-correlation",
+                "propositionId": "p-x402-correlation",
+                "evaluator": {
+                  "type": "hub_correlation",
+                  "version": "hub-f1-lens/v0.1",
+                  "buildRef": null,
+                  "immutableSourceRef": null,
+                  "verificationMode": "local_deterministic_field_presence_check",
+                  "provenanceClass": "hub_local_derivation",
+                  "localRecomputation": "performed",
+                  "replayCapability": "deterministic_from_pinned_bytes"
+                },
+                "verifierType": "hub_correlation",
+                "verifierVersion": "hub-f1-lens/v0.1",
+                "verifierVersionAvailability": "available",
+                "verifierBuildRef": null,
+                "verifierImmutableSourceRef": null,
+                "verificationMode": "local_deterministic_field_presence_check",
+                "inputRefs": [
+                  {
+                    "type": "artifact",
+                    "artifactId": "f1-public-issue-claim-1062"
+                  },
+                  {
+                    "type": "artifact",
+                    "artifactId": "f0-network-evidence-1"
+                  }
+                ],
+                "inputDigests": [
+                  {
+                    "algorithm": "sha256",
+                    "digestOf": "raw_bytes",
+                    "artifactId": "f0-network-evidence-1",
+                    "value": "724493778e217047a00b6ee18fc20177b3ab115f902ed773659336701be44e45",
+                    "digestClass": "public_network_reference"
+                  }
+                ],
+                "withheldInputDigestCount": 1,
+                "resultDigest": null,
+                "resultVocabulary": "network_evidence_verdict/v0.1",
+                "producedAt": null,
+                "producedAtAvailability": "hub_construction_only",
+                "provenance": null,
+                "provenanceClass": "hub_local_derivation",
+                "localRecomputation": "performed",
+                "replayCapability": "deterministic_from_pinned_bytes",
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "insufficient",
+                "basis": [
+                  "deterministic_derivation"
+                ],
+                "evidenceRefs": [
+                  "f1-public-issue-claim-1062",
+                  "f0-network-evidence-1"
+                ],
+                "evaluatedAt": null,
+                "limitations": [
+                  "Public issue material lacks independently present exact fields required for a complete x402 claim correlation; observed transfer parties are not attested terms."
+                ],
+                "networkEvidenceAuthority": "none",
+                "missingRequiredPublicFields": [
+                  "payTo",
+                  "payer",
+                  "assetContractAddress",
+                  "amountAtomic",
+                  "x402Version"
+                ]
+              }
+            ],
+            "limitations": [
+              "Public issue material lacks independently present exact fields required for a complete x402 claim correlation; observed transfer parties are not attested terms."
+            ]
+          },
+          {
+            "propositionId": "p-settlement",
+            "domain": "settlement",
+            "statement": "settlement",
+            "kind": "exact_frozen_network_evidence_projection",
+            "subjectRefs": [
+              "f0-network-evidence-1"
+            ],
+            "sourceClaimRefs": [],
+            "assessments": [],
+            "limitations": [
+              "The imported Network Evidence result declares settlement unavailable; unavailable is an availability state, not a verdict."
+            ],
+            "availability": "unavailable",
+            "unavailableDimensionRef": "settlement"
+          },
+          {
+            "propositionId": "p-service-delivery",
+            "domain": "service_response",
+            "statement": "external_service_delivered",
+            "kind": "unresolved",
+            "subjectRefs": [],
+            "sourceClaimRefs": [],
+            "assessments": [],
+            "limitations": [
+              "No independent service delivery evidence; an observed transfer does not establish delivery."
+            ]
+          }
+        ],
+        "networkEvidence": {
+          "artifactRef": "f0-network-evidence-1",
+          "subject": {
+            "type": "transaction",
+            "networkId": "eip155:8453",
+            "txId": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696"
+          },
+          "provenance": {
+            "sourceRepository": "ZzNible/network-evidence-core",
+            "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+            "sourceFreezeTag": "x402-base-late-settlement-1062-evidence-v0.1-freeze",
+            "projectionMethod": "deterministic field-preserving projection from frozen replay output",
+            "sourceFixtures": {
+              "transfer": {
+                "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+                "sha256": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813"
+              },
+              "finality": {
+                "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+                "sha256": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9"
+              }
+            }
+          },
+          "importProvenanceClass": "operator_imported",
+          "preservedResult": {
+            "execution": {
+              "applicability": "applicable",
+              "verdict": "supported",
+              "basis": [
+                "source_observation"
+              ],
+              "evidence": [
+                "evm-receipt-5da7c80be4f43c1c"
+              ],
+              "reason": "Supported by this source's receipt observation alone; not a settlement or finality claim."
+            },
+            "dataBinding": {
+              "applicability": "applicable",
+              "verdict": "supported",
+              "basis": [
+                "deterministic_derivation",
+                "source_observation"
+              ],
+              "evidence": [
+                "evm-receipt-5da7c80be4f43c1c",
+                "evm-transaction-f861e8e21ba27f6d"
+              ]
+            },
+            "observedEffects": [
+              {
+                "type": "erc20.transfer",
+                "effectId": "evm-log-88ae0203460a0f03",
+                "asset": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+                "from": "0xcece62f8d998ce55cb81b36c9e8271abcb349431",
+                "to": "0xd34411a70effbdd000c529bbf572082ffdcf1794",
+                "amountAtomic": "2000",
+                "transactionHash": "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696",
+                "blockNumber": "41551053",
+                "logIndex": "187",
+                "evidenceIds": [
+                  "evm-receipt-5da7c80be4f43c1c"
+                ]
+              }
+            ],
+            "finality": {
+              "applicability": "applicable",
+              "verdict": "insufficient",
+              "basis": [
+                "source_observation"
+              ],
+              "evidence": [
+                "opstack-canonical-block-5f9423f92eb0efa4",
+                "opstack-finalized-head-812d4eea588916ec"
+              ],
+              "reason": "The finalized-head ancestry required by the pinned ruleset could not be established within one bounded observation burst; finality fails closed.",
+              "limitationCode": "OP_ANCESTRY_DEPTH_EXCEEDED",
+              "ancestryRequiredDepth": "8916502",
+              "maxAncestryDepth": 10000
+            }
+          },
+          "unavailableDimensions": [
+            "settlement"
+          ],
+          "limitations": [
+            "One configured public Base RPC source is not independent cross-source consensus.",
+            "Full OP Stack L1 derivation was not independently replayed.",
+            "L2 finalized-head evidence is not withdrawal finalization.",
+            "Public x402 issue data is insufficient for a positive full x402 claim correlation.",
+            "This imported projection does not create new Network Evidence authority."
+          ]
+        },
+        "frozenSourceIndex": {
+          "artifactRef": "f1-frozen-network-evidence-reference-1062",
+          "sourceRepository": "ZzNible/network-evidence-core",
+          "sourceCommit": "d0917f637bda43627f38fcc1c02d5957d2802f4c",
+          "caseProfile": "nec-x402-base-late-settlement-1062-v1",
+          "exactFrozenSourceCopies": {
+            "readme": {
+              "path": "examples/x402-base-late-settlement-1062/README.md",
+              "localCopy": "source/network-evidence/README.md",
+              "blob": "f667192c3676abc5b1e869d3663da79f1dfafc81",
+              "sha256": "000d115948f41b616b21448e681bdc4a92ef21877f2d599d784adf5f75dd3349"
+            },
+            "case": {
+              "path": "examples/x402-base-late-settlement-1062/case.ts",
+              "localCopy": "source/network-evidence/case.ts",
+              "blob": "6c2be3bddb655ed40df3bca35d375d039193596e",
+              "sha256": "6200f5d8be28a17adfdd4d1669218517447195f52aa0e841c0c23d7020d7499d"
+            },
+            "fixtureManifest": {
+              "path": "examples/x402-base-late-settlement-1062/fixtures/MANIFEST.sha256",
+              "localCopy": "source/network-evidence/fixtures/MANIFEST.sha256",
+              "blob": "322fbb8f5a633910d65500791645c12a4d3f16bb",
+              "sha256": "9c0afe8b9526a2cc548d047fd775cd8da38597c86d604bda939cb0f81edb28b4"
+            },
+            "transferFixture": {
+              "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+              "localCopy": "source/network-evidence/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+              "blob": "b4b1547dabbd57c15ac25964b8fe145c8f06c18a",
+              "sha256": "5f25e8140cfb4e0d6ab2440ba4854e42f7e390169b947a54d519c0cec546e813"
+            },
+            "finalityFixture": {
+              "path": "examples/x402-base-late-settlement-1062/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+              "localCopy": "source/network-evidence/fixtures/base-mainnet-x402-1062-finality.fixture.json",
+              "blob": "66bdf74c4d07451f2851ff87d89fd556daa1e876",
+              "sha256": "2aaa1c1cb48fb3dfdf4e9fc1d840ca9d26b007467cb45c21054c9149696446e9"
+            }
+          },
+          "exactHubFrozenNetworkEvidenceProjection": {
+            "sourcePath": "fixtures/F0-positive/05-network-evidence-result.json",
+            "localCopy": "source/hub-frozen-ne-projection/05-network-evidence-result.json",
+            "sha256": "724493778e217047a00b6ee18fc20177b3ab115f902ed773659336701be44e45"
+          }
+        },
+        "projectionPolicy": "hub-f1-browser/v0.1",
+        "revisionDigest": null,
+        "revisionDigestVisibility": "withheld_by_browser_policy",
+        "browserDigestPolicy": {
+          "rawArtifactDigests": "withhold_hub_documentary_by_default",
+          "hubOwnedRevisionDigest": "withheld_when_revision_commits_low_entropy_source_content",
+          "allowedDigestClasses": [
+            "public_network_reference"
+          ]
+        },
+        "rendering": "JSON data only. Render strings with textContent; never interpret as HTML, Markdown, or executable URLs."
+      }
+    },
+    {
+      "id": "f2",
+      "display": {
+        "title": "ERC-4337 — exact UserOperation",
+        "networkLabel": "Base Sepolia",
+        "shape": "EVM · ERC-4337 v0.6"
+      },
+      "exactAction": {
+        "kind": "user_operation",
+        "networkId": "eip155:84532",
+        "id": "0x5f1e12031272034de5460796bd5cabe903a8ee6845fcab5fde18c4de632acfcf",
+        "bundleTransactionHash": "0xde8916c81ef6a7b36ddf9f7b44d1ca096e4db4818eddfd5e16eda8a7c292ed45",
+        "sender": "0xfef5b40ab4c543137262253dbaf7843bd9b3e5b6"
+      },
+      "reviewedSelectorOutcomes": [
+        {
+          "label": "Exact userOpHash + sender",
+          "verdict": "supported"
+        },
+        {
+          "label": "Unknown userOpHash",
+          "verdict": "insufficient"
+        },
+        {
+          "label": "Exact userOpHash + wrong sender",
+          "verdict": "contradicted"
+        },
+        {
+          "label": "Repeated sender only",
+          "verdict": "ambiguous"
+        }
+      ],
+      "trailPropositionOrder": [
+        "p-userop-execution",
+        "p-bundle-context",
+        "p-finality",
+        "p-bundler-provenance"
+      ],
+      "lens": {
+        "schemaVersion": "lens-case/v0.1",
+        "caseId": "f2-case-erc4337-base-sepolia-v06",
+        "namespace": "ne-maps-v1",
+        "createdAt": "2026-10-07T00:00:00.000Z",
+        "fixture": true,
+        "fixtureClass": "real_public_partial",
+        "realityClass": "real_public_partial",
+        "artifacts": [
+          {
+            "artifactId": "f2-nec-erc4337-base-sepolia-v06-reference",
+            "artifactType": "frozen_network_evidence_reference",
+            "mediaType": "application/json",
+            "artifactDigest": {
+              "algorithm": "sha256",
+              "digestOf": "raw_bytes",
+              "value": "33cb0a2e85e0380a898364e7c4d02e072f7d13fe0e5818643b98d40bf9f2a39d"
+            },
+            "locatorClass": "private_ref",
+            "locatorRef": null,
+            "availability": "available",
+            "artifactDigestVisibility": "public_network_reference"
+          }
+        ],
+        "sourceClaims": [],
+        "propositions": [
+          {
+            "propositionId": "p-userop-execution",
+            "domain": "network",
+            "statement": "selected_useroperation_execution_in_exact_bundle",
+            "kind": "exact_frozen_network_evidence_projection",
+            "subjectRefs": [
+              "f2-nec-erc4337-base-sepolia-v06-reference"
+            ],
+            "assessments": [
+              {
+                "assessmentId": "a-userop-execution",
+                "propositionId": "p-userop-execution",
+                "evaluator": {
+                  "type": "network_evidence",
+                  "version": null,
+                  "buildRef": "0c45bcab8a51beba05b7be979b10ff659669978a",
+                  "immutableSourceRef": {
+                    "repository": "ZzNible/network-evidence-core",
+                    "commit": "9781af576c60800346580e8413f23bc0bf7bafb8",
+                    "path": "packages/adapter-erc4337/test/fixtures/base-sepolia-external-v06-userop.json",
+                    "sha256": "37f7da5719220a16a2841a08360eff4738aab9bbc4873dcbf79307847f4131a3"
+                  },
+                  "verificationMode": "operator_imported_reviewed_exact_fixture_semantics",
+                  "provenanceClass": "operator_imported",
+                  "localRecomputation": "not_performed",
+                  "replayCapability": "available_in_source_adapter"
+                },
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "source_observation",
+                  "deterministic_derivation"
+                ],
+                "evidenceRefs": [
+                  "f2-nec-erc4337-base-sepolia-v06-reference"
+                ],
+                "inputRefs": [
+                  {
+                    "networkId": "eip155:84532",
+                    "bundleTransactionHash": "0xde8916c81ef6a7b36ddf9f7b44d1ca096e4db4818eddfd5e16eda8a7c292ed45",
+                    "userOpHash": "0x5f1e12031272034de5460796bd5cabe903a8ee6845fcab5fde18c4de632acfcf",
+                    "sender": "0xfef5b40ab4c543137262253dbaf7843bd9b3e5b6"
+                  }
+                ],
+                "supportedLabel": "OBSERVED_ENTRYPOINT_EVIDENCE_SUPPORTS_SUCCESSFUL_SELECTED_USEROPERATION_IN_EXACT_BUNDLE",
+                "limitations": [
+                  "Exact reviewed F2 fixture only; no generic ERC-4337 claim.",
+                  "No finality, bundler identity, causal attribution, settlement, or service-completion conclusion."
+                ]
+              }
+            ],
+            "limitations": [
+              "Operation result is bounded to the exact reviewed bundle and selector."
+            ]
+          },
+          {
+            "propositionId": "p-bundle-context",
+            "domain": "network",
+            "statement": "exact_bundle_execution_context",
+            "kind": "context",
+            "subjectRefs": [
+              "f2-nec-erc4337-base-sepolia-v06-reference"
+            ],
+            "assessments": [],
+            "context": {
+              "network": "eip155:84532",
+              "transactionHash": "0xde8916c81ef6a7b36ddf9f7b44d1ca096e4db4818eddfd5e16eda8a7c292ed45",
+              "blockNumber": "12168926",
+              "blockHash": "0x18cb57a710d328ea6304fc3be9ec47a34fbc54480cc42af59195d5a8e4763cbc",
+              "entryPoint": "0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789"
+            },
+            "limitations": [
+              "Bundle context is distinct from selected UserOperation semantics."
+            ]
+          },
+          {
+            "propositionId": "p-finality",
+            "domain": "network/finality",
+            "statement": "finality",
+            "kind": "unresolved",
+            "subjectRefs": [
+              "f2-nec-erc4337-base-sepolia-v06-reference"
+            ],
+            "assessments": [],
+            "availability": "unavailable",
+            "limitations": [
+              "Finality is not established by the F2 source."
+            ]
+          },
+          {
+            "propositionId": "p-bundler-provenance",
+            "domain": "network",
+            "statement": "bundler_software_or_operator_identity",
+            "kind": "unresolved",
+            "subjectRefs": [
+              "f2-nec-erc4337-base-sepolia-v06-reference"
+            ],
+            "assessments": [],
+            "availability": "unavailable",
+            "limitations": [
+              "Bundle transaction sender is not bundler software/operator attribution."
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "relationId": "r-f2-pin",
+            "fromRef": "f2-nec-erc4337-base-sepolia-v06-reference",
+            "toRef": "packages/adapter-erc4337/test/fixtures/base-sepolia-external-v06-userop.json",
+            "relationType": "pins_exact_frozen_bytes",
+            "basis": "deterministic_binding",
+            "evidenceRefs": [
+              "f2-nec-erc4337-base-sepolia-v06-reference"
+            ],
+            "limitations": [
+              "Byte identity pin only; not a fresh network observation."
+            ]
+          },
+          {
+            "relationId": "r-userop-bundle",
+            "fromRef": "0x5f1e12031272034de5460796bd5cabe903a8ee6845fcab5fde18c4de632acfcf",
+            "toRef": "0xde8916c81ef6a7b36ddf9f7b44d1ca096e4db4818eddfd5e16eda8a7c292ed45",
+            "relationType": "selected_useroperation_belongs_to_exact_bundle",
+            "basis": "deterministic_derivation",
+            "evidenceRefs": [
+              "f2-nec-erc4337-base-sepolia-v06-reference"
+            ],
+            "limitations": [
+              "Exact userOpHash + sender selection basis; no causal edge beyond source semantics."
+            ]
+          }
+        ],
+        "openQuestions": [
+          {
+            "questionId": "q-finality",
+            "domain": "network/finality",
+            "status": "unresolved",
+            "reason": "F2 does not establish finality.",
+            "relatedPropositionRefs": [
+              "p-finality"
+            ]
+          },
+          {
+            "questionId": "q-bundler",
+            "domain": "network",
+            "status": "unresolved",
+            "reason": "No Rundler, Alchemy, bundler software, or operator identity is established.",
+            "relatedPropositionRefs": [
+              "p-bundler-provenance"
+            ]
+          }
+        ],
+        "exactReviewedSemantics": {
+          "selectedUserOperation": {
+            "userOpHash": "0x5f1e12031272034de5460796bd5cabe903a8ee6845fcab5fde18c4de632acfcf",
+            "sender": "0xfef5b40ab4c543137262253dbaf7843bd9b3e5b6",
+            "paymaster": "0x8817340e0a3435e06254f2ed411e6418cd070d6f",
+            "success": true,
+            "actualGasCost": "10026199539816",
+            "actualGasUsed": "186726",
+            "selectionBasis": "exact_userOpHash_plus_sender"
+          },
+          "finalityEstablished": false,
+          "bundlerIdentityEstablished": false,
+          "crossSourceIndependenceEstablished": false
+        },
+        "limitations": [
+          "Exact-fixture support only; no generic ERC-4337 verifier is implemented in Hub/Lens.",
+          "No Rundler/Alchemy attribution is derived from the bundle sender.",
+          "No finality, causal attribution, settlement, service completion, policy, or economic consequence is inferred."
+        ],
+        "TARGET_CORE_MUTATIONS": 0,
+        "revisionDigest": null,
+        "revisionDigestVisibility": "withheld_by_browser_policy"
+      }
+    },
+    {
+      "id": "f3",
+      "display": {
+        "title": "Solana x402-SVM — partial historical correlation",
+        "networkLabel": "Solana mainnet",
+        "shape": "Solana · x402 v2 exact-SVM"
+      },
+      "exactAction": {
+        "kind": "transaction",
+        "networkId": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        "id": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71"
+      },
+      "trailPropositionOrder": [
+        "p-network-execution",
+        "p-x402-svm-payment",
+        "p-network-finality",
+        "p-historical-x402-correlation",
+        "p-settlement"
+      ],
+      "lens": {
+        "schemaVersion": "lens-case/v0.1",
+        "caseId": "f3-case-solana-mainnet-x402-partial",
+        "namespace": "ne-maps-v1",
+        "createdAt": "2026-10-07T00:00:00.000Z",
+        "constructionTimeMeaning": "Lens construction only; not source event time.",
+        "fixture": true,
+        "fixtureClass": "real_public_partial",
+        "realityClass": "real_public_partial",
+        "artifacts": [
+          {
+            "artifactId": "f3-nec-solana-mainnet-x402-reference",
+            "artifactType": "frozen_network_evidence_reference",
+            "mediaType": "application/json",
+            "artifactDigest": null,
+            "locatorClass": "private_ref",
+            "locatorRef": null,
+            "availability": "available",
+            "artifactDigestVisibility": "withheld_by_browser_policy"
+          }
+        ],
+        "sourceClaims": [],
+        "propositions": [
+          {
+            "propositionId": "p-network-execution",
+            "domain": "network",
+            "statement": "solana_transaction_execution",
+            "kind": "exact_frozen_network_evidence_projection",
+            "subjectRefs": [
+              "f3-nec-solana-mainnet-x402-reference"
+            ],
+            "assessments": [
+              {
+                "assessmentId": "a-network-execution",
+                "propositionId": "p-network-execution",
+                "evaluator": {
+                  "type": "network_evidence",
+                  "version": null,
+                  "buildRef": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+                  "immutableSourceRef": {
+                    "repository": "ZzNible/network-evidence",
+                    "commit": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+                    "path": "packages/resolver-solana/test/fixtures/solana-mainnet-x402-real.json",
+                    "sha256": "62b5191f62b61e9514f4be785d480828c496c199ef88ca763db51caf667d720a"
+                  },
+                  "verificationMode": "operator_imported_reviewed_exact_fixture_semantics",
+                  "provenanceClass": "operator_imported",
+                  "localRecomputation": "not_performed",
+                  "replayCapability": "available_in_source_resolver_adapter"
+                },
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "source_observation"
+                ],
+                "evidenceRefs": [
+                  "f3-nec-solana-mainnet-x402-reference"
+                ],
+                "supportedLabel": null,
+                "limitations": [
+                  "Exact reviewed Solana fixture only."
+                ]
+              }
+            ],
+            "limitations": [
+              "Execution support does not establish settlement or service delivery."
+            ]
+          },
+          {
+            "propositionId": "p-x402-svm-payment",
+            "domain": "payment",
+            "statement": "exact_observed_transfer_checked_matches_reviewed_x402_svm_requirement_context",
+            "kind": "exact_frozen_network_evidence_projection",
+            "subjectRefs": [
+              "f3-nec-solana-mainnet-x402-reference"
+            ],
+            "assessments": [
+              {
+                "assessmentId": "a-x402-svm-payment",
+                "propositionId": "p-x402-svm-payment",
+                "evaluator": {
+                  "type": "network_evidence",
+                  "version": null,
+                  "buildRef": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+                  "immutableSourceRef": {
+                    "repository": "ZzNible/network-evidence",
+                    "commit": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+                    "path": "packages/resolver-solana/test/fixtures/solana-mainnet-x402-real.json",
+                    "sha256": "62b5191f62b61e9514f4be785d480828c496c199ef88ca763db51caf667d720a"
+                  },
+                  "verificationMode": "operator_imported_reviewed_exact_fixture_semantics",
+                  "provenanceClass": "operator_imported",
+                  "localRecomputation": "not_performed",
+                  "replayCapability": "available_in_source_resolver_adapter"
+                },
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "deterministic_derivation",
+                  "source_observation"
+                ],
+                "evidenceRefs": [
+                  "f3-nec-solana-mainnet-x402-reference"
+                ],
+                "supportedLabel": "ONE_OBSERVED_TRANSFER_CHECKED_MATCHES_EXPECTED_X402_SVM_PAYMENT_OUTCOME",
+                "limitations": [
+                  "The requirement is reviewed fixture context, not recovered historical PaymentRequirements bytes."
+                ]
+              }
+            ],
+            "limitations": [
+              "Observed payment outcome is distinct from facilitator verify/settle outcome."
+            ]
+          },
+          {
+            "propositionId": "p-network-finality",
+            "domain": "network/finality",
+            "statement": "solana_finalized_rpc_observation",
+            "kind": "exact_frozen_network_evidence_projection",
+            "subjectRefs": [
+              "f3-nec-solana-mainnet-x402-reference"
+            ],
+            "assessments": [
+              {
+                "assessmentId": "a-network-finality",
+                "propositionId": "p-network-finality",
+                "evaluator": {
+                  "type": "network_evidence",
+                  "version": null,
+                  "buildRef": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+                  "immutableSourceRef": {
+                    "repository": "ZzNible/network-evidence",
+                    "commit": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+                    "path": "packages/resolver-solana/test/fixtures/solana-mainnet-x402-real.json",
+                    "sha256": "62b5191f62b61e9514f4be785d480828c496c199ef88ca763db51caf667d720a"
+                  },
+                  "verificationMode": "operator_imported_reviewed_exact_fixture_semantics",
+                  "provenanceClass": "operator_imported",
+                  "localRecomputation": "not_performed",
+                  "replayCapability": "available_in_source_resolver_adapter"
+                },
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "supported",
+                "basis": [
+                  "source_observation"
+                ],
+                "evidenceRefs": [
+                  "f3-nec-solana-mainnet-x402-reference"
+                ],
+                "supportedLabel": null,
+                "limitations": [
+                  "Solana RPC finalized is preserved as source-observed Network Evidence finality only; independent cryptographic verification and generic economic irreversibility are not established."
+                ]
+              }
+            ],
+            "limitations": [
+              "Solana RPC finalized is preserved as source-observed Network Evidence finality only; independent cryptographic verification and generic economic irreversibility are not established."
+            ]
+          },
+          {
+            "propositionId": "p-historical-x402-correlation",
+            "domain": "payment",
+            "statement": "historical_exact_x402_artifact_to_transaction_correlation",
+            "kind": "correlation_limit",
+            "subjectRefs": [
+              "f3-nec-solana-mainnet-x402-reference"
+            ],
+            "assessments": [
+              {
+                "assessmentId": "a-historical-x402-correlation",
+                "propositionId": "p-historical-x402-correlation",
+                "evaluator": {
+                  "type": "hub_correlation",
+                  "version": "hub-f3-solana-x402-lens/v0.1",
+                  "buildRef": null,
+                  "immutableSourceRef": {
+                    "repository": "ZzNible/network-evidence",
+                    "commit": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+                    "path": "packages/adapter-x402-svm/README.md",
+                    "sha256": "add79be23de53b21ce8f80fa24a3e6e66c51c44554bc280688dc93d4ea2a4b1d"
+                  },
+                  "verificationMode": "operator_reviewed_public_documentation_limit",
+                  "provenanceClass": "operator_reviewed",
+                  "localRecomputation": "not_performed",
+                  "replayCapability": "pinned_public_documentation_reference"
+                },
+                "verifierType": "hub_correlation",
+                "vocabulary": "network_evidence_verdict/v0.1",
+                "value": "insufficient",
+                "basis": [
+                  "source_observation"
+                ],
+                "evidenceRefs": [
+                  "f3-nec-solana-mainnet-x402-reference"
+                ],
+                "networkEvidenceAuthority": "none",
+                "reviewClass": "operator_reviewed_public_documentation_limit",
+                "absenceStatementScope": "public_documentation_states_not_public_not_nonexistence",
+                "missingHistoricalPublicArtifacts": [
+                  "PaymentRequirements",
+                  "PaymentPayload",
+                  "VerifyResponse",
+                  "SettlementResponse"
+                ],
+                "limitations": [
+                  "Pinned public x402-SVM documentation states that contemporaneous historical PaymentRequirements, PaymentPayload, VerifyResponse, and SettlementResponse are not public; this is an operator-reviewed public-documentation limit, not proof that such artifacts never existed."
+                ]
+              }
+            ],
+            "limitations": [
+              "Pinned public x402-SVM documentation states that contemporaneous historical PaymentRequirements, PaymentPayload, VerifyResponse, and SettlementResponse are not public; this is an operator-reviewed public-documentation limit, not proof that such artifacts never existed."
+            ]
+          },
+          {
+            "propositionId": "p-settlement",
+            "domain": "settlement",
+            "statement": "x402_facilitator_settlement",
+            "kind": "unresolved",
+            "subjectRefs": [
+              "f3-nec-solana-mainnet-x402-reference"
+            ],
+            "assessments": [],
+            "availability": "unavailable",
+            "limitations": [
+              "The source adapter explicitly sets settlementInferred=false; network payment/finality do not establish facilitator settlement."
+            ]
+          }
+        ],
+        "relations": [
+          {
+            "relationId": "r-transfer-in-transaction",
+            "fromRef": "solana-transfer-checked-ce276d84a060fd3e",
+            "toRef": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71",
+            "relationType": "observed_transfer_in_exact_transaction",
+            "basis": "deterministic_derivation",
+            "evidenceRefs": [
+              "f3-nec-solana-mainnet-x402-reference"
+            ],
+            "limitations": [
+              "This relation does not establish historical x402 request/settlement artifacts."
+            ]
+          }
+        ],
+        "openQuestions": [
+          {
+            "questionId": "q-historical-x402-correlation",
+            "domain": "payment",
+            "status": "unresolved",
+            "reason": "Pinned public x402-SVM documentation states that contemporaneous historical PaymentRequirements, PaymentPayload, VerifyResponse, and SettlementResponse are not public; this is an operator-reviewed public-documentation limit, not proof that such artifacts never existed.",
+            "relatedPropositionRefs": [
+              "p-historical-x402-correlation"
+            ],
+            "missingHistoricalPublicArtifacts": [
+              "PaymentRequirements",
+              "PaymentPayload",
+              "VerifyResponse",
+              "SettlementResponse"
+            ]
+          },
+          {
+            "questionId": "q-settlement",
+            "domain": "settlement",
+            "status": "unresolved",
+            "reason": "The source adapter explicitly sets settlementInferred=false; network payment/finality do not establish facilitator settlement.",
+            "relatedPropositionRefs": [
+              "p-settlement"
+            ]
+          },
+          {
+            "questionId": "q-economic-irreversibility",
+            "domain": "network/finality",
+            "status": "unresolved",
+            "reason": "Solana RPC finalized is preserved as source-observed Network Evidence finality only; independent cryptographic verification and generic economic irreversibility are not established.",
+            "relatedPropositionRefs": [
+              "p-network-finality"
+            ]
+          }
+        ],
+        "exactReviewedSemantics": {
+          "transaction": {
+            "network": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+            "signature": "4DYWUMExSrMNxYLjUuH9G8feN4fmYXm4ToCx7gGaAEjJRf2QNrE8LsvoFSGhXwQJrchhgrnGpUFwjxrci9PRLF71",
+            "slot": "418897974",
+            "executionVerdict": "supported"
+          },
+          "payment": {
+            "verdict": "supported",
+            "supportedLabel": "ONE_OBSERVED_TRANSFER_CHECKED_MATCHES_EXPECTED_X402_SVM_PAYMENT_OUTCOME",
+            "basis": [
+              "deterministic_derivation",
+              "source_observation"
+            ],
+            "requirementContextClass": "reviewed_fixture_requirement_not_historical_artifact",
+            "asset": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "payTo": "CNkB2jCHvnjF6zzmK2QeL9qEWBcq2oSq5t1DBnD59yJj",
+            "amount": "5000",
+            "feePayer": "BENrLoUbndxoNMUS5JXApGMtNykLjFXXixMtpDwDR9SP",
+            "effectId": "solana-transfer-checked-ce276d84a060fd3e",
+            "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+            "source": "DMJ2By4ZCnStePpyt82gYMNYbsur1iE1YmVG2GmEdU6x",
+            "destination": "3pkdujCUZ9GWXe8V3cG2wWygBMB57xCHt6nFmWw5zzdz",
+            "authority": "5Quv32NFLRPvZGtuGrT9AGasz6U8x29jF6kxLCeFznrz",
+            "settlementInferred": false
+          },
+          "networkFinality": {
+            "verdict": "supported",
+            "basis": [
+              "source_observation"
+            ],
+            "rpcCommitment": "finalized",
+            "economicIrreversibilityEstablished": false
+          },
+          "historicalCorrelation": {
+            "verdict": "insufficient",
+            "reviewClass": "operator_reviewed_public_documentation_limit",
+            "absenceStatementScope": "public_documentation_states_not_public_not_nonexistence",
+            "missingHistoricalPublicArtifacts": [
+              "PaymentRequirements",
+              "PaymentPayload",
+              "VerifyResponse",
+              "SettlementResponse"
+            ],
+            "adapterContextLabel": "STRONG_BUT_ONE_FIELD_MISSING",
+            "adapterContextLabelMeaning": "public adapter documentation label only; not a confidence value or verdict strength"
+          }
+        },
+        "publicSourceIndex": {
+          "networkFixture": {
+            "repository": "ZzNible/network-evidence",
+            "commit": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+            "path": "packages/resolver-solana/test/fixtures/solana-mainnet-x402-real.json",
+            "sha256": "62b5191f62b61e9514f4be785d480828c496c199ef88ca763db51caf667d720a"
+          },
+          "requirementContext": {
+            "repository": "ZzNible/network-evidence",
+            "commit": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+            "path": "packages/adapter-x402-svm/test/adapter.test.ts",
+            "sha256": "5e95d96f0df32b47631a46f814e7c4b371bfd8bed52f4545486b6492a81a932c"
+          },
+          "documentation": {
+            "repository": "ZzNible/network-evidence",
+            "commit": "e536ca1c63465ebb2de46c855a01bac71e4dc768",
+            "path": "packages/adapter-x402-svm/README.md",
+            "sha256": "add79be23de53b21ce8f80fa24a3e6e66c51c44554bc280688dc93d4ea2a4b1d"
+          },
+          "frozenCoreProjection": {
+            "path": "source/04-frozen-core-runtime.json",
+            "sha256": "ce2f4eb570df3f2ebb264127e5a570746cb677cb68165c76dbbcf5ef1e9d21ff"
+          }
+        },
+        "limitations": [
+          "Exact-fixture support only; no generic Solana/x402 Hub ingestion is implemented.",
+          "Reviewed requirement context is not a recovered historical x402 request artifact.",
+          "Solana RPC finalized is preserved as source-observed Network Evidence finality only; independent cryptographic verification and generic economic irreversibility are not established.",
+          "The source adapter explicitly sets settlementInferred=false; network payment/finality do not establish facilitator settlement.",
+          "No facilitator outcome, service delivery, confidence score, policy consequence, or global case verdict is inferred."
+        ],
+        "TARGET_CORE_MUTATIONS": 0,
+        "revisionDigest": null,
+        "revisionDigestVisibility": "withheld_by_browser_policy"
+      }
+    }
+  ]
+}
