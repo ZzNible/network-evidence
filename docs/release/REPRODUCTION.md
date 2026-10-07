@@ -17,14 +17,18 @@ git clone https://github.com/ZzNible/network-evidence.git
 cd network-evidence
 git checkout <commit>   # the commit being reproduced
 npm ci
+npm audit
 npm run typecheck
 npm test
 npm run test:maps
 ```
 
-The release candidate recorded in [RELEASE.md](../../RELEASE.md) is source
-commit `bcd4d5b1cd0e0e6e325a3e303cdfb16264c2a898`. This document does not
-assert that the commit has been pushed to the public remote.
+The dependency-hardening code anchor is
+`64b412d01bd12c1a87c93699a4fbc9ee64e61967`. The exact release sign-off
+candidate is the Git commit being reproduced, including any documentation-only
+sign-off correction. Record it with `git rev-parse HEAD` and compare it with
+the promoted SHA in the canonical project STATUS. This avoids an impossible
+self-reference where a Git commit would need to contain its own SHA.
 
 `npm ci` installs exactly the graph in `package-lock.json` and fails if
 `package.json` and the lockfile disagree. Do not use `npm install` or

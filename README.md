@@ -85,6 +85,6 @@ Then open `http://127.0.0.1:4177/`. `TARGET_CORE_MUTATIONS = 0`.
 - [docs/release/REPRODUCTION.md](docs/release/REPRODUCTION.md) — clean-machine
   reproduction with expected digests.
 - [docs/release/DEPENDENCY_ADVISORIES.md](docs/release/DEPENDENCY_ADVISORIES.md)
-  — open `npm audit` advisories in the development/test toolchain.
+  — release-gate dependency status and remediation record (`npm audit`: 0 vulnerabilities observed on 2026-10-07).
 - [SECURITY_BOUNDARIES.md](SECURITY_BOUNDARIES.md) — evidence boundaries and
   the public/private boundary.

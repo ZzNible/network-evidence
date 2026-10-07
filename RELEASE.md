@@ -5,7 +5,8 @@ documentation only: it does not perform, and does not claim, any tag, GitHub
 Release, npm publication or deployment beyond what is stated below.
 
 ```text
-CANDIDATE_SOURCE_COMMIT   = bcd4d5b1cd0e0e6e325a3e303cdfb16264c2a898
+SIGNOFF_CANDIDATE        = current Git commit containing this file (resolve with `git rev-parse HEAD`)
+CODE_BASE_COMMIT          = 64b412d01bd12c1a87c93699a4fbc9ee64e61967  (dependency-hardening anchor)
 RECORDED_RELEASE_TAG      = v0.1.0  (see FREEZE_MANIFEST.md)
 NEXT_PUBLIC_VERSION       = UNDECIDED
 CANDIDATE_TAG_CREATED     = NO
@@ -15,9 +16,10 @@ DEPLOYMENT                = NO
 TARGET_CORE_MUTATIONS     = 0
 ```
 
-Choosing the next version, creating a tag or GitHub Release, publishing to
-npm and remediating dependency advisories are human decisions. They are not
-taken by this documentation.
+Choosing the next version, creating a tag or GitHub Release, and publishing
+to npm remain human decisions. Dependency hardening for the current sign-off
+code base has been applied and independently gated; see the advisory record
+below.
 
 ## Release documentation
 
@@ -32,8 +34,8 @@ taken by this documentation.
 
 ## Package and version inventory
 
-Host-observed from the candidate source commit above. No version was changed
-for this documentation.
+Host-observed from the current sign-off tree. Workspace package versions were
+not changed by the dependency hardening or this documentation-only correction.
 
 | Package | Manifest | Version | `private` |
 | --- | --- | --- | --- |
@@ -67,7 +69,8 @@ Root development dependencies (test/typecheck/demo toolchain only):
 
 | Dependency | Range | Locked |
 | --- | --- | --- |
-| `vitest` | `^3.0.0` | `3.2.7` |
+| `vite` | `^6.4.3` | `6.4.3` |
+| `vitest` | `^4.1.11` | `4.1.11` |
 | `typescript` | `^5.5.0` | `5.9.3` |
 | `tsx` | `^4.23.0` | `4.23.12` |
 | `@types/node` | `^20.14.0` | `20.19.43` |
@@ -94,8 +97,8 @@ Expected digests used for reproduction are listed in
 
 ## Open items requiring a human decision
 
-1. Next public version and whether to tag/release the candidate commit.
-2. Dependency advisories in the development toolchain; see
-   [docs/release/DEPENDENCY_ADVISORIES.md](docs/release/DEPENDENCY_ADVISORIES.md).
-   Remediation requires changing `package.json` and/or `package-lock.json`,
-   which is outside this documentation change.
+1. Next public version and whether to tag/release the sign-off candidate.
+
+The dependency-advisory remediation is complete for the current sign-off code
+base; the observed release-gate audit result is recorded in
+[docs/release/DEPENDENCY_ADVISORIES.md](docs/release/DEPENDENCY_ADVISORIES.md).
