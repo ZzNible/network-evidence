@@ -720,10 +720,13 @@ function evmProbeFromAcquisition(acquisition: EvmTransactionAcquisition): EvmCap
   };
 }
 
+// Head-view coherence: ordering plus finalized-head stability within the burst.
+// Subject/ancestry checks are action-specific and stay out of BEFORE.
 const HEAD_ORDERING_CHECKS = new Set([
   "OP_FINALIZED_NOT_AHEAD_OF_SAFE",
   "OP_SAFE_NOT_AHEAD_OF_LATEST",
   "OP_SAFE_FINALIZED_COHERENT_AT_EQUAL_HEIGHT",
+  "OP_FINALIZED_HEAD_STABLE",
 ]);
 
 function finalityProbeFromReplay(observation: OpStackFinalityObservation): OpStackFinalityProbeObservation {

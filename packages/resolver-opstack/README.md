@@ -271,7 +271,9 @@ Semantics:
   source's finalized head reaches that block within the bounded ancestry walk.
 - `historical_replay` (archived fixtures) projects every supported capability
   to current availability `unknown`. Capture-time availability is recorded
-  only in metadata (`historicalAvailabilityAtCapture`).
+  only in metadata (`historicalAvailabilityAtCapture`). A burst whose
+  finalized head changed on the stability re-read counts as an incoherent
+  head view, so it records `degraded` at capture, never `available`.
 - Preflight reports evidence readiness only. It never covers wallet, balance,
   funding, gas acquisition, signing or submission readiness.
 

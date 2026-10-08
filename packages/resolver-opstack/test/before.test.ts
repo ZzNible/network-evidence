@@ -895,6 +895,38 @@ describe("historical replay of pinned real Base fixtures", () => {
     );
   });
 
+  it("an unstable finalized head on the burst re-read never records capture-time availability", async () => {
+    const { evmFixture, finalityFixture } = realFixtures(BASE_SEPOLIA_OPSTACK_BEFORE_PROFILE);
+    const tampered = JSON.parse(JSON.stringify(finalityFixture)) as {
+      captures: Array<{ rpcMethod: string; rpcParams: unknown[]; resultJson: string }>;
+    };
+    const reRead = tampered.captures.at(-1)!;
+    expect(reRead.rpcMethod).toBe("eth_getBlockByNumber");
+    expect(reRead.rpcParams[0]).toBe("finalized");
+    const block = JSON.parse(reRead.resultJson) as { hash: string };
+    block.hash = `0x${"ab".repeat(32)}`;
+    reRead.resultJson = JSON.stringify(block);
+
+    const observation = await replayOpStackFinalityObservation(tampered);
+    expect(observation.consistent).toBe(false);
+    expect(observation.checks.filter((check) => !check.passed).map((check) => check.code)).toEqual([
+      "OP_FINALIZED_HEAD_STABLE",
+    ]);
+
+    const f = await replayOpStackBeforeFoundation({
+      config: BASE_SEPOLIA_OPSTACK_BEFORE_PROFILE.config,
+      evmFixture,
+      finalityFixture: tampered,
+    });
+    const finality = f.snapshot.evidenceCapabilities.finality;
+    expect(finality.availability).toBe("unknown");
+    expect(finality.metadata?.currentAvailability).toBe("unknown");
+    expect(finality.metadata?.historicalAvailabilityAtCapture).toBe("degraded");
+    expect(finality.evidence ?? []).toEqual([]);
+    expect(f.snapshot.evidenceCapabilities.execution.metadata?.historicalAvailabilityAtCapture).toBe("available");
+    expect(capabilityIsUsable(finality, f.snapshot.evidence)).toBe(false);
+  });
+
   it("fails closed on a tampered archived capture", async () => {
     const { evmFixture, finalityFixture } = realFixtures(BASE_SEPOLIA_OPSTACK_BEFORE_PROFILE);
     const tampered = JSON.parse(JSON.stringify(finalityFixture)) as { captures: Array<{ resultJson: string }> };
