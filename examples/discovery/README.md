@@ -69,8 +69,10 @@ The stdout is stable. Its SHA-256 is pinned in
   There is no hosted monitoring and no live probing. The demo does no network
   I/O; the CLI replaces `fetch` with a throwing guard.
 - Archived replay keeps current availability `unknown`.
-- `mainnet`/`testnet` labels are presentation only. Relabelling cannot change
-  a Core classification; the tests check this.
+- `environment` (`mainnet`/`testnet`) is presentation/scope metadata. It may
+  narrow the candidate scope (`scope.environments`), but it never changes a
+  Core classification or evidence truth. Relabelling without changing scope
+  leaves the Core result bytes identical; the tests check this.
 - Finality is not settlement. A Solana `finalized` observation does not
   establish economic irreversibility. OP Stack L2 finality does not establish
   withdrawal, output-root or dispute-game settlement.

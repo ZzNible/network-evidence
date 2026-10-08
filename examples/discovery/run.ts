@@ -214,7 +214,7 @@ export function renderDiscoveryDemo(demo: DiscoveryDemo): string {
     out(`  ${pad(requirement.strength, 12)} ${requirement.capability}`);
   }
   out();
-  out("[2] Explicit candidate contexts (caller-supplied order; environment is a presentation label only)");
+  out("[2] Explicit candidate contexts (caller-supplied order; environment is presentation/scope metadata)");
   for (const candidate of input.candidates) {
     const demoInput = inputs[candidate.id as DemoCandidateId];
     out(`  ${pad(candidate.id, 16)} ${pad(candidate.network.networkId, 48)} ${pad(candidate.environment, 8)} ${demoInput.inputKind}`);
@@ -236,7 +236,7 @@ export function renderDiscoveryDemo(demo: DiscoveryDemo): string {
   for (const candidate of outcome.candidates) {
     out(`  - ${candidate.id}`);
     out(`      network         ${candidate.networkId}`);
-    out(`      environment     ${candidate.environment} (presentation only)`);
+    out(`      environment     ${candidate.environment} (presentation/scope metadata)`);
     out(`      resolver        ${candidate.resolver.id}@${candidate.resolver.version}`);
     out(
       `      observation     ${String(candidate.match.network.metadata?.observationKind ?? "(not stated)")} (resolver metadata); demo input: ${inputs[candidate.id as DemoCandidateId].inputKind}`,
@@ -284,7 +284,7 @@ export function renderDiscoveryDemo(demo: DiscoveryDemo): string {
   out("[7] Boundaries");
   out("  - synthetic demo probe inputs are not live network availability; no hosted monitoring or live probing");
   out("  - archived replay keeps current availability unknown");
-  out("  - environment labels are presentation only and never change a Core classification");
+  out("  - environment is presentation/scope metadata; it may narrow the candidate scope, but never changes a Core classification or evidence truth");
   out("  - finality is not settlement; Solana finalized does not establish economic irreversibility");
   out("  - OP Stack L2 finality does not establish withdrawal, output-root or dispute-game settlement");
   out("  - zkSYS: current scope is Tanenbaum testnet/replay semantics only; there is no zkSYS mainnet profile");

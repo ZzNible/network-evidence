@@ -25,6 +25,9 @@ import {
 import type { DiscoveryDemo } from "../run.js";
 
 const FORBIDDEN_WORDS = /\b(rank\w*|scor\w*|best|recommend\w*|weight\w*|priorit\w*)\b/i;
+// Keys only: @nec/discovery outcome / preflight result keys must not carry choice semantics.
+// prefer*/select* are legitimate in caller-policy prose and objects, so they are not in FORBIDDEN_WORDS.
+const FORBIDDEN_KEY_WORD = /^(rank\w*|scor\w*|best|recommend\w*|weight\w*|priorit\w*|prefer\w*|select\w*|top|better)$/i;
 
 const originalFetch = globalThis.fetch;
 const fetchGuard = vi.fn(() => {
@@ -51,6 +54,11 @@ function sha256(text: string): string {
 
 function classes(outcome: DiscoverNetworksOutcome): Record<string, string> {
   return Object.fromEntries(outcome.candidates.map((c) => [c.id, c.match.classification]));
+}
+
+/** Split a key into camelCase / snake_case / kebab-case words and test each against FORBIDDEN_KEY_WORD. */
+function hasForbiddenKeyWord(key: string): boolean {
+  return key.split(/[^A-Za-z0-9]+|(?<=[a-z0-9])(?=[A-Z])/).some((word) => FORBIDDEN_KEY_WORD.test(word));
 }
 
 function allKeys(value: unknown, out: string[] = []): string[] {
@@ -102,6 +110,17 @@ describe("public Discovery demo", () => {
     for (const key of allKeys(demo.preflight?.result)) expect(key).not.toMatch(FORBIDDEN_WORDS);
     expect(Object.keys(demo.outcome).sort()).toEqual(["candidates", "result", "scope", "verificationContext"]);
     expect(stdout.trimEnd().split("\n").at(-1)).toBe("NE did not execute, sign, fund or submit anything.");
+  });
+
+  it("@nec/discovery outcome and preflight result keys carry no rank / preference / selection field", () => {
+    for (const bad of ["preferred", "preferredId", "selected", "selectedCandidate", "top", "isBetter", "candidate_rank", "best-score", "weight", "priority", "recommendation"]) {
+      expect(hasForbiddenKeyWord(bad), bad).toBe(true);
+    }
+    for (const ok of ["candidates", "scope", "inScopeCandidateIds", "topic", "stop", "status", "evaluations"]) {
+      expect(hasForbiddenKeyWord(ok), ok).toBe(false);
+    }
+    expect(allKeys(demo.outcome).filter(hasForbiddenKeyWord)).toEqual([]);
+    expect(allKeys(demo.preflight?.result).filter(hasForbiddenKeyWord)).toEqual([]);
   });
 
   it("the chosen candidate comes from the explicit caller-policy function, not from @nec/discovery", () => {
