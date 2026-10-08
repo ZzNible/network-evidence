@@ -1,10 +1,6 @@
 # @nec/mcp — local, read-only Network Evidence MCP server (v0)
 
-> **Status: local v0; hosted mode PREPARED, NOT DEPLOYED.** This is NOT a public
-> endpoint, NOT published to npm, NOT listed in any MCP registry or directory,
-> and NOT a ChatGPT/Codex/Claude plugin. By default it binds loopback only and
-> has no authentication. An opt-in [hosted preview mode](#hosted-preview-mode-opt-in-not-deployed)
-> exists for a separately approved deployment; no service, URL or domain exists.
+> **Status:** local mode remains loopback-only by default. A separate **public, anonymous, read-only Cloud Run MCP v0.0.1 preview** is LIVE at `https://network-evidence-mcp-preview-jrkc26rjga-ew.a.run.app/mcp`. This is NOT an official MCP registry listing, npm publication, or guaranteed production service. The existing private ChatGPT connector still targets Render until separately tested. See the [hosted preview](#hosted-preview-mode-opt-in-public-cloud-run-preview).
 > See [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
 > and [`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
 
@@ -49,7 +45,7 @@ The CLI replaces global `fetch` with a throwing guard.
 Local mode ignores the platform variable `PORT`. Setting `NE_MCP_PUBLIC_ORIGIN`
 or `NE_MCP_CUSTOM_ORIGIN` without `NE_MCP_MODE=hosted` is refused at startup.
 
-## Hosted preview mode (opt-in, NOT deployed)
+## Hosted preview mode (opt-in; public Cloud Run preview)
 
 For a **separately approved** deployment behind a platform that terminates
 HTTPS and forwards plain HTTP (e.g. a Render Web Service). It is an
