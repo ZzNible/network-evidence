@@ -34,6 +34,29 @@ The caller then chooses externally and invokes the resolver-specific evidence
 preflight (e.g. `deriveOpStackBeforePreflightResult`,
 `deriveSolanaBeforePreflightResult`) for its chosen network.
 
+## Integration flow (runnable demo)
+
+[`examples/discovery/`](../../examples/discovery/README.md) is a
+deterministic, offline walk through this flow. Run it with
+`npm run -s demo:discovery`. It uses Base mainnet, Base Sepolia, Solana
+mainnet and Solana devnet in one request:
+
+1. Build each candidate's `network` / `manifest` / `snapshot` from a public
+   resolver BEFORE export: `deriveOpStackBeforeFoundation`,
+   `deriveSolanaBeforeFoundation` or `replaySolanaBeforeFoundation`. Give each
+   candidate an explicit `environment` label.
+2. `discoverNetworks(...)` returns Core classifications for every in-scope
+   candidate (`eligible` / `conditional` / `ineligible`), ordered by
+   presentation id.
+3. Choose with your own policy. The demo's
+   [`caller-policy.ts`](../../examples/discovery/caller-policy.ts) is example
+   caller code ("first `eligible` in my preference list"). It is not part of
+   this package.
+4. Call the resolver-specific preflight for the chosen candidate with the same
+   foundation you passed to discovery. Verify the result with Core
+   `verifyPreflightResult`.
+5. Executing the action, and post-action Resolution, happen outside Discovery.
+
 ## Delegation to Core (sole truth-table authority)
 
 - `validateDiscoveryRequirements` — request validation.

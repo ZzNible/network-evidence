@@ -16,7 +16,8 @@
     "test:maps": "vitest run examples/ne-maps/test",
     "maps:collection": "tsx examples/ne-maps/build-collection.ts --verify",
     "demo:integrability": "tsx examples/integrability-fixture/run.ts --verify",
-    "demo:historical-compat": "tsx examples/historical-compat/run.ts --verify"
+    "demo:historical-compat": "tsx examples/historical-compat/run.ts --verify",
+    "demo:discovery": "tsx examples/discovery/run.ts"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

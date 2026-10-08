@@ -68,6 +68,10 @@ snapshot). It can filter by exact candidate id and by environment. Core
 the deterministic `DiscoverNetworksResult`. Environment selects scope only and
 never changes a classification. There is no network I/O, ranking, scoring or
 network choice. See [`packages/discovery/README.md`](packages/discovery/README.md).
+A deterministic, offline integration demo runs with
+`npm run -s demo:discovery`. It covers Base and Solana, mainnet and testnet,
+an external caller choice, and an evidence preflight for the chosen
+candidate. See [`examples/discovery/README.md`](examples/discovery/README.md).
 
 This repository intentionally has fresh history. Its selected package content
 comes from frozen source snapshots, but private Git history is not imported.
