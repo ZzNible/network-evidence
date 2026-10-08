@@ -1,4 +1,4 @@
-# MCP launch checklist (Cloud Run preview LIVE; directory publication PENDING)
+# MCP launch checklist (Cloud Run preview LIVE; official Registry ACTIVE; other directories PENDING)
 
 > **Updated 2026-10-09:** Cloud Run MCP v0.0.1 is PUBLIC at `https://network-evidence-mcp-preview-jrkc26rjga-ew.a.run.app/mcp`. Remote SDK 2025/2026 PASS and an actual Codex GPT-6 Sol MCP tool call PASS. The **official MCP Registry, Smithery, and ChatGPT/Codex public plugin directory are NOT published**. The original unchecked prelaunch items below reflect historical planning and are not evidence the endpoint is still offline. Current operation is in `CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md` and canonical `STATUS.md`. Root `server.json` is a validated *draft only*. No registry publication or listing submission in this lot.
 
@@ -55,6 +55,8 @@ Legend:
 - [ ] Uptime/support owner and incident contact. [HUMAN]
 - [ ] Re-run all gates on the exact deployed commit. Record the commit SHA in
       the canonical STATUS before any listing.
+
+**Publication verified 2026-10-09:** `io.github.ZzNible/network-evidence` version `0.0.1` is **ACTIVE** in the official MCP Registry. The official publisher `v1.8.1` validated the manifest, then GitHub Actions authenticated via OIDC and published successfully ([run 37853843152](https://github.com/ZzNible/network-evidence/actions/runs/37853843152)). A registry REST GET on the exact version returned HTTP 200 with status `active`. Old unchecked items below are historical prelaunch checklist entries. Other directories are NOT published.
 
 ## 2. Official MCP Registry (remote server)
 
