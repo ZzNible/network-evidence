@@ -1,0 +1,19 @@
+{
+  "name": "@nec/discovery",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Public NEC Discovery orchestrator above @nec/core: explicit caller-supplied candidate contexts, exact candidate-id and presentation-only environment scope filters, fail-closed binding validation, and a deterministic Core-built/verified DiscoverNetworksResult. Classification is delegated to Core composeDiscoveryMatch. No network I/O, no ranking or scoring, no network choice, no wallet, signing, funding or submission.",
+  "engines": { "node": ">=20" },
+  "exports": {
+    ".": { "types": "./src/index.ts", "default": "./src/index.ts" }
+  },
+  "dependencies": {
+    "@nec/core": "*"
+  },
+  "devDependencies": {
+    "@nec/resolver-evm": "*",
+    "@nec/resolver-opstack": "*",
+    "@nec/resolver-solana": "*"
+  }
+}

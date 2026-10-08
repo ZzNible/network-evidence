@@ -60,6 +60,15 @@ economic irreversibility. Replaying the pinned archived mainnet and devnet
 fixtures gives current availability `unknown`. See
 [`packages/resolver-solana/README.md`](packages/resolver-solana/README.md#before-foundation-solana-mainnet--devnet).
 
+`@nec/discovery` is a thin public Discovery orchestrator above Core. A caller
+supplies requirements and explicit candidates (presentation id, explicit
+`mainnet`/`testnet` label, and an already-derived network, manifest and
+snapshot). It can filter by exact candidate id and by environment. Core
+`composeDiscoveryMatch` classifies each candidate, and Core builds and verifies
+the deterministic `DiscoverNetworksResult`. Environment selects scope only and
+never changes a classification. There is no network I/O, ranking, scoring or
+network choice. See [`packages/discovery/README.md`](packages/discovery/README.md).
+
 This repository intentionally has fresh history. Its selected package content
 comes from frozen source snapshots, but private Git history is not imported.
 It is licensed under [Apache-2.0](LICENSE).
