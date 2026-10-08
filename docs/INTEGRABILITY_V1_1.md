@@ -1,8 +1,8 @@
 # Network Evidence Suite v1.1 integrability contract freeze
 
-**Status:** LOT 1–4 and BEFORE + Discovery completion are implemented and public at runtime authority `ed5273b2e28cf7438dcdade0a2d48a08ffa7f9ef` (final whole-stack review CLEAN). Current step: documentation-only release alignment and signoff. No `v1.1.0` tag or GitHub Release exists.
+**Status:** LOT 1–4 and BEFORE + Discovery completion are implemented at runtime authority `ed5273b2e28cf7438dcdade0a2d48a08ffa7f9ef` (final whole-stack review CLEAN) and published as source release `v1.1.0` from `de3ee11d08d22d2791d8b5acfe17c2e61df23e81` on 2026-10-08.
 **Historical release:** `v1.0.0` (peeled `d3827f9b42084bf893e8d93faa0fb905fa339155`) remains published and unchanged.
-**Target:** "v1.1" names this integrability target, not a chosen version. The next public version and any tag/release remain a human decision (`NEXT_PUBLIC_VERSION = UNDECIDED`; see [RELEASE.md](../RELEASE.md)).
+**Release:** `v1.1.0` is an annotated tag and GitHub Release; no npm package publication or hosted deployment is part of it. See [RELEASE.md](../RELEASE.md).
 **Core rule:** `TARGET_CORE_MUTATIONS = 0`.
 
 ## 1. Required reusable path
@@ -192,7 +192,7 @@ LOT 2 demonstrates both Core object and Core wire inputs produce byte-identical 
 
 ## 7. Integrability Definition of Done for v1.1.0
 
-Before a future `v1.1.0`:
+For the published `v1.1.0`, the release DoD was:
 
 1. Core remains unchanged and directly reusable.
 2. `@nec/hub` exposes and documents the public v0.1 normalization contract and runtime implementation.
@@ -210,7 +210,7 @@ Added with the BEFORE + Discovery completion (section 9):
 11. Base (`eip155:8453`, `eip155:84532`) and Solana (`solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp`, `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1`) have explicit public BEFORE profiles with probe-only availability, archived replay availability `unknown`, and explicit finality boundaries.
 12. `@nec/discovery` exposes a deterministic Discovery orchestrator over explicit candidates with Core as sole classification authority, plus a deterministic offline demo; it adds no ranking, network I/O or wallet/signing/submission.
 
-**DoD status:** items 1–12 are met at runtime authority `ed5273b` (final whole-stack review CLEAN; gates and digests in [docs/release/REPRODUCTION.md](release/REPRODUCTION.md)). The heading keeps its original target name; meeting the DoD does not choose a version. Remaining steps are release-process only: independent review of the documentation-only alignment, then the human decision on version, tag and GitHub Release.
+**DoD status:** items 1–12 were met at runtime authority `ed5273b` (final whole-stack review CLEAN; gates and digests in [docs/release/REPRODUCTION.md](release/REPRODUCTION.md)). The documentation-only alignment at `de3ee11d08d22d2791d8b5acfe17c2e61df23e81` was independently reviewed CLEAN and published as `v1.1.0` on 2026-10-08.
 
 ## 8. Lot boundaries
 

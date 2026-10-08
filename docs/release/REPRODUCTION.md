@@ -201,24 +201,23 @@ tests, not by a demo CLI switch. See
 git ls-remote --tags origin 'v1.*'
 # 60fc3e91860a226b020e9addefa152dbe23f4ffa  refs/tags/v1.0.0
 # d3827f9b42084bf893e8d93faa0fb905fa339155  refs/tags/v1.0.0^{}
-# (no v1.1.0 entry)
+# 62044f78851260d6af8bc5e8dffd6d8bace46d15  refs/tags/v1.1.0
+# de3ee11d08d22d2791d8b5acfe17c2e61df23e81  refs/tags/v1.1.0^{}
 
-git rev-parse 'v1.0.0^{}'
-# d3827f9b42084bf893e8d93faa0fb905fa339155
+git rev-parse 'v1.1.0^{}'
+# de3ee11d08d22d2791d8b5acfe17c2e61df23e81
 ```
 
-`v1.0.0` is the historical public release and is immutable. At the time of
-writing, the only GitHub Release is `v1.0.0`, no `v1.1.0` tag or GitHub
-Release exists, and no `@nec/*` package is published to npm.
+`v1.1.0` is the current public source release and `v1.0.0` remains immutable
+historical release state. No `@nec/*` package is published to npm and no hosted
+deployment is part of `v1.1.0`.
 
 ## What reproduction does not establish
 
 Passing these steps reproduces the documented results and deterministic
-outputs of the candidate source tree. It does not create or authorize a tag,
-GitHub Release, npm publication or deployment, and it does not choose the
-next public version; those remain human decisions (see
-[RELEASE.md](../../RELEASE.md)). It does not establish live network
-availability, hosted monitoring, settlement or finality beyond the explicit
-boundaries in each package README, and it does not change the
-dependency-advisory status described in
-[DEPENDENCY_ADVISORIES.md](DEPENDENCY_ADVISORIES.md).
+outputs of the `v1.1.0` source tree. Reproduction does not itself create,
+modify or republish a tag/GitHub Release, and it does not publish npm packages
+or deploy a hosted service. It does not establish live network availability,
+hosted monitoring, settlement or finality beyond the explicit boundaries in
+each package README, and it does not change the dependency-advisory status
+described in [DEPENDENCY_ADVISORIES.md](DEPENDENCY_ADVISORIES.md).

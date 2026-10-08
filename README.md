@@ -116,9 +116,9 @@ Then open `http://127.0.0.1:4177/`. `TARGET_CORE_MUTATIONS = 0`.
 ## Release and reproducibility
 
 - [RELEASE.md](RELEASE.md) — release status, package/version inventory and
-  release artifacts. `v1.0.0` is the latest public release; the next public
-  version is undecided, no `v1.1.0` tag or GitHub Release exists, and no
-  package is published to npm.
+  release artifacts. `v1.1.0` is the latest public source release, published
+  on 2026-10-08 from `de3ee11d08d22d2791d8b5acfe17c2e61df23e81`; no
+  package is published to npm and no hosted deployment is part of the release.
 - [docs/release/REPRODUCTION.md](docs/release/REPRODUCTION.md) — clean-machine
   reproduction with expected test counts and output digests.
 - [docs/INTEGRABILITY_V1_1.md](docs/INTEGRABILITY_V1_1.md) — Hub/Lens/Maps

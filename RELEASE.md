@@ -5,34 +5,30 @@ documentation only: it does not perform, and does not claim, any tag, GitHub
 Release, npm publication or deployment beyond what is stated below.
 
 ```text
+LATEST_PUBLIC_RELEASE     = v1.1.0  (annotated tag; peeled commit de3ee11d08d22d2791d8b5acfe17c2e61df23e81; published 2026-10-08)
 HISTORICAL_PUBLIC_RELEASE = v1.0.0  (annotated tag; peeled commit d3827f9b42084bf893e8d93faa0fb905fa339155; immutable)
-RUNTIME_AUTHORITY         = ed5273b2e28cf7438dcdade0a2d48a08ffa7f9ef  (runtime/product candidate; BEFORE + Discovery complete)
-SIGNOFF_CANDIDATE         = current Git commit containing this file (resolve with `git rev-parse HEAD`)
-NEXT_PUBLIC_VERSION       = UNDECIDED
-V1_1_0_TAG                = NONE
-V1_1_0_GITHUB_RELEASE     = NONE
+RUNTIME_AUTHORITY         = ed5273b2e28cf7438dcdade0a2d48a08ffa7f9ef  (runtime/product authority; BEFORE + Discovery complete)
+V1_1_0_TAG_OBJECT         = 62044f78851260d6af8bc5e8dffd6d8bace46d15
 NPM_PUBLICATION           = NO  (every package manifest is "private": true)
 DEPLOYMENT                = NO
 TARGET_CORE_MUTATIONS     = 0
 ```
 
-`v1.0.0` is the latest public release: an annotated Git tag and GitHub Release
-of the source tree, published on 2026-10-07. It is not moved, retagged or
-rewritten. Earlier tags (`v0.1.0` – `v0.4.0`) are also historical;
-`FREEZE_MANIFEST.md` records the `v0.1.0` release and the provenance of the
-imported frozen package trees.
+`v1.1.0` is the latest public source release: an annotated Git tag and GitHub
+Release published on 2026-10-08. Its tag peels exactly to
+`de3ee11d08d22d2791d8b5acfe17c2e61df23e81`. The release source commit is the
+runtime authority above plus the independently reviewed documentation-only
+release alignment; its source, tests, fixtures, package manifests and lockfile
+are byte-identical to `ed5273b`.
 
-The signoff candidate is the runtime authority above plus documentation-only
-release alignment. Its source, tests, fixtures, package manifests and lockfile
-are byte-identical to `ed5273b`. A Git commit cannot contain its own SHA, so
-record the candidate with `git rev-parse HEAD` and compare it with the
-promoted SHA in the canonical project STATUS.
+`v1.0.0` remains an immutable historical release at
+`d3827f9b42084bf893e8d93faa0fb905fa339155`. Earlier tags (`v0.1.0` –
+`v0.4.0`) are also historical; `FREEZE_MANIFEST.md` records the `v0.1.0`
+release and the provenance of the imported frozen package trees.
 
-The repository's v1.1 integrability target
-([docs/INTEGRABILITY_V1_1.md](docs/INTEGRABILITY_V1_1.md)) is a project target
-name, not a chosen version. No `v1.1.0` tag or GitHub Release exists. Choosing
-the next version, creating a tag or GitHub Release, publishing to npm and
-deploying remain human decisions.
+The v1.1 integrability target is now published as `v1.1.0`. No npm package was
+published and no hosted deployment was created; those remain separate future
+human decisions if ever desired.
 
 ## Release documentation
 
@@ -122,10 +118,7 @@ Expected digests used for reproduction are listed in
 
 ## Open items
 
-Release-process only; no semantic implementation work is pending.
-
-1. Independent review of the documentation-only release-alignment commit.
-2. Human decision on the next public version and whether to tag and create a
-   GitHub Release for the signoff candidate. Any npm publication or deployment
-   is a separate human decision; none is prepared and all manifests remain
-   `"private": true`.
+The `v1.1.0` source release is published and no semantic implementation work is
+pending for this release. Any future npm publication or hosted deployment is a
+separate human decision; none is prepared and all manifests remain
+`"private": true`.
