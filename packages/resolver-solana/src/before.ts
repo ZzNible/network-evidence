@@ -11,12 +11,19 @@
  * SEMANTIC BOUNDARY (never collapsed):
  *   - SUPPORT is static manifest authority; AVAILABILITY derives only from the
  *     supplied probe observation and its concrete EvidenceRefs.
- *   - Every supported capability requires the SAME evidence path, because the
- *     post-action resolver (`nec-resolver-solana-acquisition-v1`) reads it as
- *     one sequential pipeline and any read failure aborts the whole
- *     acquisition: full getGenesisHash identity, getTransaction(finalized),
+ *   - Every supported capability requires the SAME evidence path: full
+ *     getGenesisHash identity, getTransaction(finalized),
  *     getSignatureStatuses(searchTransactionHistory) and compact
- *     getBlock(finalized).
+ *     getBlock(finalized). An `unusable` path is `unavailable` for all of them
+ *     because the post-action resolver (`nec-resolver-solana-acquisition-v1`)
+ *     reads them as one sequential pipeline and any read failure aborts it.
+ *     `not_established` paths and incoherent lookups are projected to every
+ *     capability conservatively, because the probe characterizes the
+ *     configured source's view, not a per-dimension post-action verdict.
+ *   - `observationKind: "probe"` is a producer assertion; this pure
+ *     derivation cannot verify freshness. Consumers must apply their own
+ *     freshness window to `generatedAt`, `network.observedAt` and each
+ *     `EvidenceRef.retrievedAt`.
  *   - `finality` additionally requires that the probe OBSERVED the finalized
  *     commitment for its subject. It means only Solana finalized commitment as
  *     reported by the configured source (basis `source_observation`). It
@@ -163,7 +170,11 @@ export const SOLANA_FINALITY_DOES_NOT_ESTABLISH: readonly string[] = Object.free
 export const SOLANA_BEFORE_FINALITY_SEMANTICS =
   "Solana finalized commitment as reported by the configured source: getTransaction(commitment=finalized), getSignatureStatuses confirmationStatus=finalized and the finalized containing getBlock, mutually consistent under nec-resolver-solana-evaluation-v1; basis source_observation only";
 
-/** Probe paths, in citation order. Every supported capability requires all of them. */
+/**
+ * Probe paths, in citation order. Every supported capability requires all of
+ * them (pipeline abort for `unusable`; conservative source-view projection for
+ * `not_established` and incoherent lookups).
+ */
 export type SolanaProbePath = "genesisidentity" | "transaction" | "signaturestatus" | "finalizedblock";
 
 const PROBE_PATHS: readonly SolanaProbePath[] = ["genesisidentity", "transaction", "signaturestatus", "finalizedblock"];
@@ -265,7 +276,8 @@ export interface SolanaCapabilityProbeObservation {
 
 /**
  * `probe`: the caller's own fresh observation; the snapshot states
- * availability AS OF that probe time.
+ * availability AS OF that probe time. This is a producer assertion the
+ * derivation cannot verify; consumers apply their own freshness window.
  * `historical_replay`: archived observations; every supported capability is
  * projected to current availability `unknown`.
  */
@@ -532,9 +544,12 @@ function deriveFoundation(input: SolanaBeforeDerivationInput): SolanaBeforeFound
   }
 
   const networkId = config.networkId as NetworkId;
+  // genesisId only when the probe itself established the identity path; a
+  // supplied hash is still bound above but never presented as observed.
+  const genesisObserved = obs.paths.genesisidentity === "usable" && obs.genesisHash !== undefined;
   const network: NetworkFingerprint = {
     networkId,
-    ...(obs.genesisHash === undefined ? {} : { genesisId: obs.genesisHash }),
+    ...(genesisObserved ? { genesisId: obs.genesisHash } : {}),
     observedAt: { timestamp: obs.observedAt },
     metadata: {
       chainFamily: SOLANA_FAMILY,

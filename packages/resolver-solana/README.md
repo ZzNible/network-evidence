@@ -24,7 +24,7 @@ The BEFORE side is a pure derivation (`src/before.ts`). It takes one explicit ge
 
 Manifest `resolver-solana-before@0.1.0` (family `solana`, source `svm_rpc`) claims `execution`, `observedEffects`, `dataBinding` and `finality`. That is exactly what the post-action evaluator evaluates. It never claims `settlement`, and no execution-family slot is populated. Being in the manifest permits evaluation only. It never proves availability.
 
-Availability. The post-action pipeline is one sequential read sequence, and any read failure aborts it. So every supported capability needs the same probe paths:
+Availability. Every supported capability needs the same probe paths:
 
 1. full `getGenesisHash` identity,
 2. `getTransaction(finalized)`,
@@ -43,6 +43,10 @@ Each path outcome is `usable`, `not_established` or `unusable`. `not_established
 | Lookups mutually inconsistent (signature, status slot, error, parent slot) | `degraded` |
 | Finality only: finalized commitment not observed for the probe subject | `unknown` |
 | Otherwise | `available`, citing the identity and lookup refs |
+
+The coupling has two different reasons. An `unusable` path makes every capability `unavailable` because the post-action pipeline is one sequential read sequence, and any read failure aborts it. A `not_established` path or incoherent lookups are a different case: the post-action evaluator could still ground some dimensions on its own. They are applied to every capability conservatively, because the probe describes the configured source's view, not a per-dimension post-action verdict. Neither branch can yield `available`.
+
+`network.genesisId` is set only when the probe's `genesisidentity` path is `usable`. A `genesisHash` supplied with any other outcome must still equal the pinned hash, but it is not presented as observed.
 
 A `usable` path without a classified EvidenceRef is ghost evidence and is rejected. Refs are classified by `metadata.probePath`, or else by `metadata.rpcMethod`. Refs from other networks or a second source are also rejected.
 
@@ -83,6 +87,7 @@ Limitations:
 
 - Archived fixtures never establish current availability.
 - A probe's availability holds only at its probe time, for the probed source.
+- `observationKind: "probe"` is the producer's assertion of a fresh observation. The pure derivation cannot verify freshness. Consumers must apply their own freshness window to `snapshot.generatedAt`, `network.observedAt` and each `EvidenceRef.retrievedAt`.
 - The post-action resolver accepts only legacy and version-0 transactions. Devnet blocks now carry version-1 transactions, so actions using them are outside this resolver's evaluable scope.
 - The post-action resolver rejects instruction data longer than 128 base58 characters. One example is devnet vote `TowerSync`.
 - `observedEffects` covers only SPL Token / Token-2022 `TransferChecked`.

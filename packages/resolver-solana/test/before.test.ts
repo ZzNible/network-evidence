@@ -423,6 +423,18 @@ describe("availability is derived from the probe observation", () => {
     expect(availability(deriveSolanaBeforeFoundation({ config: profile.config, observationKind: "probe", observation: unseen }))).toEqual(all("unknown"));
   });
 
+  it("identity not established + supplied genesisHash -> still bound, but genesisId is not presented as observed", () => {
+    const supplied = observation(profile, { paths: { ...allUsable(), genesisidentity: "not_established" } });
+    supplied.evidence.splice(0, 1);
+    const f = deriveSolanaBeforeFoundation({ config: profile.config, observationKind: "probe", observation: supplied });
+    expect(availability(f)).toEqual(all("unknown"));
+    expect(f.snapshot.network.genesisId).toBeUndefined();
+    expect(f.snapshot.network.metadata?.observationKind).toBe("probe");
+    const forged = observation(profile, { paths: { ...allUsable(), genesisidentity: "not_established" }, genesisHash: `${profile.config.genesisHash.slice(0, -1)}${profile.config.genesisHash.endsWith("e") ? "f" : "e"}` });
+    forged.evidence.splice(0, 1);
+    expectSolError(() => deriveSolanaBeforeFoundation({ config: profile.config, observationKind: "probe", observation: forged }), "SOLANA_NETWORK_MISMATCH");
+  });
+
   it.each(["transaction", "signaturestatus", "finalizedblock"] as const)("%s read failed -> every capability unavailable", (path) => {
     const f = probeFoundation(profile, { paths: { ...allUsable(), [path]: "unusable" }, lookupsCoherent: false, finalizedCommitmentObserved: path !== "signaturestatus" });
     expect(availability(f)).toEqual(all("unavailable"));
