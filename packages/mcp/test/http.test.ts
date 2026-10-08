@@ -86,6 +86,7 @@ describe("HTTP host", () => {
     expect(body.mode).toBe("local");
     expect(body.scope).toBe("local v0; not a public endpoint");
     expect(server.mode).toBe("local");
+    expect((await fetch(`${server.url}/health`)).status).toBe(404); // Hosted-only Cloud Run health alias
   });
 
   it("rejects DNS-rebinding Host and foreign Origin headers", async () => {

@@ -201,6 +201,17 @@ describe("hosted mode over genuine HTTP (0.0.0.0 bind, simulated public Host)", 
     expect(JSON.stringify(body)).not.toMatch(/https?:\/\//);
   });
 
+  it("serves /health as a Cloud Run-safe hosted alias without weakening guards", async () => {
+    const standard = await send(server.port, "/healthz", "GET", H);
+    const alias = await send(server.port, "/health", "GET", H);
+    expect(alias.status).toBe(200);
+    expect(alias.body).toBe(standard.body);
+    expect((await send(server.port, "/health", "HEAD", H)).status).toBe(200);
+    expect((await send(server.port, "/health", "POST", H)).status).toBe(405);
+    expect((await send(server.port, "/health", "GET", { host: "evil.example" })).status).toBe(403);
+    expect((await send(server.port, "/health", "GET", { ...H, origin: "https://evil.example" })).status).toBe(403);
+  });
+
   it("admits only the exact configured Host names", async () => {
     expect((await send(server.port, "/healthz", "GET", { host: CUSTOM_HOST })).status).toBe(200);
     expect((await send(server.port, "/healthz", "GET", { host: "MCP.Example.ORG" })).status).toBe(200);
@@ -332,7 +343,7 @@ describe("hosted mode over genuine HTTP (0.0.0.0 bind, simulated public Host)", 
     expect((await send(server.port, "/mcp", "GET", { ...H, accept: "text/event-stream" })).status).toBe(405);
     expect((await send(server.port, "/etc/passwd", "GET", H)).status).toBe(404);
     for (const line of logLines) {
-      expect(line).toMatch(/^(GET|POST|HEAD|DELETE|PUT|\?) (\/mcp|\/healthz|\(other\)) \d{3} \d+ms$|^mcp (handler|adapter) error: \w+$/);
+      expect(line).toMatch(/^(GET|POST|HEAD|DELETE|PUT|\?) (\/mcp|\/healthz|\/health|\(other\)) \d{3} \d+ms$|^mcp (handler|adapter) error: \w+$/);
       expect(line).not.toMatch(/example|127\.0\.0\.1|203\.0\.113/);
     }
   });

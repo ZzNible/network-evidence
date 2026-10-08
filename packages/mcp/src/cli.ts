@@ -35,7 +35,7 @@ try {
   if (server.mode === "hosted") {
     process.stdout.write(
       `Network Evidence MCP v0 [${HEALTH_SCOPE.hosted}] listening on ${server.host}:${server.port}; ` +
-        `accepted public origin(s): ${[config.hosted!.publicOrigin, config.hosted!.customOrigin].filter(Boolean).join(", ")}; endpoint /mcp, health /healthz\n`,
+        `accepted public origin(s): ${[config.hosted!.publicOrigin, config.hosted!.customOrigin].filter(Boolean).join(", ")}; endpoint /mcp, health /health\n`,
     );
   } else {
     process.stdout.write(

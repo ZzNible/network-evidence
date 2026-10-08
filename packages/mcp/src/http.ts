@@ -3,7 +3,8 @@
  * explicit, validated hosted mode exists for a separately approved deployment
  * (see hosted.ts).
  *
- *   GET  /healthz  -> 200 static JSON (no evidence, no clock-derived claims)
+ *   GET  /healthz  -> 200 static JSON (local/Render)
+ *   GET  /health   -> 200 static JSON (hosted; Cloud Run-safe alias)
  *   POST /mcp      -> MCP (2026-07-28 modern era, and 2025-era
  *                     initialize -> tools/list -> tools/call served statelessly)
  *   *    /mcp      -> delegated to the SDK (GET/DELETE answered 405: stateless)
@@ -185,7 +186,7 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     for (const guard of guards) if (!guard(req, res)) return;
     const path = (req.url ?? "/").split("?")[0];
-    if (path === "/healthz") {
+    if (path === "/healthz" || (mode === "hosted" && path === "/health")) {
       if (req.method !== "GET" && req.method !== "HEAD") {
         sendJson(res, 405, JSON.stringify({ error: "method not allowed" }), { allow: "GET, HEAD" });
         return;
@@ -243,7 +244,7 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
     res.on("finish", () => {
       const ms = Number((process.hrtime.bigint() - started) / 1_000_000n);
       const path = (req.url ?? "/").split("?")[0];
-      const route = path === "/mcp" || path === "/healthz" ? path : "(other)";
+      const route = path === "/mcp" || path === "/healthz" || (mode === "hosted" && path === "/health") ? path : "(other)";
       log(`${req.method ?? "?"} ${route} ${res.statusCode} ${ms}ms`);
     });
     handle(req, res).catch(() => {

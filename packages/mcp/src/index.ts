@@ -2,7 +2,7 @@
  * @nec/mcp — local, read-only MCP server v0 over public Network Evidence code.
  *
  * Three tools, no router: list_network_profiles, discover_network_candidates,
- * get_reviewed_evidence_case. Streamable HTTP at /mcp, health at /healthz;
+ * get_reviewed_evidence_case. Streamable HTTP at /mcp, health at /healthz (local) or /health (hosted);
  * loopback-only by default, plus an explicit opt-in hosted preview mode (exact
  * public origin, 0.0.0.0:$PORT). No network I/O, no wallet/signing/funding/
  * submission, no ranking or network choice. Not published; not deployed.

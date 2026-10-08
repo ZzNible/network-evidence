@@ -112,6 +112,8 @@ byte-bounded body read (`413`) → the **@nec/core strict wire parser** over the
 raw body (duplicate JSON keys, malformed JSON, depth/node/string bounds →
 `400`, JSON-RPC `-32700`) → SDK. Each request gets a fresh `McpServer`.
 
+For **Google Cloud Run**, use `GET /health` (or HEAD) in hosted mode for health checks. Cloud Run reserves some URL paths ending in `z`, so `/healthz` can return a Google frontend 404 without reaching the application. Hosted `/health` returns the identical static payload and keeps the exact Host/Origin guards. `/healthz` stays available for Render and local mode; local mode deliberately does not serve `/health`.
+
 Browser-based cross-origin clients are not supported in hosted preview mode (no CORS preflight headers). Server-to-server MCP clients with no `Origin` header are supported; any supplied `Origin` must exactly match an explicitly configured HTTPS origin.
 
 Logging is one stderr line per request: method, route (`/mcp`, `/healthz` or
