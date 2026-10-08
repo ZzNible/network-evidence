@@ -476,6 +476,22 @@ describe("candidate-id scope is exact and fail-closed", () => {
     }
   });
 
+  it("matches only the opaque presentation id, never networkId", () => {
+    const devnetId = SOLANA_DEVNET_BEFORE_PROFILE.config.networkId;
+    // A caller that literally chooses another candidate's networkId as a presentation id gets exactly that id.
+    const outcome = discoverNetworks(
+      input({
+        candidates: [ctx(devnetId, "mainnet", solanaMainnet), ctx("devnet", "testnet", solanaDevnet)],
+        scope: { candidateIds: [devnetId] },
+      }),
+    );
+    expect(outcome.candidates.map((c) => [c.id, c.networkId])).toEqual([[devnetId, solanaMainnet.network.networkId]]);
+    expectCode(
+      () => discoverNetworks(input({ candidates: [ctx("devnet", "testnet", solanaDevnet)], scope: { candidateIds: [devnetId] } })),
+      "DISCOVERY_SCOPE_UNKNOWN_CANDIDATE",
+    );
+  });
+
   it("empty, duplicate, non-string filters and unknown scope fields fail closed", () => {
     expectCode(() => discoverNetworks(input({ scope: { candidateIds: [] } })), "DISCOVERY_SCOPE_INVALID");
     expectCode(() => discoverNetworks(input({ scope: { environments: [] } })), "DISCOVERY_SCOPE_INVALID");
@@ -726,5 +742,16 @@ describe("fail-closed validation", () => {
 
   it("rejects an empty requestId", () => {
     expectCode(() => discoverNetworks(input({ requestId: "" })), "DISCOVERY_INPUT_INVALID");
+  });
+
+  it("maps a non-cloneable exotic input (no-trap Proxy) to NecDiscoveryError, not a raw DataCloneError", () => {
+    const proxied = { ...ctx("solana-mainnet", "mainnet", solanaMainnet), network: new Proxy(structuredClone(solanaMainnet.network), {}) };
+    const error = expectCode(() => discoverNetworks(input({ candidates: [proxied] })), "DISCOVERY_INPUT_INVALID");
+    expect(error.cause).toBeInstanceOf(Error);
+    expect((error.cause as Error).name).toBe("DataCloneError");
+    expectCode(
+      () => discoverNetworks(input({ requirements: new Proxy(structuredClone(EXEC_REQUIRED_FINALITY_DESIRED), {}) })),
+      "DISCOVERY_INPUT_INVALID",
+    );
   });
 });

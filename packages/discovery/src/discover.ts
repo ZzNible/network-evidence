@@ -181,9 +181,17 @@ function isEnvironment(value: unknown): value is DiscoveryEnvironment {
   return typeof value === "string" && (DISCOVERY_ENVIRONMENTS as readonly string[]).includes(value);
 }
 
-/** Core-detached, frozen copy of Core-validated plain data. */
-function detach<T>(value: T): T {
-  return deepFreeze(structuredClone(value)) as T;
+/**
+ * Core-detached, frozen copy of Core-validated plain data. Exotic inputs that
+ * pass Core's validators but cannot be cloned or frozen (e.g. a live Proxy)
+ * fail closed as DISCOVERY_INPUT_INVALID, keeping the raw error as `cause`.
+ */
+function detach<T>(value: T, path: string): T {
+  try {
+    return deepFreeze(structuredClone(value)) as T;
+  } catch (error) {
+    discoveryFail("DISCOVERY_INPUT_INVALID", `${path} must be inert, cloneable plain data`, error);
+  }
 }
 
 interface ParsedScope {
@@ -258,7 +266,7 @@ export function discoverNetworks(input: DiscoverNetworksInput): DiscoverNetworks
   } catch (error) {
     discoveryFail("DISCOVERY_REQUIREMENTS_INVALID", "Core rejected input.requirements", error);
   }
-  const requirements = detach(root.requirements as DiscoveryRequirements);
+  const requirements = detach(root.requirements as DiscoveryRequirements, "input.requirements");
 
   // 1. Presentation records: exact shape, unique ids, explicit environment.
   const contexts: DiscoveryCandidateContext[] = [];
@@ -299,9 +307,9 @@ export function discoverNetworks(input: DiscoverNetworksInput): DiscoverNetworks
     return {
       id: context.id,
       environment: context.environment,
-      network: detach(context.network),
-      manifest: detach(context.manifest),
-      snapshot: detach(context.snapshot),
+      network: detach(context.network, `candidate ${JSON.stringify(context.id)}: network`),
+      manifest: detach(context.manifest, `candidate ${JSON.stringify(context.id)}: manifest`),
+      snapshot: detach(context.snapshot, `candidate ${JSON.stringify(context.id)}: snapshot`),
     };
   });
 
@@ -411,15 +419,19 @@ export function discoverNetworks(input: DiscoverNetworksInput): DiscoverNetworks
     };
   });
 
-  return deepFreeze({
-    result,
-    candidates,
-    scope: {
-      candidateIds: scope.candidateIds,
-      environments: scope.environments,
-      inScopeCandidateIds: inScope.map((candidate) => candidate.id),
-      outOfScopeCandidateIds: outOfScope.map((candidate) => candidate.id),
-    },
-    verificationContext,
-  }) as DiscoverNetworksOutcome;
+  try {
+    return deepFreeze({
+      result,
+      candidates,
+      scope: {
+        candidateIds: scope.candidateIds,
+        environments: scope.environments,
+        inScopeCandidateIds: inScope.map((candidate) => candidate.id),
+        outOfScopeCandidateIds: outOfScope.map((candidate) => candidate.id),
+      },
+      verificationContext,
+    }) as DiscoverNetworksOutcome;
+  } catch (error) {
+    discoveryFail("DISCOVERY_RESULT_INVALID", "the DiscoverNetworksOutcome could not be deep-frozen", error);
+  }
 }

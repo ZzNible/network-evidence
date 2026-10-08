@@ -61,6 +61,10 @@ Required unsatisfied/unknown => `ineligible`; desired unsatisfied/unknown =>
   (`DISCOVERY_SCOPE_UNKNOWN_CANDIDATE`), as do empty or duplicate filter
   lists (`DISCOVERY_SCOPE_INVALID`) and a named id excluded by the
   environment filter (`DISCOVERY_SCOPE_CONFLICT`).
+- Candidate ids are opaque presentation identifiers: `scope.candidateIds`
+  matches only the candidate `id` field and never `networkId`, so callers
+  should not reuse network ids as presentation ids if that could cause
+  ambiguity.
 - Every supplied candidate is validated through Core, in or out of scope.
 - An empty scoped set yields a valid, Core-verified result with no matches
   (Core permits empty `matches`).
