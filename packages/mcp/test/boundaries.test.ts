@@ -15,7 +15,18 @@ const sources = new Map(files.map((name) => [name, readFileSync(`${SRC}${name}`,
 
 describe("@nec/mcp source boundaries", () => {
   it("has the expected small module set", () => {
-    expect(files.sort()).toEqual(["cases.ts", "cli.ts", "discover.ts", "errors.ts", "http.ts", "index.ts", "profiles.ts", "tools.ts"]);
+    expect(files.sort()).toEqual([
+      "cases.ts",
+      "cli.ts",
+      "discover.ts",
+      "errors.ts",
+      "hosted.ts",
+      "http.ts",
+      "index.ts",
+      "limits.ts",
+      "profiles.ts",
+      "tools.ts",
+    ]);
   });
 
   it("contains no outbound network, process or dynamic-code primitives", () => {
@@ -52,9 +63,20 @@ describe("@nec/mcp source boundaries", () => {
     expect(all).not.toMatch(/["'](rank|score|best|recommendation|recommended)["']\s*:/);
   });
 
-  it("binds 127.0.0.1 by default and never 0.0.0.0", () => {
+  it("binds 127.0.0.1 by default; 0.0.0.0 exists only as the hosted-mode bind constant", () => {
     const http = sources.get("http.ts")!;
     expect(http).toMatch(/DEFAULT_HOST = "127\.0\.0\.1"/);
     expect(http).not.toMatch(/0\.0\.0\.0/);
+    // Code literal (quoted) only; prose comments may name the address.
+    const holders = [...sources].filter(([, text]) => /["'`]0\.0\.0\.0["'`]/.test(text)).map(([name]) => name);
+    expect(holders).toEqual(["hosted.ts"]);
+    const hosted = sources.get("hosted.ts")!;
+    expect(hosted.match(/["'`]0\.0\.0\.0["'`]/g)).toHaveLength(1);
+    expect(hosted).toMatch(/export const HOSTED_BIND_HOST = "0\.0\.0\.0";/);
+  });
+
+  it("never reads X-Forwarded-* or other proxy-supplied identity headers", () => {
+    const all = [...sources.values()].join("\n");
+    expect(all).not.toMatch(/["'`](x-forwarded-[a-z]+|forwarded|x-real-ip|cf-connecting-ip|true-client-ip)["'`]|headers\.forwarded|remoteAddress|remotePort/i);
   });
 });

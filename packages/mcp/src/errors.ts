@@ -26,6 +26,14 @@ export class NeMcpError extends Error {
   }
 }
 
+/** Invalid or unsafe server configuration; the server refuses to start. */
+export class NeMcpConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NeMcpConfigError";
+  }
+}
+
 /** Upper bound on any message text returned to a caller. */
 export const MAX_ERROR_MESSAGE_CHARS = 2000;
 

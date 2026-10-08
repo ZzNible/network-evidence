@@ -7,11 +7,16 @@
 > public artifact as-is.
 
 Today the server is `@nec/mcp` v0: local, read-only, loopback-only
-Streamable HTTP, no authentication. See
-[`packages/mcp/README.md`](../../packages/mcp/README.md).
+Streamable HTTP by default, no authentication. An opt-in hosted preview mode is
+**prepared but NOT deployed** (lot NE-MCP-RENDER-PREP). See
+[`packages/mcp/README.md`](../../packages/mcp/README.md) and
+[`RENDER_DEPLOY_RUNBOOK.md`](RENDER_DEPLOY_RUNBOOK.md).
 
 Legend:
-- **[verified-local]** — checked in this repository during lot NE-MCP-V0.0.1.
+- **[verified-local]** — checked in this repository during lot NE-MCP-V0.0.1
+  (or NE-MCP-RENDER-PREP where marked **[prepared]**).
+- **[prepared]** — code/docs exist and were tested locally; **not deployed**.
+- **[deployed]** — exists on a real public host. Nothing is marked deployed.
 - **[external — verify at launch]** — an external platform requirement. It was
   NOT verified in this lot (no external accounts or network calls were used).
   Re-check it against that platform's current official documentation before acting.
@@ -28,22 +33,30 @@ Legend:
       the raw body. Body/candidate bounds. No stack traces in errors. No payload logging.
 - [x] [verified-local] Raw JSON-RPC and official SDK-client protocol tests
       (`npx vitest run packages/mcp`, `npm run -s mcp:smoke`).
-- [ ] Nothing below this line is done.
+- [x] [prepared] Opt-in hosted mode: `NE_MCP_MODE=hosted` + exact validated
+      `NE_MCP_PUBLIC_ORIGIN`, binds `0.0.0.0:$PORT`. Exact `Host`/`Origin`
+      allowlist, `X-Forwarded-*` never read. Global rate/concurrency `429`.
+      Mode-specific `/healthz` scope. Tested in `packages/mcp/test/hosted.test.ts`.
+- [x] [prepared] Render runbook with exact settings, FAILED/STOP states and
+      rollback: [`RENDER_DEPLOY_RUNBOOK.md`](RENDER_DEPLOY_RUNBOOK.md).
+- [ ] [deployed] Nothing is deployed. Nothing below this line is done unless marked [prepared].
 
 ## 1. Remote HTTPS service (prerequisite for every listing)
 
 - [ ] [HUMAN] Choose the operator, domain and hosting. Placeholder origin:
       `<NOT-FOR-PUBLICATION:HTTPS_ORIGIN>`. Placeholder MCP URL:
       `<NOT-FOR-PUBLICATION:HTTPS_ORIGIN>/mcp`.
-- [ ] Code change (new lot): v0 deliberately refuses non-loopback binds. A
-      remote deployment needs a reviewed reverse proxy / TLS termination
-      design. It also needs an explicit `Host`/`Origin` allowlist for the
-      public hostname instead of the loopback-only guards.
+- [x] [prepared] Code change: hosted mode with an exact `Host`/`Origin`
+      allowlist for the public hostname (TLS terminated by the platform).
+      Local mode still refuses non-loopback binds.
+- [ ] Independent review of the hosted mode, then explicit approval to create
+      the service (plan, name, workspace: [HUMAN]).
 - [ ] Decide authentication. The tools are read-only and closed-world, so
       anonymous access may be acceptable. If not, add OAuth per the MCP
       authorization spec. [external — verify at launch]
-- [ ] Rate limiting and per-IP/request quotas at the edge. Keep the 1 MiB body
-      and 16-candidate bounds.
+- [x] [prepared] Global in-memory rate + concurrency limits (`429`, no client
+      identity stored). 1 MiB body and 16-candidate bounds kept.
+- [ ] Per-client quotas / edge protection, if required. [HUMAN]
 - [ ] Logging policy for the hosted service. Keep v0's rule: no bodies,
       arguments or client identifiers. Document retention.
 - [ ] Data handling. `get_reviewed_evidence_case` serves only the shipped,

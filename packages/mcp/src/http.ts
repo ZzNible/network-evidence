@@ -1,5 +1,7 @@
 /**
- * Loopback-only Streamable HTTP host for the MCP server.
+ * Streamable HTTP host for the MCP server. Loopback-only by default; an
+ * explicit, validated hosted mode exists for a separately approved deployment
+ * (see hosted.ts).
  *
  *   GET  /healthz  -> 200 static JSON (no evidence, no clock-derived claims)
  *   POST /mcp      -> MCP (2026-07-28 modern era, and 2025-era
@@ -7,9 +9,11 @@
  *   *    /mcp      -> delegated to the SDK (GET/DELETE answered 405: stateless)
  *   anything else  -> 404
  *
- * Guards, in order: Host + Origin validation (DNS-rebinding protection,
- * loopback names only), JSON Content-Type, a byte-bounded body read, then the
- * @nec/core strict wire parser over the RAW body (duplicate keys, depth,
+ * Guards, in order: Host + Origin validation (DNS-rebinding protection;
+ * local: loopback names and the exact same-port loopback Origin; hosted: the
+ * exact configured hostname/origin only), the global /mcp abuse limiter
+ * (rate + concurrency, 429), JSON Content-Type, a byte-bounded body read, then
+ * the @nec/core strict wire parser over the RAW body (duplicate keys, depth,
  * node-count and string bounds fail closed) before anything reaches the SDK.
  * Every request gets a fresh McpServer instance (no shared session state).
  *
@@ -21,20 +25,27 @@ import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 
-import { localhostHostValidation, localhostOriginValidation, toNodeHandler } from "@modelcontextprotocol/node";
+import { localhostHostValidation, toNodeHandler } from "@modelcontextprotocol/node";
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { parseNecWireJson } from "@nec/core";
 
 import { loadReviewedCaseStore } from "./cases.js";
 import type { ReviewedCaseStore } from "./cases.js";
+import { NeMcpConfigError } from "./errors.js";
+import { HOSTED_BIND_HOST, hostedAllowlist, hostedGuard, localSamePortOriginGuard } from "./hosted.js";
+import type { HostedAllowlist, NeMcpHostedOptions, NeMcpMode, RequestGuard } from "./hosted.js";
+import { GlobalAbuseLimiter, HOSTED_DEFAULT_LIMITS, LOCAL_DEFAULT_LIMITS, resolveLimits } from "./limits.js";
+import type { NeMcpLimits } from "./limits.js";
 import { createNeMcpServer, SERVER_NAME, SERVER_VERSION, TOOL_NAMES } from "./tools.js";
 
 export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4178;
 export const DEFAULT_MAX_BODY_BYTES = 1_048_576;
 export const MAX_MAX_BODY_BYTES = 4_194_304;
-/** v0 has no authentication, so only loopback binds are accepted. */
+/** v0 has no authentication, so local mode accepts only loopback binds. */
 export const LOOPBACK_HOSTS: readonly string[] = Object.freeze(["127.0.0.1", "::1", "localhost"]);
+
+export { NeMcpConfigError };
 
 export interface NeMcpHttpOptions {
   readonly host?: string;
@@ -44,6 +55,13 @@ export interface NeMcpHttpOptions {
   readonly log?: (line: string) => void;
   /** Injected store (tests); default loads the shipped, pinned collection. */
   readonly cases?: ReviewedCaseStore;
+  /**
+   * Opt-in hosted mode. Requires a validated exact public origin; binds
+   * HOSTED_BIND_HOST by default (a loopback bind is allowed for rehearsal/tests).
+   */
+  readonly hosted?: NeMcpHostedOptions;
+  /** Global /mcp abuse limits; defaults depend on the mode. */
+  readonly limits?: { readonly maxConcurrent?: number | undefined; readonly maxRequestsPerMinute?: number | undefined };
 }
 
 export interface NeMcpHttpServer {
@@ -51,22 +69,31 @@ export interface NeMcpHttpServer {
   readonly mcpUrl: string;
   readonly host: string;
   readonly port: number;
+  readonly mode: NeMcpMode;
   close(): Promise<void>;
 }
 
-export class NeMcpConfigError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "NeMcpConfigError";
-  }
+export interface ValidatedHttpOptions {
+  readonly mode: NeMcpMode;
+  readonly host: string;
+  readonly port: number;
+  readonly maxBodyBytes: number;
+  readonly limits: NeMcpLimits;
+  /** Present in hosted mode only. */
+  readonly allow?: HostedAllowlist;
 }
 
-export function validateHttpOptions(options: NeMcpHttpOptions): { host: string; port: number; maxBodyBytes: number } {
-  const host = options.host ?? DEFAULT_HOST;
-  if (!LOOPBACK_HOSTS.includes(host)) {
+export function validateHttpOptions(options: NeMcpHttpOptions): ValidatedHttpOptions {
+  const mode: NeMcpMode = options.hosted === undefined ? "local" : "hosted";
+  const allow = options.hosted === undefined ? undefined : hostedAllowlist(options.hosted);
+  const host = options.host ?? (mode === "hosted" ? HOSTED_BIND_HOST : DEFAULT_HOST);
+  if (mode === "local" && !LOOPBACK_HOSTS.includes(host)) {
     throw new NeMcpConfigError(
-      `host ${JSON.stringify(host)} is not a loopback address; v0 binds loopback only (${LOOPBACK_HOSTS.join(", ")})`,
+      `host ${JSON.stringify(host)} is not a loopback address; local mode binds loopback only (${LOOPBACK_HOSTS.join(", ")})`,
     );
+  }
+  if (mode === "hosted" && host !== HOSTED_BIND_HOST && !LOOPBACK_HOSTS.includes(host)) {
+    throw new NeMcpConfigError(`hosted mode binds ${HOSTED_BIND_HOST} (or loopback for rehearsal) only`);
   }
   const port = options.port ?? DEFAULT_PORT;
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new NeMcpConfigError("port must be an integer in 0..65535");
@@ -74,21 +101,30 @@ export function validateHttpOptions(options: NeMcpHttpOptions): { host: string; 
   if (!Number.isInteger(maxBodyBytes) || maxBodyBytes < 1024 || maxBodyBytes > MAX_MAX_BODY_BYTES) {
     throw new NeMcpConfigError(`maxBodyBytes must be an integer in 1024..${MAX_MAX_BODY_BYTES}`);
   }
-  return { host, port, maxBodyBytes };
+  const limits = resolveLimits(options.limits, mode === "hosted" ? HOSTED_DEFAULT_LIMITS : LOCAL_DEFAULT_LIMITS);
+  return { mode, host, port, maxBodyBytes, limits, ...(allow === undefined ? {} : { allow }) };
 }
 
-const HEALTH_BODY = JSON.stringify({
-  status: "ok",
-  server: SERVER_NAME,
-  version: SERVER_VERSION,
-  transport: "streamable-http",
-  endpoint: "/mcp",
-  tools: TOOL_NAMES,
-  readOnly: true,
-  liveObservation: false,
-  networkIo: "none",
-  scope: "local v0; not a public endpoint",
+export const HEALTH_SCOPE: Readonly<Record<NeMcpMode, string>> = Object.freeze({
+  local: "local v0; not a public endpoint",
+  hosted: "hosted preview v0: anonymous, read-only, offline; not a reviewed production service",
 });
+
+function healthBody(mode: NeMcpMode): string {
+  return JSON.stringify({
+    status: "ok",
+    server: SERVER_NAME,
+    version: SERVER_VERSION,
+    transport: "streamable-http",
+    endpoint: "/mcp",
+    tools: TOOL_NAMES,
+    readOnly: true,
+    liveObservation: false,
+    networkIo: "none",
+    mode,
+    scope: HEALTH_SCOPE[mode],
+  });
+}
 
 function sendJson(res: ServerResponse, status: number, body: string, extra: Record<string, string> = {}): void {
   res.writeHead(status, {
@@ -125,9 +161,9 @@ function isJsonContentType(value: string | undefined): boolean {
   return value.split(";")[0]!.trim().toLowerCase() === "application/json";
 }
 
-/** Start the loopback-only MCP HTTP server. Fails closed on invalid configuration or unverified case data. */
+/** Start the MCP HTTP server (local by default). Fails closed on invalid configuration or unverified case data. */
 export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Promise<NeMcpHttpServer> {
-  const { host, port, maxBodyBytes } = validateHttpOptions(options);
+  const { mode, host, port, maxBodyBytes, limits, allow } = validateHttpOptions(options);
   const cases = options.cases ?? loadReviewedCaseStore();
   const log = options.log ?? (() => {});
 
@@ -140,24 +176,38 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
     maxRequestBodySize: maxBodyBytes,
     onerror: (error) => log(`mcp adapter error: ${error.name}`),
   });
-  const validateHost = localhostHostValidation();
-  const validateOrigin = localhostOriginValidation();
+  let boundPort = port;
+  const guards: RequestGuard[] =
+    allow === undefined ? [localhostHostValidation(), localSamePortOriginGuard(() => boundPort)] : [hostedGuard(allow)];
+  const limiter = new GlobalAbuseLimiter(limits);
+  const health = healthBody(mode);
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    if (!validateHost(req, res) || !validateOrigin(req, res)) return;
+    for (const guard of guards) if (!guard(req, res)) return;
     const path = (req.url ?? "/").split("?")[0];
     if (path === "/healthz") {
       if (req.method !== "GET" && req.method !== "HEAD") {
         sendJson(res, 405, JSON.stringify({ error: "method not allowed" }), { allow: "GET, HEAD" });
         return;
       }
-      sendJson(res, 200, req.method === "HEAD" ? "" : HEALTH_BODY);
+      sendJson(res, 200, req.method === "HEAD" ? "" : health);
       return;
     }
     if (path !== "/mcp") {
       sendJson(res, 404, JSON.stringify({ error: "not found" }));
       return;
     }
+    const admission = limiter.admit();
+    if (!admission.ok) {
+      sendJson(
+        res,
+        429,
+        JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: "Too Many Requests: global server limit reached" }, id: null }),
+        { "retry-after": String(admission.retryAfterSeconds) },
+      );
+      return;
+    }
+    res.once("close", admission.release);
     if (req.method !== "POST") {
       await mcpNode(req, res);
       return;
@@ -214,6 +264,7 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
     });
   });
   const address = server.address() as AddressInfo;
+  boundPort = address.port;
   const urlHost = address.family === "IPv6" ? `[${address.address}]` : address.address;
   const url = `http://${urlHost}:${address.port}`;
   return {
@@ -221,6 +272,7 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
     mcpUrl: `${url}/mcp`,
     host: address.address,
     port: address.port,
+    mode,
     async close() {
       await mcp.close();
       await new Promise<void>((resolve) => {

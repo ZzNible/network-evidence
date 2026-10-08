@@ -1,10 +1,12 @@
 # @nec/mcp — local, read-only Network Evidence MCP server (v0)
 
-> **Status: local v0 only.** This is NOT a public endpoint, NOT published to npm,
-> NOT listed in any MCP registry or directory, and NOT a ChatGPT/Codex/Claude
-> plugin. It binds loopback only and has no authentication. See
-> [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
-> for what remains before any public launch.
+> **Status: local v0; hosted mode PREPARED, NOT DEPLOYED.** This is NOT a public
+> endpoint, NOT published to npm, NOT listed in any MCP registry or directory,
+> and NOT a ChatGPT/Codex/Claude plugin. By default it binds loopback only and
+> has no authentication. An opt-in [hosted preview mode](#hosted-preview-mode-opt-in-not-deployed)
+> exists for a separately approved deployment; no service, URL or domain exists.
+> See [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
+> and [`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
 
 A Model Context Protocol server over public Network Evidence code. It exposes
 three read-only tools and performs **no network I/O**: no RPC, crawler,
@@ -41,6 +43,51 @@ The CLI replaces global `fetch` with a throwing guard.
 | host (`--host`, `NE_MCP_HOST`) | `127.0.0.1` | only `127.0.0.1`, `::1`, `localhost` accepted; anything else fails at startup |
 | port (`--port`, `NE_MCP_PORT`) | `4178` | `0` = ephemeral |
 | request body | 1 MiB | `startNeMcpHttpServer({ maxBodyBytes })`, 1 KiB..4 MiB |
+| `/mcp` concurrency (`NE_MCP_MAX_CONCURRENT`) | 16 | global, 1..64; excess → `429`, `Retry-After: 1` |
+| `/mcp` rate (`NE_MCP_RATE_LIMIT_PER_MINUTE`) | 600 / 60 s | global fixed window, 1..6000; excess → `429` + `Retry-After` |
+
+Local mode ignores the platform variable `PORT`. Setting `NE_MCP_PUBLIC_ORIGIN`
+or `NE_MCP_CUSTOM_ORIGIN` without `NE_MCP_MODE=hosted` is refused at startup.
+
+## Hosted preview mode (opt-in, NOT deployed)
+
+For a **separately approved** deployment behind a platform that terminates
+HTTPS and forwards plain HTTP (e.g. a Render Web Service). It is an
+**anonymous, read-only preview**, not a reviewed production service: no
+authentication, no per-client quota, global limits only. Runbook:
+[`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
+
+| variable | required | rule |
+| --- | --- | --- |
+| `NE_MCP_MODE` | yes | exactly `hosted` (anything other than unset/`local`/`hosted` is refused) |
+| `NE_MCP_PUBLIC_ORIGIN` | yes | exact canonical origin `https://<public hostname>`: lowercase, no path, port, trailing slash, query, credentials or wildcard; not an IP, not localhost-class or special-use (`.local`, `.internal`, `.test`, …) |
+| `NE_MCP_CUSTOM_ORIGIN` | no | a second exact origin for an explicitly configured custom domain; same rules; must differ |
+| `PORT` | yes | set by the platform; decimal 1..65535 |
+| `NE_MCP_MAX_CONCURRENT` | no | default 8 in hosted mode (1..64) |
+| `NE_MCP_RATE_LIMIT_PER_MINUTE` | no | default 240 in hosted mode (1..6000) |
+
+```sh
+NE_MCP_MODE=hosted NE_MCP_PUBLIC_ORIGIN=https://<exact-public-hostname> PORT=<n> npm run mcp:serve
+```
+
+Behaviour:
+
+- binds `0.0.0.0:$PORT` (the only non-loopback bind in the package);
+  `--host`, `--port`, `NE_MCP_HOST`, `NE_MCP_PORT` are refused in hosted mode;
+- `Host` must be exactly a configured hostname (case-insensitive, **no port**).
+  Loopback names, IPs, `:443`, sub/superdomains and anything else → `403`;
+- no `Origin` (server-to-server MCP clients) passes; any present `Origin` must
+  equal a configured `https://` origin byte-for-byte. `http://`, other ports,
+  `localhost`, `null`, wildcards → `403`;
+- `X-Forwarded-*`, `Forwarded`, `X-Real-IP` are **never read**; the client
+  address is never read either;
+- 403 bodies are static and never echo the rejected header;
+- `/healthz` reports `"mode": "hosted"` and
+  `"scope": "hosted preview v0: anonymous, read-only, offline; not a reviewed production service"`;
+- all other guards, limits, tools, outputs and digests are identical to local mode.
+
+Refusals exit with status 1 before anything is bound, e.g.
+`Network Evidence MCP v0: NE_MCP_PUBLIC_ORIGIN is required in hosted mode (exact https origin)`.
 
 ## Transport and protocol
 
@@ -53,17 +100,22 @@ The CLI replaces global `fetch` with a throwing guard.
   - **modern** (`2026-07-28`): `server/discover` + per-request `_meta` envelope.
 - `GET`/`DELETE /mcp` → `405` (stateless; no standalone SSE stream).
 - `GET /healthz` → static JSON (`status`, tool names, `readOnly: true`,
-  `liveObservation: false`, `networkIo: "none"`).
+  `liveObservation: false`, `networkIo: "none"`, `mode`, and a mode-specific
+  `scope`: `"local v0; not a public endpoint"` locally).
 
-Request guards, in order: `Host`/`Origin` validation (loopback names only,
-DNS-rebinding protection) → `Content-Type: application/json` (`415`) →
+Request guards, in order: `Host`/`Origin` validation (DNS-rebinding
+protection; local: loopback `Host` names and, when an `Origin` is sent, only
+the exact same-port loopback origin `http://{127.0.0.1|localhost|[::1]}:<port>`.
+A browser page on another local port is refused. Hosted: see above) →
+global `/mcp` abuse limiter (`429`) → `Content-Type: application/json` (`415`) →
 byte-bounded body read (`413`) → the **@nec/core strict wire parser** over the
 raw body (duplicate JSON keys, malformed JSON, depth/node/string bounds →
 `400`, JSON-RPC `-32700`) → SDK. Each request gets a fresh `McpServer`.
 
 Logging is one stderr line per request: method, route (`/mcp`, `/healthz` or
 `(other)`), status and duration. Headers, bodies, tool arguments, client
-addresses and identifiers are never logged.
+addresses and identifiers are never logged. The abuse limiter keeps two global
+counters only. It stores no IP, payload, credential or client identifier.
 
 ## Tools
 
@@ -221,5 +273,9 @@ npx vitest run packages/mcp
 - Discovery byte-equality with direct `@nec/discovery`, plus fail-closed negatives;
 - case verbatim/pin/label checks;
 - raw JSON-RPC `initialize → tools/list → tools/call` and SDK client (both eras);
-- HTTP guards;
+- HTTP guards, including the same-port local `Origin` rule;
+- hosted mode (`test/hosted.test.ts`): configuration refusals, a real
+  `0.0.0.0` bind, exact `Host`/`Origin` admission with simulated public `Host`
+  headers, spoofed `X-Forwarded-*`, raw JSON-RPC and SDK-client (both eras)
+  through the hosted guards, malformed bodies, and `429` rate/concurrency bounds;
 - static source boundaries (no outbound I/O primitives).

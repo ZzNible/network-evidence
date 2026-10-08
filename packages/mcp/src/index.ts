@@ -2,12 +2,13 @@
  * @nec/mcp — local, read-only MCP server v0 over public Network Evidence code.
  *
  * Three tools, no router: list_network_profiles, discover_network_candidates,
- * get_reviewed_evidence_case. Loopback-only Streamable HTTP at /mcp, health at
- * /healthz. No network I/O, no wallet/signing/funding/submission, no ranking
- * or network choice. Not published; not a public endpoint.
+ * get_reviewed_evidence_case. Streamable HTTP at /mcp, health at /healthz;
+ * loopback-only by default, plus an explicit opt-in hosted preview mode (exact
+ * public origin, 0.0.0.0:$PORT). No network I/O, no wallet/signing/funding/
+ * submission, no ranking or network choice. Not published; not deployed.
  */
 
-export { NeMcpError, toSafeToolError } from "./errors.js";
+export { NeMcpConfigError, NeMcpError, toSafeToolError } from "./errors.js";
 export type { NeMcpErrorCode, SafeToolError } from "./errors.js";
 
 export { fixedProfileEnvironments, networkProfilesInventory, PROFILES_SCHEMA, TRUTH_BOUNDARIES } from "./profiles.js";
@@ -31,10 +32,16 @@ export {
   DEFAULT_HOST,
   DEFAULT_MAX_BODY_BYTES,
   DEFAULT_PORT,
+  HEALTH_SCOPE,
   LOOPBACK_HOSTS,
   MAX_MAX_BODY_BYTES,
-  NeMcpConfigError,
   startNeMcpHttpServer,
   validateHttpOptions,
 } from "./http.js";
-export type { NeMcpHttpOptions, NeMcpHttpServer } from "./http.js";
+export type { NeMcpHttpOptions, NeMcpHttpServer, ValidatedHttpOptions } from "./http.js";
+
+export { HOSTED_BIND_HOST, hostedAllowlist, resolveServeConfig, validateHostedOrigin } from "./hosted.js";
+export type { HostedAllowlist, NeMcpHostedOptions, NeMcpMode, ResolvedServeConfig } from "./hosted.js";
+
+export { GlobalAbuseLimiter, HOSTED_DEFAULT_LIMITS, LOCAL_DEFAULT_LIMITS, resolveLimits } from "./limits.js";
+export type { NeMcpLimits } from "./limits.js";
