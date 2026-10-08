@@ -1,22 +1,14 @@
-# MCP launch checklist (NOT YET LAUNCHED)
+# MCP launch checklist (Cloud Run preview LIVE; directory publication PENDING)
 
-> **Status: nothing in this document is live.** No public HTTPS endpoint, domain,
-> registry entry, Smithery listing, ChatGPT/Codex app or plugin, ARD descriptor
-> or `llms.txt` exists for Network Evidence. Every value written
-> `<NOT-FOR-PUBLICATION:…>` is a placeholder and must not be copied into any
-> public artifact as-is.
+> **Updated 2026-10-09:** Cloud Run MCP v0.0.1 is PUBLIC at `https://network-evidence-mcp-preview-jrkc26rjga-ew.a.run.app/mcp`. Remote SDK 2025/2026 PASS and an actual Codex GPT-6 Sol MCP tool call PASS. The **official MCP Registry, Smithery, and ChatGPT/Codex public plugin directory are NOT published**. The original unchecked prelaunch items below reflect historical planning and are not evidence the endpoint is still offline. Current operation is in `CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md` and canonical `STATUS.md`. Root `server.json` is a validated *draft only*. No registry publication or listing submission in this lot.
 
-Today the server is `@nec/mcp` v0: local, read-only, loopback-only
-Streamable HTTP by default, no authentication. An opt-in hosted preview mode is
-**prepared but NOT deployed** (lot NE-MCP-RENDER-PREP). See
-[`packages/mcp/README.md`](../../packages/mcp/README.md) and
-[`RENDER_DEPLOY_RUNBOOK.md`](RENDER_DEPLOY_RUNBOOK.md).
+The local `@nec/mcp` v0 remains loopback-only by default. Its opt-in hosted version runs as a bounded, anonymous, read-only Cloud Run preview. Use `/health` on Cloud Run; `/healthz` is reserved upstream. Three MCP tools retain the exact offline and non-live evidence boundaries. Render Free remains a fallback; the separate private ChatGPT plugin pointing to Render has not been verified as migrated.
 
 Legend:
 - **[verified-local]** — checked in this repository during lot NE-MCP-V0.0.1
   (or NE-MCP-RENDER-PREP where marked **[prepared]**).
 - **[prepared]** — code/docs exist and were tested locally; **not deployed**.
-- **[deployed]** — exists on a real public host. Nothing is marked deployed.
+- **[deployed]** — current Cloud Run preview is live; some unchecked list items below remain historical.
 - **[external — verify at launch]** — an external platform requirement. It was
   NOT verified in this lot (no external accounts or network calls were used).
   Re-check it against that platform's current official documentation before acting.
@@ -39,13 +31,11 @@ Legend:
       Mode-specific `/healthz` scope. Tested in `packages/mcp/test/hosted.test.ts`.
 - [x] [prepared] Render runbook with exact settings, FAILED/STOP states and
       rollback: [`RENDER_DEPLOY_RUNBOOK.md`](RENDER_DEPLOY_RUNBOOK.md).
-- [ ] [deployed] Nothing is deployed. Nothing below this line is done unless marked [prepared].
+- [x] [deployed] Google Cloud Run public MCP preview live and verified; direct Codex MCP call PASS. Directory listings remain pending.
 
-## 1. Remote HTTPS service (prerequisite for every listing)
+## 1. Remote HTTPS service (Cloud Run public preview verified; other gates pending)
 
-- [ ] [HUMAN] Choose the operator, domain and hosting. Placeholder origin:
-      `<NOT-FOR-PUBLICATION:HTTPS_ORIGIN>`. Placeholder MCP URL:
-      `<NOT-FOR-PUBLICATION:HTTPS_ORIGIN>/mcp`.
+- [x] [deployed] Owner chose Google Cloud Run (`europe-west1`) with its assigned `run.app` origin and the exact public `/mcp` endpoint. No custom-owned domain is configured.
 - [x] [prepared] Code change: hosted mode with an exact `Host`/`Origin`
       allowlist for the public hostname (TLS terminated by the platform).
       Local mode still refuses non-loopback binds.
@@ -74,7 +64,7 @@ Legend:
       `io.github.<owner>/<server>`. The publisher proves control of the GitHub
       account/org. For a custom-domain namespace, the domain-verification
       challenge (DNS or HTTP) must be completed. [HUMAN: owner account]
-- [ ] Prepare `server.json` with a **remote** entry (no npm package: `@nec/mcp`
+- [x] [prepared] Root `server.json` now contains a remote entry validated locally against the current dated official JSON schema, **NOT published**. No npm package: `@nec/mcp`
       is `private: true` and must stay unpublished). Draft shape:
 
       ```jsonc
