@@ -167,7 +167,7 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
   const cases = options.cases ?? loadReviewedCaseStore();
   const log = options.log ?? (() => {});
 
-  const mcp = createMcpHandler(() => createNeMcpServer({ cases }), {
+  const mcp = createMcpHandler(() => createNeMcpServer({ cases, mode }), {
     legacy: "stateless",
     maxRequestBodySize: maxBodyBytes,
     onerror: (error) => log(`mcp handler error: ${error.name}`),

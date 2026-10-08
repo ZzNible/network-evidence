@@ -289,6 +289,9 @@ describe("hosted mode over genuine HTTP (0.0.0.0 bind, simulated public Host)", 
     const initMsg = rpcMessage(init);
     expect(initMsg.result.protocolVersion).toBe("2025-11-25");
     expect(initMsg.result.serverInfo).toEqual({ name: "network-evidence-mcp", version: "0.0.1" });
+    expect(initMsg.result.instructions).toContain("hosted preview");
+    expect(initMsg.result.instructions).toContain("read-only, offline");
+    expect(initMsg.result.instructions).not.toMatch(/— local,/);
     expect((await send(server.port, "/mcp", "POST", { ...LEGACY, ...H }, '{"jsonrpc":"2.0","method":"notifications/initialized"}')).status).toBe(202);
     const list = rpcMessage(await send(server.port, "/mcp", "POST", { ...LEGACY, ...H }, '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'));
     expect(list.result.tools.map((t: any) => t.name)).toEqual([...TOOL_NAMES]);

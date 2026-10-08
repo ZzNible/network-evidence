@@ -37,6 +37,12 @@ export const SERVER_INSTRUCTIONS = [
   "No wallet, signing, funding, gas, transaction submission, settlement or live finality claims.",
 ].join("\n");
 
+/** The hosted preview is remote, but still reads no live network data. */
+export const HOSTED_SERVER_INSTRUCTIONS = SERVER_INSTRUCTIONS.replace(
+  "Network Evidence MCP v0 — local, read-only, offline.",
+  "Network Evidence MCP v0 — hosted preview, anonymous, read-only, offline; not a production service.",
+);
+
 // ---------------------------------------------------------------------------
 // Schemas
 // ---------------------------------------------------------------------------
@@ -257,11 +263,13 @@ function toolError(error: unknown): CallToolResult {
 
 export interface NeMcpServerDeps {
   readonly cases: ReviewedCaseStore;
+  readonly mode?: "local" | "hosted";
 }
 
 /** Fresh McpServer with exactly the three tools (one per request; stateless). */
 export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
-  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { instructions: SERVER_INSTRUCTIONS });
+  const instructions = deps.mode === "hosted" ? HOSTED_SERVER_INSTRUCTIONS : SERVER_INSTRUCTIONS;
+  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { instructions });
   const caseIds = deps.cases.caseIds as unknown as [string, ...string[]];
 
   server.registerTool(

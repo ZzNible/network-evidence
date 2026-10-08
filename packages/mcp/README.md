@@ -112,6 +112,8 @@ byte-bounded body read (`413`) → the **@nec/core strict wire parser** over the
 raw body (duplicate JSON keys, malformed JSON, depth/node/string bounds →
 `400`, JSON-RPC `-32700`) → SDK. Each request gets a fresh `McpServer`.
 
+Browser-based cross-origin clients are not supported in hosted preview mode (no CORS preflight headers). Server-to-server MCP clients with no `Origin` header are supported; any supplied `Origin` must exactly match an explicitly configured HTTPS origin.
+
 Logging is one stderr line per request: method, route (`/mcp`, `/healthz` or
 `(other)`), status and duration. Headers, bodies, tool arguments, client
 addresses and identifiers are never logged. The abuse limiter keeps two global
