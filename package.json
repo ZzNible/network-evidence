@@ -17,7 +17,9 @@
     "maps:collection": "tsx examples/ne-maps/build-collection.ts --verify",
     "demo:integrability": "tsx examples/integrability-fixture/run.ts --verify",
     "demo:historical-compat": "tsx examples/historical-compat/run.ts --verify",
-    "demo:discovery": "tsx examples/discovery/run.ts"
+    "demo:discovery": "tsx examples/discovery/run.ts",
+    "mcp:serve": "tsx packages/mcp/src/cli.ts",
+    "mcp:smoke": "tsx packages/mcp/test/smoke.ts"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

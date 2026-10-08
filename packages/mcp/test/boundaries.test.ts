@@ -1,0 +1,60 @@
+/**
+ * Static boundary checks over the MCP package source: no outbound I/O
+ * primitives, no process spawning, no wallet/signing/submission vocabulary,
+ * no choice/ranking keys, and no Core reimplementation hooks.
+ */
+
+import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+import { describe, expect, it } from "vitest";
+
+const SRC = fileURLToPath(new URL("../src/", import.meta.url));
+const files = readdirSync(SRC).filter((name) => name.endsWith(".ts"));
+const sources = new Map(files.map((name) => [name, readFileSync(`${SRC}${name}`, "utf8")]));
+
+describe("@nec/mcp source boundaries", () => {
+  it("has the expected small module set", () => {
+    expect(files.sort()).toEqual(["cases.ts", "cli.ts", "discover.ts", "errors.ts", "http.ts", "index.ts", "profiles.ts", "tools.ts"]);
+  });
+
+  it("contains no outbound network, process or dynamic-code primitives", () => {
+    const forbidden = [
+      /\bfetch\s*\(/,
+      /node:https/,
+      /^import (?!type )[^;]*"node:net"/m,
+      /node:dgram/,
+      /node:child_process/,
+      /\bhttp\.request\b|\brequest\s+as\s+httpRequest\b|\bhttpRequest\(/,
+      /\bWebSocket\b/,
+      /\beval\s*\(/,
+      /new Function\(/,
+      /writeFile|appendFile|mkdir|unlink|rmSync/,
+    ];
+    for (const [name, text] of sources) {
+      for (const pattern of forbidden) expect(`${name}: ${pattern.test(text)}`).toBe(`${name}: false`);
+    }
+  });
+
+  it("reads exactly one fixed data file and never a caller-supplied path", () => {
+    const readers = [...sources].filter(([, text]) => /readFileSync/.test(text)).map(([name]) => name);
+    expect(readers).toEqual(["cases.ts"]);
+    const cases = sources.get("cases.ts")!;
+    expect(cases).toMatch(/REVIEWED_COLLECTION_PATH = "examples\/ne-maps\/data\/collection\.json"/);
+    expect(cases.match(/readFileSync\(/g)).toHaveLength(2);
+  });
+
+  it("does not reimplement Core classification or carry choice / wallet semantics", () => {
+    const all = [...sources.values()].join("\n");
+    expect(all).not.toMatch(/composeDiscoveryMatch\(/);
+    expect(all).toMatch(/discoverNetworks\(/);
+    expect(all).not.toMatch(/\b(signTransaction|sendTransaction|sendRawTransaction|privateKey|mnemonic|walletClient)\b/);
+    expect(all).not.toMatch(/["'](rank|score|best|recommendation|recommended)["']\s*:/);
+  });
+
+  it("binds 127.0.0.1 by default and never 0.0.0.0", () => {
+    const http = sources.get("http.ts")!;
+    expect(http).toMatch(/DEFAULT_HOST = "127\.0\.0\.1"/);
+    expect(http).not.toMatch(/0\.0\.0\.0/);
+  });
+});
