@@ -14,7 +14,7 @@
 
 **Do NOT run any commands in §4 without explicit human authorization.** Verify a Google Cloud project that the owner controls, active Cloud Billing, and permission to enable Cloud Run, Cloud Build and Artifact Registry APIs. No Google Cloud connector or authenticated `gcloud` is currently available on the VM. The operator must complete Google login/OAuth himself; do not ask for or handle passwords, billing numbers, API keys or service-account JSON.
 
-Recommended limited trial: **request-based billing**, 1 vCPU, 512 MiB, min instances 0, max instances 1, concurrency 4, no databases or VPC connectors, region `europe-west1` (Belgium). The free monthly Cloud Run request-based tier includes 2 million requests, 180,000 vCPU-seconds and 360,000 GiB-seconds (account-wide, subject to price-zone rules); it is **not a promise of a 0-euro bill**. API charges can include Cloud Build, Artifact Registry image storage, data egress, and usage beyond quotas. Confirm current prices for the selected region and all resources before deployment. Set a small billing budget with several alerts and manually review usage; **an alert-only budget is not a hard spending cap**. Max instances=1 reduces but does not eliminate the potential bill. Do not enable min instances 1 just to keep the MCP awake without measuring ongoing idle cost.
+Recommended limited trial: **request-based billing**, 1 vCPU, 512 MiB, min instances 0, max instances 1, concurrency 4, no databases or VPC connectors, region `europe-west1` (Belgium). The free monthly Cloud Run request-based tier includes 2 million requests, 180,000 vCPU-seconds and 360,000 GiB-seconds (account-wide, subject to price-zone rules); it is **not a promise of a 0-euro bill**. Potential charges include Cloud Run above free quotas, Cloud Build minutes, Artifact Registry image storage (including retained old images), Cloud Storage build/source staging, Cloud Logging ingestion beyond free allotments, and network egress. Confirm current prices and quotas for the selected region and every resource before deployment. Configure both a small account/project-wide budget with alerts and, if offered for this first-party account, a **Cloud Run-specific monthly Spend cap enforcement budget** (currently Google Cloud Billing preview). This enforcement applies to Cloud Run in the selected project, not Cloud Build, Artifact Registry, Cloud Storage, Cloud Logging, or other services. It can be delayed and overages are still billed, so it is NOT a guarantee of a hard total account cap. Alert-only budgets have no enforcement at all. Manually inspect billing after every test. Max instances=1 reduces but does not eliminate potential costs. Do not set min instances 1 without first estimating ongoing idle charges.
 
 Official documentation (verify again at deploy time):
 - https://cloud.google.com/run/pricing
@@ -23,6 +23,8 @@ Official documentation (verify again at deploy time):
 - https://docs.cloud.google.com/run/docs/configuring/billing-settings
 - https://docs.cloud.google.com/run/docs/deploying-source-code
 - https://docs.cloud.google.com/billing/docs/how-to/budgets
+- https://docs.cloud.google.com/billing/docs/how-to/budgets-spend-caps
+- https://docs.cloud.google.com/run/docs/container-contract
 - https://docs.cloud.google.com/run/docs/authenticating/public
 
 ## 2. Local gates (already demonstrated; rerun on the exact deploy commit)
@@ -34,7 +36,10 @@ npm ci && npm run -s typecheck && npm test
 npm audit --audit-level=high
 npm run -s mcp:smoke
 docker build --pull=false -t ne-mcp-cloudrun-local:trial .
-# Demonstrate the full MCP handshake against container via loopback Host simulation (see §3).
+# Demonstrate the full MCP handshake against container via loopback Host simulation (see section 3).
+# This VM is ARM64, so this local Docker artifact MUST NOT be pushed as a Cloud Run image.
+# Cloud Run requires linux/amd64; source deployment rebuilds there via Cloud Build.
+# Before an approved deployment, verify its amd64 build and boot; do not use --image with the local ARM64 artifact.
 ```
 
 The local container must load the pinned `examples/ne-maps/data/collection.json` at startup. A checksum mismatch must stop startup. No remote fetch/RPC should occur at runtime.
@@ -57,19 +62,19 @@ curl -sS -o /dev/null -w '%{http_code}\n' \
 docker rm -f ne-mcp-cloudrun-local-trial
 ```
 
-Local Docker checks on 2026-10-08 passed: 1 vCPU / 512 MiB constrained container cold boot to `/healthz` in 1,745 ms, approximately 117.7 MiB observed memory use during the test, HTTP 200 for MCP initialize and real four-candidate Discovery, exact pinned Core digest (`sha256:d85c2fe5ff876acf3413a25986b6a78b2eaac7fc66cc998193e72deb14dee68b`), and foreign `Host` refused with HTTP 403. These are LOCAL observations, NOT Google Cloud Run CPU, memory billing, or edge cold-start measurements.
+Local Docker checks on 2026-10-08 passed **on ARM64 only**: 1 vCPU / 512 MiB constrained container cold boot to `/healthz` in 1,745 ms, approximately 117.7 MiB observed memory during the test, HTTP 200 for MCP initialize and real four-candidate Discovery, exact pinned Core digest (`sha256:d85c2fe5ff876acf3413a25986b6a78b2eaac7fc66cc998193e72deb14dee68b`), and foreign `Host` refused with HTTP 403. These are LOCAL observations, NOT a test of Google's required linux/amd64 image, Cloud Run CPU/memory billing, or edge cold-start timings. The linux/amd64 image built by Cloud Build must pass the same checks before public access. The current Dockerfile uses the moving `node:22-alpine` tag: capture the resolved multi-arch base-image digest as part of the approved deployment's audit record and consider pinning it separately before production.
 
 Use `mcp.example.org` **only for local tests or the deliberately private bootstrap**. Do not make the service publicly invokable before replacing this placeholder with its actual assigned Cloud Run HTTPS origin.
 
 ## 4. Deploy procedure (NOT EXECUTED — requires separate human approval)
 
 1. Confirm billing, project ID, region, Cloud Build + Artifact Registry + Cloud Run costs; establish `gcloud` authentication using the standard Google browser consent. Confirm that the exact code commit and the CLI project match the authorized values. Use `gcloud run deploy --source .` from the repo root with the branch's Dockerfile. This operation builds an image, stores it in Artifact Registry and **creates billable resources**, even if the service is private.
-2. First create a **private, non-invokable** service with canonical placeholder origin, as the public `run.app` URL is not known yet. Keeping authentication required is important. Command template (substitute an actual project and recheck documented flags):
+2. First create a **private service requiring IAM authentication** (not anonymously invokable; principals authorized with `roles/run.invoker` could still call it) with canonical placeholder origin, as the public `run.app` URL is not known yet. Keeping authentication required is important. Command template (substitute an actual project and recheck documented flags):
 ```sh
 gcloud run deploy network-evidence-mcp-preview \
   --source . --project="<CONFIRMED_PROJECT_ID>" --region=europe-west1 \
   --cpu=1 --memory=512Mi --concurrency=4 \
-  --min-instances=0 --max=1 --max-instances=1 \
+  --min-instances=0 --max-instances=1 \
   --cpu-throttling --cpu-boost --no-allow-unauthenticated \
   --ingress=all --port=8080 \
   --set-env-vars=NE_MCP_MODE=hosted,NE_MCP_PUBLIC_ORIGIN=https://mcp.example.org
@@ -83,14 +88,32 @@ gcloud run services describe network-evidence-mcp-preview \
 ```
 4. Still **private**, update exactly `NE_MCP_PUBLIC_ORIGIN` to that URL (creates a new revision). Confirm readiness and inspect logs. Do not remove other settings; use `--update-env-vars`:
 ```sh
+ACTUAL_URL="$(gcloud run services describe network-evidence-mcp-preview \
+  --project="<CONFIRMED_PROJECT_ID>" --region=europe-west1 \
+  --format='value(status.url)')"
+# Refuse empty, non-HTTPS, non-run.app and path-bearing values.
+case "$ACTUAL_URL" in https://*.run.app) ;; *) echo 'Unexpected Cloud Run URL: STOP' >&2; exit 1 ;; esac
+# Confirm the exact assigned host, lowercase canonical spelling and intended project.
 gcloud run services update network-evidence-mcp-preview \
   --project="<CONFIRMED_PROJECT_ID>" --region=europe-west1 \
-  --update-env-vars=NE_MCP_PUBLIC_ORIGIN=https://<ACTUAL_CLOUD_RUN_HOST>
+  --update-env-vars="NE_MCP_PUBLIC_ORIGIN=$ACTUAL_URL"
 ```
-5. Only after separate explicit approval to expose an anonymous public preview, allow unauthenticated requests (for example by disabling the Cloud Run Invoker IAM check per official docs), then run remote smoke. Do not share or reconfigure the ChatGPT plugin yet. On an unauthorized/incorrect Host or Origin, the application must return 403.
-6. Remote validation: GET `<ACTUAL_URL>/healthz` 200; MCP initialize (legacy and modern); exactly three tools; F1 historical `liveObservation:false`, F4 synthetic; Discovery demo digest `sha256:d85c2fe5ff876acf3413a25986b6a78b2eaac7fc66cc998193e72deb14dee68b`; negatives and guards. Run idle-then-cold-start timing (first-byte and total) at least twice; compare with Render Free's observed 42.465 s cold vs ~0.11 s warm. **Do not claim Google cold-start performance from local Docker startup (~1.1 s)**. Check Render and Cloud Run bills/usage independently.
-7. If any mandatory check fails, disable public IAM invocations first (without weakening the app guard); review/rollback the revision. Do not repoint the existing private ChatGPT plugin until the new endpoint has passed all tests, and only after human consent.
+5. **STOP GATE before public exposure:** while the service still requires IAM authentication, compare its currently deployed `NE_MCP_PUBLIC_ORIGIN` against the exact `status.url` from step 3 using `gcloud run services describe --format=json`; verify the HTTPS host has no wildcard/placeholder or mismatch, no other env overrides, the live revision is READY, and the deployment image supports linux/amd64. A permitted operator can perform a private authenticated smoke using Google Cloud's documented authenticated invocation/proxy procedure; ordinary anonymous calls MUST fail at this stage. If any check fails, STOP. Only after a **separate explicit authorization to enable anonymous preview**, grant the invoker role to all users:
+```sh
+gcloud run services add-iam-policy-binding network-evidence-mcp-preview \
+  --project="<CONFIRMED_PROJECT_ID>" --region=europe-west1 \
+  --member=allUsers --role=roles/run.invoker
+```
+If the project disallows public `allUsers` IAM bindings, STOP and obtain a separate review before considering the alternative `--no-invoker-iam-check` documented by Google; do not silently switch mechanisms. Do not share or repoint the existing private ChatGPT plugin yet. An incorrect `Host` or supplied `Origin` must return HTTP 403 at the application layer.
+6. Remote validation: GET `<ACTUAL_URL>/healthz` 200; MCP initialize (legacy and modern); exactly three tools; F1 historical `liveObservation:false`, F4 synthetic; Discovery demo digest `sha256:d85c2fe5ff876acf3413a25986b6a78b2eaac7fc66cc998193e72deb14dee68b`; negatives and guards. Run idle-then-cold-start timing (first-byte and total) at least twice; compare with the operator's 2026-10-08 measured Render Free response: 42.465 s on a wake-up and ~0.11 s warm. **Do not claim Cloud Run cold-start performance from the ARM64 local Docker startup (1.745 s under 1 vCPU/512 MiB).** Check Render and Cloud Run bills/usage independently.
+7. If any mandatory check fails, revoke anonymous access **first**, without weakening the app guard, using:
+```sh
+gcloud run services remove-iam-policy-binding network-evidence-mcp-preview \
+  --project="<CONFIRMED_PROJECT_ID>" --region=europe-west1 \
+  --member=allUsers --role=roles/run.invoker
+```
+Verify the binding is absent and unauthenticated requests fail. If a different authorized mechanism was used, reverse that mechanism instead. Review/rollback the revision. Do not repoint the existing private ChatGPT plugin until the new endpoint passes all tests and the owner explicitly approves the change.
 
 ## 5. Why we are not deploying right now
 
-No confirmed Google Cloud project/billing access is available to this session. This lot has **zero provider-side mutations**; a local working Docker image is the only new runtime artifact. It is legitimate for the owner to decide not to create a billing account; Render Free can remain a functional but cold-start-prone private preview. No public catalog/registry submission is authorized.
+The owner reports completing the requested Google Cloud prepayment on 2026-10-08; **that does not verify that Free Trial activation or Cloud Billing linking is complete**. This session still has no authenticated Google Cloud project/billing access or approved deployment. This lot has **zero Google-side mutations**; the local Docker image and documentation are its only new artifacts. Render Free remains the working but cold-start-prone private preview. No public catalog/registry submission, branch push, billing mutation, or Google deploy is authorized.
