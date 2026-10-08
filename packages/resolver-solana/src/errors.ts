@@ -8,7 +8,10 @@ export type NecResolverSolanaErrorCode =
   | "SOLANA_INCOMPLETE_ACCOUNT_KEYS"
   | "SOLANA_FIXTURE_INVALID"
   | "SOLANA_REPLAY_UNMATCHED_REQUEST"
-  | "SOLANA_REPLAY_UNUSED_CAPTURES";
+  | "SOLANA_REPLAY_UNUSED_CAPTURES"
+  | "SOLANA_PROBE_INVALID"
+  | "SOLANA_OBSERVATION_INCOMPLETE"
+  | "SOLANA_TIME_INVALID";
 
 export class NecResolverSolanaError extends Error {
   readonly code: NecResolverSolanaErrorCode;

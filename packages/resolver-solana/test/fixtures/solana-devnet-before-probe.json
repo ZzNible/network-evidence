@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "nec-resolver-solana-fixture-v1",
+  "acquiredAt": "2026-10-08T07:38:57.014Z",
+  "source": {
+    "sourceId": "src.solana-devnet.public",
+    "sourceType": "svm_rpc",
+    "networkId": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+    "independenceGroup": "solana-devnet-public-rpc"
+  },
+  "networkId": "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1",
+  "subject": {
+    "signature": "4D3WXyMK9HdpXuXwM5H9ZrQ5i6ofVhygVKZMcYK9VjKkvDkhzhtoBtsMGRBsQF9R49RfkrDsdWwX2AdkmqbwkFpJ"
+  },
+  "captures": [
+    {
+      "rpcMethod": "getGenesisHash",
+      "rpcParams": [],
+      "httpStatus": 200,
+      "resultJson": "\"EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG\""
+    },
+    {
+      "rpcMethod": "getTransaction",
+      "rpcParams": [
+        "4D3WXyMK9HdpXuXwM5H9ZrQ5i6ofVhygVKZMcYK9VjKkvDkhzhtoBtsMGRBsQF9R49RfkrDsdWwX2AdkmqbwkFpJ",
+        {
+          "commitment": "finalized",
+          "encoding": "json",
+          "maxSupportedTransactionVersion": 0
+        }
+      ],
+      "httpStatus": 200,
+      "resultJson": "{\"blockTime\":1791445136,\"meta\":{\"computeUnitsConsumed\":9281,\"costUnits\":10723,\"err\":null,\"fee\":5000,\"innerInstructions\":[],\"loadedAddresses\":{\"readonly\":[],\"writable\":[]},\"logMessages\":[\"Program 9Vk7u8952ryz42qKwwcQPiAu4bWS5DL9kSH19h1Pnq14 invoke [1]\",\"Program log: Instruction: TickEpoch\",\"Program log: tick: 0 epoch(s) skipped, network GP is zero\",\"Program 9Vk7u8952ryz42qKwwcQPiAu4bWS5DL9kSH19h1Pnq14 consumed 9281 of 200000 compute units\",\"Program 9Vk7u8952ryz42qKwwcQPiAu4bWS5DL9kSH19h1Pnq14 success\"],\"postBalances\":[355378320,1793240,1488440,833120,1329930],\"postTokenBalances\":[],\"preBalances\":[355383320,1793240,1488440,833120,1329930],\"preTokenBalances\":[],\"rewards\":[],\"status\":{\"Ok\":null}},\"slot\":508743915,\"transaction\":{\"message\":{\"accountKeys\":[\"5giTVhNLHn9egNtmwgxyUXHKC1ePNqEmckWTBNwZVHeY\",\"A9coWE4eV81ZVdQrK3AhCExWCrnNdeetDW1tpCQivhK2\",\"3PRf2gih1Vd254k213aXYRyQHETZ3Yw521uHu7ZshVdL\",\"9Vk7u8952ryz42qKwwcQPiAu4bWS5DL9kSH19h1Pnq14\",\"GX2T9Rt5wVZvYVKzGLhkJLBBxovsSi6xvPg8UGHWtvn6\"],\"header\":{\"numReadonlySignedAccounts\":0,\"numReadonlyUnsignedAccounts\":3,\"numRequiredSignatures\":1},\"instructions\":[{\"accounts\":[1,4,2],\"data\":\"NV2jG6vnNss\",\"programIdIndex\":3,\"stackHeight\":1}],\"recentBlockhash\":\"AWEvoYThnFPpSbkFV44zLfhQDp5HYxs6MUt3ZqW8CNKU\"},\"signatures\":[\"4D3WXyMK9HdpXuXwM5H9ZrQ5i6ofVhygVKZMcYK9VjKkvDkhzhtoBtsMGRBsQF9R49RfkrDsdWwX2AdkmqbwkFpJ\"]},\"transactionIndex\":0,\"version\":\"legacy\"}"
+    },
+    {
+      "rpcMethod": "getSignatureStatuses",
+      "rpcParams": [
+        [
+          "4D3WXyMK9HdpXuXwM5H9ZrQ5i6ofVhygVKZMcYK9VjKkvDkhzhtoBtsMGRBsQF9R49RfkrDsdWwX2AdkmqbwkFpJ"
+        ],
+        {
+          "searchTransactionHistory": true
+        }
+      ],
+      "httpStatus": 200,
+      "resultJson": "{\"context\":{\"apiVersion\":\"4.4.0-beta.0\",\"slot\":508743918},\"value\":[{\"confirmationStatus\":\"finalized\",\"confirmations\":null,\"err\":null,\"slot\":508743915,\"status\":{\"Ok\":null}}]}"
+    },
+    {
+      "rpcMethod": "getBlock",
+      "rpcParams": [
+        508743915,
+        {
+          "commitment": "finalized",
+          "transactionDetails": "none",
+          "rewards": false,
+          "maxSupportedTransactionVersion": 0
+        }
+      ],
+      "httpStatus": 200,
+      "resultJson": "{\"blockHeight\":495980168,\"blockTime\":1791445136,\"blockhash\":\"54YJoreAvGqVsYH9wLVKuNDJhMgWEcoZUe5cRLnmWiir\",\"parentSlot\":508743914,\"previousBlockhash\":\"61qePDJmcQ739caRmGYoGfpNjgPmgdwxsK33HhspgNjw\"}"
+    }
+  ]
+}

@@ -13,3 +13,28 @@ export type { SolanaAcquisitionFixture, SolanaFixtureCapture, SolanaFixtureSourc
 export { replaySolanaTransaction } from "./replay.js";
 export { EVALUATION_PROFILE, TRANSFER_CHECKED_EFFECT_TYPE, evaluateSolanaTransaction } from "./evaluate.js";
 export type { SolanaEvaluation } from "./evaluate.js";
+export {
+  SOLANA_BEFORE_FINALITY_SEMANTICS,
+  SOLANA_BEFORE_PROFILE,
+  SOLANA_FAMILY,
+  SOLANA_FINALITY_DOES_NOT_ESTABLISH,
+  SOLANA_PROBE_PATH_METADATA_KEY,
+  deriveSolanaBeforeFoundation,
+  deriveSolanaBeforePreflightResult,
+  replaySolanaBeforeFoundation,
+  solanaBeforeResolverManifest,
+  solanaProbeObservationFromAcquisition,
+  validateSolanaBeforeNetworkConfig,
+} from "./before.js";
+export type {
+  SolanaBeforeDerivationInput,
+  SolanaBeforeFoundation,
+  SolanaBeforeNetworkConfig,
+  SolanaBeforeObservationKind,
+  SolanaBeforeReplayInput,
+  SolanaCapabilityProbeObservation,
+  SolanaProbePath,
+  SolanaProbePathOutcome,
+} from "./before.js";
+export { SOLANA_BEFORE_PROFILES, SOLANA_DEVNET_BEFORE_PROFILE, SOLANA_MAINNET_BEFORE_PROFILE } from "./profiles.js";
+export type { SolanaBeforeEnvironment, SolanaBeforeProfile } from "./profiles.js";

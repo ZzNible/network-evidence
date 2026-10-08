@@ -48,6 +48,18 @@ and never infers withdrawal or output-root finalization. Replaying the pinned
 archived fixtures gives current availability `unknown`. See
 [`packages/resolver-opstack/README.md`](packages/resolver-opstack/README.md#before-overlay-base-mainnet--base-sepolia).
 
+Solana BEFORE support lives in `@nec/resolver-solana`. There are two explicit
+genesis-bound profiles: Solana mainnet `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp`
+(labelled mainnet) and Solana devnet `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1`
+(labelled testnet). Each pins the full `getGenesisHash` result, and the labels
+are presentation only. The manifest claims `execution`, `observedEffects`,
+`dataBinding` and `finality`, never `settlement`. Availability comes only from
+probe observations of the post-action read path. A Solana `finalized`
+commitment is a source observation. It never establishes settlement or
+economic irreversibility. Replaying the pinned archived mainnet and devnet
+fixtures gives current availability `unknown`. See
+[`packages/resolver-solana/README.md`](packages/resolver-solana/README.md#before-foundation-solana-mainnet--devnet).
+
 This repository intentionally has fresh history. Its selected package content
 comes from frozen source snapshots, but private Git history is not imported.
 It is licensed under [Apache-2.0](LICENSE).
