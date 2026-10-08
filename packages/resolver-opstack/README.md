@@ -215,6 +215,87 @@ fixture. The companion package-local EVM fixture is an exact copy of the
 required acquisition fixture from the pinned private source snapshot; only
 its public-staging filename/path is genericized.
 
+## BEFORE overlay (Base mainnet + Base Sepolia)
+
+The BEFORE side reuses the generic EVM BEFORE foundation
+(`deriveEvmBeforeFoundation` / `deriveEvmBeforePreflightResult`) unchanged and
+adds ONLY an OP Stack L2 block-finality capability state:
+
+```text
+explicit OpStackFinalityConfig (family "opstack", never inferred)
+EvmCapabilityProbeObservation  -> generic execution/observedEffects/dataBinding
+OpStackFinalityProbeObservation -> OP Stack L2 block finality availability
+        |
+        v
+opStackBeforeResolverManifest()   execution, observedEffects, dataBinding, finality
+deriveOpStackBeforeFoundation()   CapabilitySnapshot + DiscoveryCandidate
+deriveOpStackBeforePreflightResult()  evidence readiness only
+replayOpStackBeforeFoundation()   offline replay of archived fixtures (historical_replay)
+```
+
+Profiles: `BASE_MAINNET_OPSTACK_BEFORE_PROFILE` (`eip155:8453`, labelled
+`mainnet`) and `BASE_SEPOLIA_OPSTACK_BEFORE_PROFILE` (`eip155:84532`, labelled
+`testnet`). A derivation consumes only `profile.config`. The `id`, `label` and
+`environment` fields never appear in a manifest, snapshot, candidate or
+preflight. Being in a profile does not mean a network is currently available.
+
+Semantics:
+
+- `finality` means the configured source's OP Stack L2 `finalized` head view
+  under `opstack.rpc-finalized-head-v1`. The manifest and every finality
+  state list what it does **not** establish: `withdrawal_finalization`,
+  `output_root_finalization`, `dispute_game_resolution`, `settlement` and
+  `economic_irreversibility`.
+- `settlement` is always `unsupported`. Requiring it makes discovery
+  `ineligible` and preflight `blocked`, even when finality is ready.
+- Finality availability for a `probe` observation is decided by this
+  ladder:
+
+  | Probe observation | Finality availability |
+  | --- | --- |
+  | no finality probe | `unknown` |
+  | source unreachable | `unavailable` |
+  | chain identity unobserved | `unknown` |
+  | `finalized` head unusable | `unavailable` (never substituted by `safe`/`latest`) |
+  | `safe` or `latest` unusable | `unavailable` |
+  | head ordering incoherent | `degraded` |
+  | generic receipt+block path not available | mirrors it (`unavailable`/`unknown`) |
+  | otherwise | `available`, citing the identity/head refs plus the execution refs |
+
+  Every positive flag needs at least one EvidenceRef tagged with a matching
+  `metadata.probePath`, or the observation fails closed. The same applies to
+  chain-id or network mismatches, cross-source refs, and EvidenceId
+  collisions. The EVM and finality probes must share one `observedAt`.
+- Availability says the head view could be acquired at probe time. Whether a
+  specific action's block is final is still decided post-action, once the
+  source's finalized head reaches that block within the bounded ancestry walk.
+- `historical_replay` (archived fixtures) projects every supported capability
+  to current availability `unknown`. Capture-time availability is recorded
+  only in metadata (`historicalAvailabilityAtCapture`).
+- Preflight reports evidence readiness only. It never covers wallet, balance,
+  funding, gas acquisition, signing or submission readiness.
+
+Pinned replay fixtures (read-only public RPC, no transactions):
+
+| Profile | Generic EVM fixture | OP Stack finality fixture |
+| --- | --- | --- |
+| Base mainnet | `test/fixtures/base-mainnet-usdc-transfer.fixture.json` (2026-08-24) | `test/fixtures/base-mainnet-finality.fixture.json` (2026-08-24, `https://mainnet.base.org`) |
+| Base Sepolia | `../adapter-erc4337/test/fixtures/base-sepolia-external-v06-userop.json` (2026-09-26, reused unchanged) | `test/fixtures/base-sepolia-finality.fixture.json` (2026-10-08, `https://sepolia.base.org`) |
+
+The Base Sepolia finality fixture was recorded with
+`acquireOpStackFinalityObservation` against the official public endpoint
+`https://sepolia.base.org`, with no credentials and no transactions. Its
+subject anchor is a recent finalized block (height 47835400, finalized head −
+8), chosen only to exercise the head reads and the bounded ancestry walk. It
+is not a transaction subject. The burst has 14 captures and passed every
+consistency check, including an 8-block parentHash walk and a stable
+finalized re-read.
+
+The F2 transaction's block (12168926) could not serve as the anchor: the
+public endpoint reported `pruned history unavailable … earliest available
+46000000`. So this public source cannot re-read old Base Sepolia heights for
+post-action finality.
+
 ## Public API
 
 - `acquireOpStackFinalityObservation({source, subjectBlock, now, fetchFn, maxAncestryDepth?})`
@@ -224,5 +305,11 @@ its public-staging filename/path is genericized.
 - `validateOpStackFinalityConfig(config)`, `OPSTACK_FINALITY_RULESET`,
   `OPSTACK_FAMILY`, `OPSTACK_MAX_ANCESTRY_DEPTH`, profile constants,
   observation/check types, `FINALITY_PROPOSITION`
+- BEFORE: `opStackBeforeResolverManifest()`,
+  `deriveOpStackBeforeFoundation({config, observationKind, evmObservation, finalityObservation?})`,
+  `deriveOpStackBeforePreflightResult(foundation, request)`,
+  `replayOpStackBeforeFoundation({config, evmFixture, finalityFixture?})`,
+  `BASE_MAINNET_OPSTACK_BEFORE_PROFILE`, `BASE_SEPOLIA_OPSTACK_BEFORE_PROFILE`,
+  `BASE_OPSTACK_BEFORE_PROFILES`, `OPSTACK_FINALITY_DOES_NOT_ESTABLISH`
 
 No high-level universal `resolveNetworkEvidence` API exists here.

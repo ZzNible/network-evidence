@@ -21,6 +21,22 @@ describe("public API surface (@nec/resolver-opstack v0.1 entrypoint)", () => {
     expect(opstack.OPSTACK_FINALITY_RULESET_VERSION).toBe("1");
   });
 
+  it("exposes the BEFORE overlay and the explicit Base profiles", () => {
+    expect(typeof opstack.deriveOpStackBeforeFoundation).toBe("function");
+    expect(typeof opstack.deriveOpStackBeforePreflightResult).toBe("function");
+    expect(typeof opstack.opStackBeforeResolverManifest).toBe("function");
+    expect(typeof opstack.replayOpStackBeforeFoundation).toBe("function");
+    expect(opstack.OPSTACK_BEFORE_PROFILE).toBe("opstack-before-v0.1");
+    expect(opstack.BASE_OPSTACK_BEFORE_PROFILES.map((profile) => profile.config.networkId)).toEqual([
+      "eip155:8453",
+      "eip155:84532",
+    ]);
+    const ns = opstack as unknown as Record<string, unknown>;
+    for (const name of ["deriveFinalityState", "historicalState", "finalityProbeFromReplay", "evmProbeFromAcquisition"]) {
+      expect(ns[name], name).toBeUndefined();
+    }
+  });
+
   it("keeps evaluation internals out of the public namespace", async () => {
     const ns = opstack as unknown as Record<string, unknown>;
     for (const name of [

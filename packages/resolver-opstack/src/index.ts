@@ -93,3 +93,32 @@ export {
 export type { OpStackFinalityFixture, OpStackFixtureSource } from "./fixture.js";
 export { replayOpStackFinalityObservation } from "./replay.js";
 export type { OpStackReplayOptions } from "./replay.js";
+
+// BEFORE overlay (v0.1): generic EVM BEFORE foundation + OP Stack L2 block
+// finality capability. Never settlement; never withdrawal finalization.
+export {
+  deriveOpStackBeforeFoundation,
+  deriveOpStackBeforePreflightResult,
+  OPSTACK_BEFORE_FINALITY_SEMANTICS,
+  OPSTACK_BEFORE_PROFILE,
+  OPSTACK_FINALITY_DOES_NOT_ESTABLISH,
+  OPSTACK_PROBE_PATH_METADATA_KEY,
+  opStackBeforeResolverManifest,
+  replayOpStackBeforeFoundation,
+} from "./before.js";
+export type {
+  OpStackBeforeDerivationInput,
+  OpStackBeforeFoundation,
+  OpStackBeforeObservationKind,
+  OpStackBeforeReplayInput,
+  OpStackFinalityProbeObservation,
+  OpStackFinalityProbePath,
+} from "./before.js";
+
+// Explicit Base BEFORE profiles (labels are presentation-only, never evidence)
+export {
+  BASE_MAINNET_OPSTACK_BEFORE_PROFILE,
+  BASE_OPSTACK_BEFORE_PROFILES,
+  BASE_SEPOLIA_OPSTACK_BEFORE_PROFILE,
+} from "./profiles.js";
+export type { OpStackBeforeEnvironment, OpStackBeforeProfile } from "./profiles.js";

@@ -38,6 +38,16 @@ Syscoin inclusion, or finality. It is not wallet, signing, funding, paymaster,
 or submission infrastructure. Package manifests retain `private: true` to
 prevent accidental npm publication.
 
+Base BEFORE parity uses the generic EVM BEFORE foundation plus a minimal OP
+Stack overlay in `@nec/resolver-opstack`. There are two explicit profiles:
+Base mainnet `eip155:8453` (labelled mainnet) and Base Sepolia `eip155:84532`
+(labelled testnet). The labels are presentation only and are never evidence.
+The overlay adds one capability, OP Stack L2 block `finality`, whose
+availability comes only from probe observations. It never claims settlement
+and never infers withdrawal or output-root finalization. Replaying the pinned
+archived fixtures gives current availability `unknown`. See
+[`packages/resolver-opstack/README.md`](packages/resolver-opstack/README.md#before-overlay-base-mainnet--base-sepolia).
+
 This repository intentionally has fresh history. Its selected package content
 comes from frozen source snapshots, but private Git history is not imported.
 It is licensed under [Apache-2.0](LICENSE).
