@@ -1,8 +1,8 @@
 # Network Evidence Suite v1.1 integrability contract freeze
 
-**Status:** LOT 4 GENERIC MAPS COLLECTION CANDIDATE (local; review pending)
-**Historical release:** `v1.0.0` remains unchanged.
-**Target:** a future `v1.1.0` only after the full integrability DoD passes.
+**Status:** LOT 1–4 and BEFORE + Discovery completion are implemented and public at runtime authority `ed5273b2e28cf7438dcdade0a2d48a08ffa7f9ef` (final whole-stack review CLEAN). Current step: documentation-only release alignment and signoff. No `v1.1.0` tag or GitHub Release exists.
+**Historical release:** `v1.0.0` (peeled `d3827f9b42084bf893e8d93faa0fb905fa339155`) remains published and unchanged.
+**Target:** "v1.1" names this integrability target, not a chosen version. The next public version and any tag/release remain a human decision (`NEXT_PUBLIC_VERSION = UNDECIDED`; see [RELEASE.md](../RELEASE.md)).
 **Core rule:** `TARGET_CORE_MUTATIONS = 0`.
 
 ## 1. Required reusable path
@@ -205,6 +205,13 @@ Before a future `v1.1.0`:
 9. Independent review is CLEAN.
 10. No cloud service, DB, graph engine, generic A2A/MCP layer, wallet/signing/submission, policy engine, trust/confidence scoring, or new Core abstraction is introduced to satisfy this DoD.
 
+Added with the BEFORE + Discovery completion (section 9):
+
+11. Base (`eip155:8453`, `eip155:84532`) and Solana (`solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp`, `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1`) have explicit public BEFORE profiles with probe-only availability, archived replay availability `unknown`, and explicit finality boundaries.
+12. `@nec/discovery` exposes a deterministic Discovery orchestrator over explicit candidates with Core as sole classification authority, plus a deterministic offline demo; it adds no ranking, network I/O or wallet/signing/submission.
+
+**DoD status:** items 1–12 are met at runtime authority `ed5273b` (final whole-stack review CLEAN; gates and digests in [docs/release/REPRODUCTION.md](release/REPRODUCTION.md)). The heading keeps its original target name; meeting the DoD does not choose a version. Remaining steps are release-process only: independent review of the documentation-only alignment, then the human decision on version, tag and GitHub Release.
+
 ## 8. Lot boundaries
 
 LOT 1 froze the contracts. LOT 2 implements only the generic Hub/Lens runtime and synthetic proof described below.
@@ -223,3 +230,31 @@ LOT 2 does not modify Maps behavior or migrate F1/F2/F3.
 LOT 3 adds only the historical compatibility path described in section 5. It does not modify Core, `@nec/hub`, `@nec/lens`, Maps behavior or the frozen v1.0.0 `examples/core-hub-lens/` export.
 
 LOT 4 changes only `examples/ne-maps/**` (generic loader/validator, derived collection, tests, docs), the typing of the optional `extensions.provenance` in the Maps envelope contract, and a root `maps:collection` script. It does not modify Core, `@nec/hub`, `@nec/lens`, `examples/historical-compat`, `examples/integrability-fixture` or the frozen reviewed `cases.json`.
+
+BEFORE + Discovery completion (section 9) changes only `packages/resolver-opstack`, `packages/resolver-solana`, the new `packages/discovery`, the new `examples/discovery`, their docs (including the root README), a root `demo:discovery` script and the `@nec/discovery` workspace link in `package-lock.json`. `packages/core/**` is byte-identical to `v1.0.0` (tree `b8ed923c9f43d17365f224e3f03f3df3135c5e87`).
+
+Release alignment is documentation-only (README, RELEASE, this file and `docs/release/*`). It changes no source, test, fixture, manifest or lockfile, and creates no tag, GitHub Release, npm publication or deployment.
+
+## 9. BEFORE + Discovery completion
+
+Implemented at runtime authority `ed5273b2e28cf7438dcdade0a2d48a08ffa7f9ef`.
+
+### BEFORE profiles
+
+| Family | Package | Profiles (labels are presentation only) | Public exports |
+| --- | --- | --- | --- |
+| Base (OP Stack) | `@nec/resolver-opstack` | `eip155:8453` mainnet; `eip155:84532` testnet | `deriveOpStackBeforeFoundation`, `replayOpStackBeforeFoundation`, `deriveOpStackBeforePreflightResult` |
+| Solana | `@nec/resolver-solana` | `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` mainnet; `solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1` testnet | `deriveSolanaBeforeFoundation`, `replaySolanaBeforeFoundation`, `deriveSolanaBeforePreflightResult` |
+
+- Base: the generic EVM BEFORE foundation plus a minimal OP Stack overlay that adds L2 block `finality`. It never claims settlement and never infers withdrawal, output-root or dispute-game finalization. See [`packages/resolver-opstack/README.md`](../packages/resolver-opstack/README.md).
+- Solana: genesis-bound profiles pin the full `getGenesisHash` result. The manifest claims `execution`, `observedEffects`, `dataBinding` and `finality`, never `settlement`. A `finalized` commitment is a source observation, not settlement or economic irreversibility. See [`packages/resolver-solana/README.md`](../packages/resolver-solana/README.md).
+- Availability comes only from probe observations. Replaying pinned archived fixtures gives current availability `unknown`.
+- zkSYS is unchanged: Tanenbaum `eip155:57057` testnet, historical replay only; there is no zkSYS mainnet profile.
+
+### `@nec/discovery`
+
+`discoverNetworks` is a deterministic orchestrator over an explicit, caller-supplied candidate set (presentation id, explicit `mainnet`/`testnet` environment label, and an already-derived BEFORE network/manifest/snapshot). Core `composeDiscoveryMatch` is the sole classification authority, and Core builds and verifies the `DiscoverNetworksResult`. Environment is presentation/scope metadata: it may narrow scope (`scope.environments`) but never changes a Core classification. The package has no network I/O, ranking, scoring, recommendation or network choice, and no wallet/signing/submission. See [`packages/discovery/README.md`](../packages/discovery/README.md).
+
+### Discovery demo
+
+`npm run -s demo:discovery` ([`examples/discovery/`](../examples/discovery/README.md)) is offline and deterministic; its stdout SHA-256 is pinned in `EXPECTED_STDOUT.sha256`. It covers Base mainnet, Base Sepolia, Solana mainnet and Solana devnet. Its probe inputs are synthetic demo inputs, not live availability; the Solana devnet candidate is an archived replay with current availability `unknown`. The choice is made by example caller code outside `@nec/discovery`, followed by the resolver-specific evidence preflight. The demo takes no command-line options; environment scope filtering is exercised by the package and example tests. There is no hosted or continuous monitoring.

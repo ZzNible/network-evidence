@@ -23,7 +23,8 @@ not support for another.
 
 This source capsule contains `@nec/core`, `@nec/resolver-evm`,
 `@nec/adapter-x402`, `@nec/resolver-opstack`, `@nec/adapter-erc4337`,
-`@nec/resolver-solana`, `@nec/adapter-x402-svm`, and `@nec/resolver-zksys`.
+`@nec/resolver-solana`, `@nec/adapter-x402-svm`, `@nec/resolver-zksys`,
+`@nec/hub`, `@nec/lens`, and `@nec/discovery`.
 The Solana resolver is generic post-fact Solana network evidence; the x402 SVM
 adapter is x402 v2 exact-SVM interpretation above that generic Solana evidence.
 The ERC-4337 package is a narrow evidence-correlation adapter above generic EVM
@@ -115,11 +116,14 @@ Then open `http://127.0.0.1:4177/`. `TARGET_CORE_MUTATIONS = 0`.
 ## Release and reproducibility
 
 - [RELEASE.md](RELEASE.md) — release status, package/version inventory and
-  release artifacts. The next public version is undecided; no package is
-  published to npm.
+  release artifacts. `v1.0.0` is the latest public release; the next public
+  version is undecided, no `v1.1.0` tag or GitHub Release exists, and no
+  package is published to npm.
 - [docs/release/REPRODUCTION.md](docs/release/REPRODUCTION.md) — clean-machine
-  reproduction with expected digests.
+  reproduction with expected test counts and output digests.
+- [docs/INTEGRABILITY_V1_1.md](docs/INTEGRABILITY_V1_1.md) — Hub/Lens/Maps
+  contracts and the BEFORE + Discovery completion summary.
 - [docs/release/DEPENDENCY_ADVISORIES.md](docs/release/DEPENDENCY_ADVISORIES.md)
-  — release-gate dependency status and remediation record (`npm audit`: 0 vulnerabilities observed on 2026-10-07).
+  — release-gate dependency status and remediation record (`npm audit`: 0 vulnerabilities observed on 2026-10-07 and 2026-10-08).
 - [SECURITY_BOUNDARIES.md](SECURITY_BOUNDARIES.md) — evidence boundaries and
   the public/private boundary.
