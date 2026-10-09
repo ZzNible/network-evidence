@@ -18,6 +18,7 @@ import { networkProfilesInventory, activeNetworkProfilesInventory } from "./prof
 import { LIVE_MULTICHAIN_TOOL, LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
 import { CLAIM_PROTOCOLS, resolveWithOptionalClaim } from "./live-claim.js";
 import { LIVE_BEFORE_TOOL_NAME, LIVE_BEFORE_MAX_CANDIDATES, LIVE_BEFORE_SCHEMA, createLiveBeforeTool } from "./live-before.js";
+import { LIVE_PREFLIGHT_TOOL_NAME, LIVE_PREFLIGHT_SCHEMA, createLivePreflightTool } from "./live-preflight.js";
 import type { MultichainTool } from "./live-multichain.js";
 
 export const SERVER_NAME = "network-evidence-mcp";
@@ -25,7 +26,7 @@ export const SERVER_VERSION = "0.0.1";
 
 export const TOOL_NAMES = ["list_network_profiles", "discover_network_candidates", "get_reviewed_evidence_case"] as const;
 /** Only available behind the explicit hosted live-RPC switch. */
-export const LIVE_TOOL_NAMES = [...TOOL_NAMES, LIVE_MULTICHAIN_TOOL, LIVE_BEFORE_TOOL_NAME] as const;
+export const LIVE_TOOL_NAMES = [...TOOL_NAMES, LIVE_MULTICHAIN_TOOL, LIVE_BEFORE_TOOL_NAME, LIVE_PREFLIGHT_TOOL_NAME] as const;
 
 /** Explicit boolean hints for every tool. */
 export const READ_ONLY_ANNOTATIONS: ToolAnnotations = Object.freeze({
@@ -281,6 +282,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       "The three other tools remain offline; their historical, synthetic and caller-supplied observations do not become live.",
       "resolve_transaction_evidence obtains ONE source observation using an existing EVM or Solana resolver and returns an authentic Core partial fragment. Solana finalized commitment is source-reported; no cryptographic verification, protocol settlement, L1 withdrawal or economic finality assertion.",
       "discover_live_network_evidence probes 1-2 exact transactions, produces native Core capability snapshots and a Core-verified Discovery result. It never ranks or chooses networks. Availability applies only to the probed source, action and acquisition time.",
+      "preflight_live_network_evidence accepts a caller-selected exact network, original expected action and digest-bound Core evidence policy plus one separate same-network completed transaction probe; produces contextual Core-verified evidence readiness, NOT transaction simulation or wallet readiness.",
       "No wallet, signing, transaction submission, ranking, or policy engine.",
     ].join("\n");
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { instructions });
@@ -348,6 +350,47 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
 
   if (deps.liveEvidence !== undefined) {
     const liveBefore = createLiveBeforeTool(deps.liveEvidence);
+    const livePreflight = createLivePreflightTool(deps.liveEvidence);
+    server.registerTool(
+      LIVE_PREFLIGHT_TOOL_NAME,
+      {
+        title: "Evidence preflight on caller-selected Base or Solana network",
+        description:
+          "Read-only hosted pre-release: caller explicitly chooses one pinned Base/Solana network and supplies COMPLETE original Core PreflightRequest with expected action + valid evidencePolicy digest, and a separate exact completed same-network transaction as a source-capability probe. Validate ALL inputs BEFORE RPC, then derive the unchanged native EVM/Solana BEFORE foundation and context-verify the Core PreflightResult against complete ResolverManifest and CapabilitySnapshot. Readiness is evidence acquisition only, NOT prior network selection, future action execution, wallet/account/gas readiness, x402 agreement, settlement, or cryptographic consensus.",
+        inputSchema: z.object({
+          selectedNetworkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
+          probeSubject: z.object({
+            type: z.literal("transaction"),
+            networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
+            txId: z.string().min(43).max(100),
+          }).strict(),
+          request: jsonObject.describe("Exact complete Core PreflightRequest incl. caller-originated ActionDescriptor and digest-validated EvidencePolicy. No synthetic default."),
+        }).strict(),
+        outputSchema: z.object({
+          schema: z.literal(LIVE_PREFLIGHT_SCHEMA),
+          observationKind: z.literal("live_source_observation"),
+          choiceSource: z.literal("caller"),
+          selectedNetworkId: z.string(),
+          probeSubject: z.object({ type: z.literal("transaction"), networkId: z.string(), txId: z.string() }),
+          probeObservedAt: z.string(),
+          source: z.object({sourceId:z.string(),sourceType:z.string()}),
+          evidenceCaptures: z.array(z.object({rpcMethod:z.string(),contentDigest:z.string()})),
+          verifiedBy: z.literal("@nec/core"),
+          preflight: jsonObject,
+          capabilitySnapshot: jsonObject,
+          resolverManifest: jsonObject,
+          nonClaims: z.array(z.string()),
+        }),
+        annotations: {
+          title: "Evidence preflight on caller-selected Base or Solana network",
+          readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true,
+        },
+      },
+      async (args) => {
+        try { return ok(await livePreflight(args)); }
+        catch (error) { return toolError(error); }
+      },
+    );
     server.registerTool(
       LIVE_BEFORE_TOOL_NAME,
       {

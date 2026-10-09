@@ -199,7 +199,7 @@ describe("opt-in live BEFORE/Discovery over exact multichain source acquisitions
     try {
       const hostFetch=simulatedHostFetch(server.port,HOST);
       const health=await (await hostFetch(new URL(ORIGIN+"/health"))).json() as any;
-      expect(health.tools).toHaveLength(5);
+      expect(health.tools).toHaveLength(6);
       expect(health.tools).toContain(LIVE_BEFORE_TOOL_NAME);
       expect(health.tools).toContain(LIVE_MULTICHAIN_TOOL);
       for (const mode of ["legacy","auto"] as const) {

@@ -192,7 +192,7 @@ describe("optional native protocol claims on one existing hosted read-only AFTER
         await client.connect(new StreamableHTTPClientTransport(new URL(ORIGIN+"/mcp"),{fetch:hostFetch}));
         try{
           const tools=(await client.listTools()).tools;
-          expect(tools).toHaveLength(5);
+          expect(tools).toHaveLength(6);
           const live=tools.find(x=>x.name===LIVE_MULTICHAIN_TOOL);
           expect(live?.annotations).toMatchObject({readOnlyHint:true,destructiveHint:false});
           const result=await client.callTool({name:LIVE_MULTICHAIN_TOOL,arguments:{subject:ercSubject,claim:erc4337}});

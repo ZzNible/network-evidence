@@ -313,7 +313,7 @@ describe("opt-in Base L2 block finality reuses native OP Stack resolver, separat
         await cli.connect(new StreamableHTTPClientTransport(new URL(origin+"/mcp"),{fetch}));
         try{
           const tools=(await cli.listTools()).tools;
-          expect(tools).toHaveLength(5);
+          expect(tools).toHaveLength(6);
           const tool=tools.find(x=>x.name===LIVE_MULTICHAIN_TOOL);
           expect(tool?.annotations).toMatchObject({readOnlyHint:true,destructiveHint:false});
           const o=await cli.callTool({name:LIVE_MULTICHAIN_TOOL,arguments:{subject,includeL2Finality:true}});

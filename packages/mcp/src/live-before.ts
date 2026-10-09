@@ -13,7 +13,9 @@ import type { DiscoveryRequirements, NetworkEvidenceFragment, CapabilitySnapshot
 import { discoverNetworks } from "@nec/discovery";
 import type { DiscoveryCandidateContext } from "@nec/discovery";
 import { deriveEvmBeforeFoundation } from "@nec/resolver-evm";
+import type { EvmBeforeFoundation } from "@nec/resolver-evm";
 import { deriveSolanaBeforeFoundation, SOLANA_MAINNET_BEFORE_PROFILE, SOLANA_DEVNET_BEFORE_PROFILE } from "@nec/resolver-solana";
+import type { SolanaBeforeFoundation } from "@nec/resolver-solana";
 import { LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
 import type { MultichainTool, MultichainObservation, TransactionSubject } from "./live-multichain.js";
 import { NeMcpError } from "./errors.js";
@@ -71,7 +73,12 @@ function unavailable(): never {
 }
 
 /** Does not claim more than a Core-validated observation and the backed paths. */
-function foundationFromObservation(obs: MultichainObservation) {
+export type LiveSourceFoundation =
+  | { readonly family: "evm"; readonly foundation: EvmBeforeFoundation }
+  | { readonly family: "solana"; readonly foundation: SolanaBeforeFoundation };
+
+/** Shared binding: exact/fresh probe source -> native BEFORE foundation; used by Discovery and Preflight. */
+export function foundationFromObservation(obs: MultichainObservation): LiveSourceFoundation {
   if (obs.observationKind !== "live_source_observation"
       || obs.artifactType !== "network-evidence-fragment"
       || obs.evidenceBasis !== "source_observation") unavailable();
@@ -93,7 +100,7 @@ function foundationFromObservation(obs: MultichainObservation) {
         || obs.source.chainId !== profile.chainId
         || !has("eth_chainId") || !has("eth_getTransactionReceipt")
         || !has("eth_getTransactionByHash")) unavailable();
-    return deriveEvmBeforeFoundation({ networkId: obs.subject.networkId, observation: {
+    return { family: "evm", foundation: deriveEvmBeforeFoundation({ networkId: obs.subject.networkId, observation: {
       network: obs.subject.networkId, chainId: profile.chainId,
       source: { sourceId: obs.source.sourceId, sourceType: obs.source.sourceType },
       observedAt: obs.acquiredAt, rpcReachable: true,
@@ -102,7 +109,7 @@ function foundationFromObservation(obs: MultichainObservation) {
       blockLookupUsable: obs.acquisition.blockObserved,
       transactionLookupUsable: obs.acquisition.transactionLookupUsable === true,
       evidence: [...fragment.evidence],
-    } });
+    } }) };
   }
   if (obs.source.sourceType !== "svm_rpc" || !has("getGenesisHash") || !has("getTransaction") || !has("getSignatureStatuses")
       || obs.acquisition.solanaProbe === undefined) unavailable();
@@ -110,7 +117,7 @@ function foundationFromObservation(obs: MultichainObservation) {
     ? SOLANA_MAINNET_BEFORE_PROFILE.config : SOLANA_DEVNET_BEFORE_PROFILE.config;
   if (fragment.network.genesisId !== config.genesisHash) unavailable();
   const beforeProbe = obs.acquisition.solanaProbe;
-  return deriveSolanaBeforeFoundation({
+  return { family: "solana", foundation: deriveSolanaBeforeFoundation({
     config, observationKind: "probe",
     observation: {
       network: obs.subject.networkId, source: { sourceId: obs.source.sourceId, sourceType: "svm_rpc" },
@@ -120,7 +127,7 @@ function foundationFromObservation(obs: MultichainObservation) {
       lookupsCoherent: beforeProbe.lookupsCoherent,
       evidence: [...fragment.evidence],
     },
-  });
+  }) };
 }
 
 export function createLiveBeforeTool(resolve: MultichainTool): (input: LiveBeforeInput) => Promise<LiveBeforeOutput> {
@@ -154,7 +161,7 @@ export function createLiveBeforeTool(resolve: MultichainTool): (input: LiveBefor
         if (observation.subject.networkId !== subject.networkId || observation.subject.txId !== subject.txId)
           unavailable();
         // source boundary already validated by resolve_transaction_evidence.
-        const foundation = foundationFromObservation(observation);
+        const { foundation } = foundationFromObservation(observation);
         candidates.push({ id: profile.id, environment: profile.environment,
           network: foundation.network, manifest: foundation.manifest, snapshot: foundation.snapshot });
         observations.push(observation);

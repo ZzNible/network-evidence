@@ -171,7 +171,7 @@ describe("opt-in read-only live EVM source", () => {
       await client.connect(new StreamableHTTPClientTransport(new URL(ORIGIN + "/mcp"),{fetch:fetchLocal}));
       try {
         const {tools} = await client.listTools();
-        expect(tools.map(x=>x.name)).toEqual(["list_network_profiles","discover_network_candidates","get_reviewed_evidence_case","discover_live_network_evidence",LIVE_MULTICHAIN_TOOL]);
+        expect(tools.map(x=>x.name)).toEqual(["list_network_profiles","discover_network_candidates","get_reviewed_evidence_case","preflight_live_network_evidence","discover_live_network_evidence",LIVE_MULTICHAIN_TOOL]);
         const live = tools.find(x=>x.name===LIVE_MULTICHAIN_TOOL)!;
         expect(live.annotations).toMatchObject({readOnlyHint:true,destructiveHint:false,idempotentHint:false,openWorldHint:true});
         const result = await client.callTool({name:LIVE_MULTICHAIN_TOOL,arguments:{subject:{type:"transaction",networkId:"eip155:8453",txId:TX}}});

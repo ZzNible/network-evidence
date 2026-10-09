@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Three offline tools by default; unreleased hosted Base+Solana read-only AFTER with optional native protocol claim and BEFORE/Core Discovery. No signing, settlement inference or network ranking.",
+  "description": "Three offline tools by default; undeployed hosted-only Base+Solana read-only AFTER, BEFORE/Core Discovery and caller-selected native Core evidence preflight. No wallet, transaction submission, settlement inference or network ranking.",
   "engines": {
     "node": ">=20.12"
   },
