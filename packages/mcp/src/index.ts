@@ -1,11 +1,9 @@
 /**
  * @nec/mcp — local, read-only MCP server v0 over public Network Evidence code.
  *
- * Three tools, no router: list_network_profiles, discover_network_candidates,
- * get_reviewed_evidence_case. Streamable HTTP at /mcp, health at /healthz (local) or /health (hosted);
- * loopback-only by default, plus an explicit opt-in hosted preview mode (exact
- * public origin, 0.0.0.0:$PORT). No network I/O, no wallet/signing/funding/
- * submission, no ranking or network choice. Not published; not deployed.
+ * Three offline tools by default. This UNDEPLOYED candidate adds one
+ * hosted-only opt-in EVM + Solana source-evidence tool. Streamable HTTP at
+ * /mcp; loopback-only by default. No signing/funding/submission/ranking.
  */
 
 export { NeMcpConfigError, NeMcpError, toSafeToolError } from "./errors.js";
@@ -27,7 +25,9 @@ export {
 export type { EvidenceClass, ReviewedCaseOutput, ReviewedCaseStore } from "./cases.js";
 
 export { createNeMcpServer, READ_ONLY_ANNOTATIONS, SERVER_NAME, SERVER_VERSION, TOOL_NAMES, LIVE_TOOL_NAMES } from "./tools.js";
-export { createLiveEvmTool, LIVE_EVM_TOOL_NAME, LIVE_EVM_NETWORKS, restrictedBaseRpcFetch } from "./live-evm.js";
+export { createMultichainTool, LIVE_MULTICHAIN_TOOL, LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
+export { restrictedBaseRpcFetch } from "./live-evm.js";
+export { restrictedSolanaRpcFetch } from "./live-solana.js";
 
 export {
   DEFAULT_HOST,

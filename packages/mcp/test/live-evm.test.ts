@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { startNeMcpHttpServer } from "../src/http.js";
 import type { NeMcpHttpServer } from "../src/http.js";
-import { createLiveEvmTool, LIVE_EVM_TOOL_NAME, restrictedBaseRpcFetch, LIVE_EVM_MAX_RPC_BYTES } from "../src/live-evm.js";
+import { createLiveEvmTool, restrictedBaseRpcFetch, LIVE_EVM_MAX_RPC_BYTES } from "../src/live-evm.js";
+import { createMultichainTool, LIVE_MULTICHAIN_TOOL } from "../src/live-multichain.js";
 import { simulatedHostFetch } from "./helpers.js";
 
 const MAINNET = "https://mainnet.base.org";
@@ -39,7 +40,7 @@ describe("opt-in read-only live EVM source", () => {
       const health = await (await fetch(server.url + "/healthz")).json() as any;
       expect(health).toMatchObject({ liveObservation: false, networkIo: "none" });
       expect(health.tools).toHaveLength(3);
-      await expect(startNeMcpHttpServer({ port: 0, liveEvm: createLiveEvmTool(provider().fetchFn) })).rejects.toThrow(/hosted mode/);
+      await expect(startNeMcpHttpServer({ port: 0, liveEvidence: createMultichainTool(provider().fetchFn) })).rejects.toThrow(/hosted mode/);
     } finally { await server.close(); }
   });
 
@@ -91,7 +92,7 @@ describe("opt-in read-only live EVM source", () => {
     const p = provider({ receipt, block });
     const server = await startNeMcpHttpServer({
       host: "127.0.0.1", port: 0, hosted: {publicOrigin: ORIGIN},
-      liveEvm: createLiveEvmTool(p.fetchFn),
+      liveEvidence: createMultichainTool(p.fetchFn),
     });
     try {
       const transport = new StreamableHTTPClientTransport(new URL(ORIGIN + "/mcp"),{fetch:simulatedHostFetch(server.port, HOST)});
@@ -99,10 +100,10 @@ describe("opt-in read-only live EVM source", () => {
       await client.connect(transport);
       try {
         expect(client.getProtocolEra()).toBe("modern");
-        const result = await client.callTool({name:LIVE_EVM_TOOL_NAME,arguments:{network:"base-mainnet",txHash:TX}});
+        const result = await client.callTool({name:LIVE_MULTICHAIN_TOOL,arguments:{subject:{type:"transaction",networkId:"eip155:8453",txId:TX}}});
         expect(result.isError).toBeFalsy();
         const value = result.structuredContent as any;
-        expect(value.acquisition).toMatchObject({receiptObserved:true,blockObserved:true,consistent:true});
+        expect(value.acquisition).toMatchObject({transactionObserved:true,blockObserved:true,consistent:true});
         expect(value.acquisition.captures.map((x:any)=>x.rpcMethod)).toEqual(["eth_chainId","eth_getTransactionReceipt","eth_getBlockByHash"]);
         expect(value.fragment.networkEvidence.execution.verdict).toBe("supported");
         expect(value.fragment.networkEvidence.dataBinding.verdict).toBe("supported");
@@ -151,27 +152,27 @@ describe("opt-in read-only live EVM source", () => {
     const p = provider();
     const server: NeMcpHttpServer = await startNeMcpHttpServer({
       host: "127.0.0.1", port: 0, hosted: { publicOrigin: ORIGIN },
-      liveEvm: createLiveEvmTool(p.fetchFn),
+      liveEvidence: createMultichainTool(p.fetchFn),
     });
     try {
       const fetchLocal = simulatedHostFetch(server.port, HOST);
       const health = await (await fetchLocal(new URL(ORIGIN + "/health"))).json() as any;
-      expect(health.tools).toContain(LIVE_EVM_TOOL_NAME);
+      expect(health.tools).toContain(LIVE_MULTICHAIN_TOOL);
       expect(health.liveObservation).toBe(true);
-      expect(health.networkIo).toBe("bounded_base_rpc");
+      expect(health.networkIo).toBe("bounded_evm_solana_rpc");
       const client = new Client({name:"live-mcp-test",version:"1"}, {versionNegotiation:{mode:"legacy"}});
       await client.connect(new StreamableHTTPClientTransport(new URL(ORIGIN + "/mcp"),{fetch:fetchLocal}));
       try {
         const {tools} = await client.listTools();
-        expect(tools.map(x=>x.name)).toEqual(["list_network_profiles","discover_network_candidates","get_reviewed_evidence_case",LIVE_EVM_TOOL_NAME]);
-        const live = tools.find(x=>x.name===LIVE_EVM_TOOL_NAME)!;
+        expect(tools.map(x=>x.name)).toEqual(["list_network_profiles","discover_network_candidates","get_reviewed_evidence_case",LIVE_MULTICHAIN_TOOL]);
+        const live = tools.find(x=>x.name===LIVE_MULTICHAIN_TOOL)!;
         expect(live.annotations).toMatchObject({readOnlyHint:true,destructiveHint:false,idempotentHint:false,openWorldHint:true});
-        const result = await client.callTool({name:LIVE_EVM_TOOL_NAME,arguments:{network:"base-mainnet",txHash:TX}});
+        const result = await client.callTool({name:LIVE_MULTICHAIN_TOOL,arguments:{subject:{type:"transaction",networkId:"eip155:8453",txId:TX}}});
         expect(result.isError).toBeFalsy();
-        expect((result.structuredContent as any).acquisition.receiptObserved).toBe(false);
+        expect((result.structuredContent as any).acquisition.transactionObserved).toBe(false);
         expect(p.methods).toEqual(["eth_chainId","eth_getTransactionReceipt"]);
         const prior = p.methods.length;
-        const invalid = await client.callTool({name:LIVE_EVM_TOOL_NAME,arguments:{network:"not-supported",txHash:TX}});
+        const invalid = await client.callTool({name:LIVE_MULTICHAIN_TOOL,arguments:{subject:{type:"transaction",networkId:"eip155:57057",txId:TX}}});
         expect(invalid.isError).toBe(true);
         expect(p.methods.length).toBe(prior);
       } finally {await client.close();}

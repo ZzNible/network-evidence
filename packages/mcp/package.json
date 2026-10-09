@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Local, read-only MCP server (v0) over public Network Evidence code: fixed profile inventory, Core-delegated Discovery over explicit caller-supplied candidate contexts, and exact-id reads of the shipped reviewed NE Maps collection. Loopback-only Streamable HTTP. No network I/O, no wallet, signing, funding or submission. Not published; not a public endpoint.",
+  "description": "Three read-only offline MCP tools by default; an unreleased, hosted-only opt-in EVM+Solana source-observation adapter uses existing Core fragments. No wallet, signing, submission, or ranking.",
   "engines": {
     "node": ">=20.12"
   },

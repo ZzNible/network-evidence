@@ -13,14 +13,14 @@
  * Both modes: [NE_MCP_MAX_CONCURRENT] [NE_MCP_RATE_LIMIT_PER_MINUTE].
  *
  * The process replaces global `fetch` with a throwing guard. Only when
- * NE_MCP_LIVE_EVM_ENABLED=1 in hosted mode does a separately scoped fetch
- * permit read-only calls to two fixed public Base RPC endpoints. Default
+ * NE_MCP_MULTICHAIN_ENABLED=1 in hosted mode does a separately scoped fetch
+ * permit read-only calls to fixed public Base and Solana RPC endpoints. Default
  * deployment remains offline with three tools.
  */
 
 import { DEFAULT_HOST, DEFAULT_PORT, HEALTH_SCOPE, NeMcpConfigError, startNeMcpHttpServer } from "./http.js";
 import { resolveServeConfig } from "./hosted.js";
-import { createLiveEvmTool } from "./live-evm.js";
+import { createMultichainTool } from "./live-multichain.js";
 
 // Capture only the native fetch passed through a fixed-origin/method/budget
 // adapter. All generic global outbound fetches remain impossible.
@@ -31,19 +31,22 @@ globalThis.fetch = (() => {
 
 try {
   const config = resolveServeConfig(process.argv.slice(2), process.env, { host: DEFAULT_HOST, port: DEFAULT_PORT });
-  const enableLiveRpc = process.env.NE_MCP_LIVE_EVM_ENABLED === "1";
-  if (process.env.NE_MCP_LIVE_EVM_ENABLED !== undefined && !enableLiveRpc) {
-    throw new NeMcpConfigError("NE_MCP_LIVE_EVM_ENABLED must be exactly 1 or absent");
+  if (process.env.NE_MCP_LIVE_EVM_ENABLED !== undefined) {
+    throw new NeMcpConfigError("legacy Base-only flag disabled; this branch requires a multichain adapter");
+  }
+  const enableLiveRpc = process.env.NE_MCP_MULTICHAIN_ENABLED === "1";
+  if (process.env.NE_MCP_MULTICHAIN_ENABLED !== undefined && !enableLiveRpc) {
+    throw new NeMcpConfigError("NE_MCP_MULTICHAIN_ENABLED must be exactly 1 or absent");
   }
   if (enableLiveRpc && config.mode !== "hosted") {
-    throw new NeMcpConfigError("NE_MCP_LIVE_EVM_ENABLED requires hosted mode");
+    throw new NeMcpConfigError("live multichain RPC requires hosted mode");
   }
   const server = await startNeMcpHttpServer({
     host: config.host,
     port: config.port,
     ...(config.hosted === undefined ? {} : { hosted: config.hosted }),
     ...(config.limits === undefined ? {} : { limits: config.limits }),
-    ...(enableLiveRpc ? { liveEvm: createLiveEvmTool(nativeFetch) } : {}),
+    ...(enableLiveRpc ? { liveEvidence: createMultichainTool(nativeFetch) } : {}),
     log: (line) => process.stderr.write(`${line}\n`),
   });
   if (server.mode === "hosted") {

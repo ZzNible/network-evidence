@@ -25,6 +25,8 @@ describe("@nec/mcp source boundaries", () => {
       "index.ts",
       "limits.ts",
       "live-evm.ts",
+      "live-multichain.ts",
+      "live-solana.ts",
       "profiles.ts",
       "tools.ts",
     ]);
@@ -54,7 +56,13 @@ describe("@nec/mcp source boundaries", () => {
     expect(live).toContain("https://sepolia.base.org");
     expect(live).toContain('"eth_chainId", "eth_getTransactionReceipt", "eth_getBlockByHash"');
     expect(live).not.toMatch(/process\.env|source\.transport\.url\s*=|eval\s*\(/);
-    expect(sources.get("cli.ts")).toContain("NE_MCP_LIVE_EVM_ENABLED");
+    expect(sources.get("cli.ts")).toContain("NE_MCP_MULTICHAIN_ENABLED");
+    const sol = sources.get("live-solana.ts")!;
+    expect(sol).toContain("https://api.mainnet-beta.solana.com");
+    expect(sol).toContain("https://api.devnet.solana.com");
+    for (const m of ["getGenesisHash", "getTransaction", "getSignatureStatuses", "getBlock"]) expect(sol).toContain(m);
+    expect(sources.get("live-multichain.ts")).toContain("MULTICHAIN_CALLS_PER_MINUTE = 8");
+    expect(sources.get("live-multichain.ts")).toContain("MULTICHAIN_MAX_INFLIGHT = 2");
   });
 
   it("reads exactly one fixed data file and never a caller-supplied path", () => {

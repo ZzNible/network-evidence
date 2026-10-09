@@ -14,16 +14,16 @@ import * as z from "zod";
 import type { ReviewedCaseStore } from "./cases.js";
 import { MAX_DISCOVERY_CANDIDATES, runDiscoverNetworkCandidates } from "./discover.js";
 import { toSafeToolError } from "./errors.js";
-import { networkProfilesInventory } from "./profiles.js";
-import { LIVE_EVM_TOOL_NAME } from "./live-evm.js";
-import type { LiveEvmTool } from "./live-evm.js";
+import { networkProfilesInventory, activeNetworkProfilesInventory } from "./profiles.js";
+import { LIVE_MULTICHAIN_TOOL, LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
+import type { MultichainTool } from "./live-multichain.js";
 
 export const SERVER_NAME = "network-evidence-mcp";
 export const SERVER_VERSION = "0.0.1";
 
 export const TOOL_NAMES = ["list_network_profiles", "discover_network_candidates", "get_reviewed_evidence_case"] as const;
 /** Only available behind the explicit hosted live-RPC switch. */
-export const LIVE_TOOL_NAMES = [...TOOL_NAMES, LIVE_EVM_TOOL_NAME] as const;
+export const LIVE_TOOL_NAMES = [...TOOL_NAMES, LIVE_MULTICHAIN_TOOL] as const;
 
 /** Explicit boolean hints for every tool. */
 export const READ_ONLY_ANNOTATIONS: ToolAnnotations = Object.freeze({
@@ -267,17 +267,17 @@ function toolError(error: unknown): CallToolResult {
 export interface NeMcpServerDeps {
   readonly cases: ReviewedCaseStore;
   readonly mode?: "local" | "hosted";
-  readonly liveEvm?: LiveEvmTool;
+  readonly liveEvidence?: MultichainTool;
 }
 
 /** Fresh stateless McpServer: three original tools plus one ONLY if opt-in. */
 export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
-  const instructions = deps.liveEvm === undefined
+  const instructions = deps.liveEvidence === undefined
     ? (deps.mode === "hosted" ? HOSTED_SERVER_INSTRUCTIONS : SERVER_INSTRUCTIONS)
     : [
-      "Network Evidence MCP: opt-in anonymous, read-only, non-production preview; live EVM evidence from two fixed public Base RPC sources.",
+      "Network Evidence MCP: opt-in anonymous, read-only, non-production preview; EVM and Solana source evidence from four fixed network profiles.",
       "The three other tools remain offline; their historical, synthetic and caller-supplied observations do not become live.",
-      "resolve_evm_transaction acquires ONE source observation, then evaluates execution/data binding with @nec/core-backed resolver logic. RPC trust is not cryptographic proof; settlement and finality remain unevaluated.",
+      "resolve_transaction_evidence obtains ONE source observation using an existing EVM or Solana resolver and returns an authentic Core partial fragment. Solana finalized commitment is source-reported; no cryptographic verification, protocol settlement, L1 withdrawal or economic finality assertion.",
       "No wallet, signing, transaction submission, ranking, or policy engine.",
     ].join("\n");
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { instructions });
@@ -295,7 +295,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
     },
     async () => {
       try {
-        return ok(networkProfilesInventory());
+        return ok(deps.liveEvidence === undefined ? networkProfilesInventory() : activeNetworkProfilesInventory());
       } catch (error) {
         return toolError(error);
       }
@@ -342,40 +342,43 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
     },
   );
 
-  if (deps.liveEvm !== undefined) {
+  if (deps.liveEvidence !== undefined) {
     server.registerTool(
-      LIVE_EVM_TOOL_NAME,
+      LIVE_MULTICHAIN_TOOL,
       {
-        title: "Resolve a Base EVM transaction from live RPC evidence",
+        title: "Evaluate EVM or Solana transaction evidence (read only)",
         description:
-          "Read-only, opt-in: retrieve a transaction receipt and its referenced block using the configured public Base mainnet or Base Sepolia RPC endpoint; check the same source-reported chain ID against the expected ID, capture raw replies and their digests, and return the existing resolver's Core-validated execution/data-binding fragment. The RPC is ONE attributed source observation, NOT cryptographic verification, chain consensus, settlement, finality or a payment assertion. Missing receipt is insufficient. There is NO user-provided URL, custom RPC method, signing, submission or wallet.",
+          "Read-only opt-in pre-release: acquire and evaluate exact transactions on Base mainnet/Sepolia or Solana mainnet/devnet from fixed RPC sources. Return original Core-validated partial network-evidence-fragment with source provenance and capture digests. EVM L2 finality, withdrawal finalization and protocol settlement are not established; Solana finalized commitment is source-reported, not a cryptographic proof. Missing/pruned data does not prove nonexistence. No arbitrary URL/method, wallet, signing, submission or ranking.",
         inputSchema: z.object({
-          network: z.enum(["base-mainnet", "base-sepolia"]).describe("Only these two fixed public Base RPC sources are configured; network is not a URL."),
-          txHash: z.string().regex(/^0x[0-9a-f]{64}$/).describe("Exact lowercase transaction hash (32 bytes)."),
+          subject: z.object({
+            type: z.literal("transaction"),
+            networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
+            txId: z.string().min(43).max(100).describe("Exact transaction hash or Solana signature; family parser validates it."),
+          }).strict(),
         }).strict(),
         outputSchema: z.object({
-          schema: z.literal("ne-mcp-live-evm-transaction/v0.1"),
-          liveObservation: z.literal(true),
-          observationBasis: z.literal("source_observation"),
-          networkId: z.string(),
-          txHash: z.string(),
-          observedAt: z.string(),
+          schema: z.literal("ne-mcp-observation-envelope/v0.1"),
+          observationKind: z.literal("live_source_observation"),
+          toolStatus: z.literal("observed"),
+          evidenceBasis: z.literal("source_observation"),
+          subject: z.object({type: z.literal("transaction"), networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS), txId: z.string()}),
+          acquiredAt: z.string(),
           source: jsonObject,
           acquisition: z.object({
-            receiptObserved: z.boolean(),
+            transactionObserved: z.boolean(),
             blockObserved: z.boolean(),
             consistent: z.boolean(),
             captures: z.array(z.object({
-              rpcMethod: z.string(), rpcParams: z.array(z.unknown()),
-              httpStatus: z.number(), resultText: z.string(),
-              acquiredAt: z.string(), contentDigest: z.string(),
+              rpcMethod: z.string(), httpStatus: z.number(), acquiredAt: z.string(),
+              contentDigest: z.string(), resultBytes: z.number(),
             })),
           }),
+          artifactType: z.literal("network-evidence-fragment"),
           fragment: jsonObject,
           nonClaims: z.array(z.string()),
         }),
         annotations: {
-          title: "Resolve a Base EVM transaction from live RPC evidence",
+          title: "Evaluate EVM or Solana transaction evidence (read only)",
           readOnlyHint: true,
           destructiveHint: false,
           idempotentHint: false,
@@ -384,7 +387,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       },
       async (args) => {
         try {
-          return ok(await deps.liveEvm!(args));
+          return ok(await deps.liveEvidence!(args));
         } catch (error) {
           return toolError(error);
         }

@@ -38,7 +38,7 @@ import type { HostedAllowlist, NeMcpHostedOptions, NeMcpMode, RequestGuard } fro
 import { GlobalAbuseLimiter, HOSTED_DEFAULT_LIMITS, LOCAL_DEFAULT_LIMITS, resolveLimits } from "./limits.js";
 import type { NeMcpLimits } from "./limits.js";
 import { createNeMcpServer, LIVE_TOOL_NAMES, SERVER_NAME, SERVER_VERSION, TOOL_NAMES } from "./tools.js";
-import type { LiveEvmTool } from "./live-evm.js";
+import type { MultichainTool } from "./live-multichain.js";
 
 export const DEFAULT_HOST = "127.0.0.1";
 export const DEFAULT_PORT = 4178;
@@ -58,7 +58,7 @@ export interface NeMcpHttpOptions {
   /** Injected store (tests); default loads the shipped, pinned collection. */
   readonly cases?: ReviewedCaseStore;
   /** Explicitly admitted read-only live RPC tool; forbidden in local mode. */
-  readonly liveEvm?: LiveEvmTool;
+  readonly liveEvidence?: MultichainTool;
   /**
    * Opt-in hosted mode. Requires a validated exact public origin; binds
    * HOSTED_BIND_HOST by default (a loopback bind is allowed for rehearsal/tests).
@@ -114,19 +114,19 @@ export const HEALTH_SCOPE: Readonly<Record<NeMcpMode, string>> = Object.freeze({
   hosted: "hosted preview v0: anonymous, read-only, offline; not a reviewed production service",
 });
 
-function healthBody(mode: NeMcpMode, liveEvmEnabled = false): string {
+function healthBody(mode: NeMcpMode, liveEnabled = false): string {
   return JSON.stringify({
     status: "ok",
     server: SERVER_NAME,
     version: SERVER_VERSION,
     transport: "streamable-http",
     endpoint: "/mcp",
-    tools: liveEvmEnabled ? LIVE_TOOL_NAMES : TOOL_NAMES,
+    tools: liveEnabled ? LIVE_TOOL_NAMES : TOOL_NAMES,
     readOnly: true,
-    liveObservation: liveEvmEnabled,
-    networkIo: liveEvmEnabled ? "bounded_base_rpc" : "none",
+    liveObservation: liveEnabled,
+    networkIo: liveEnabled ? "bounded_evm_solana_rpc" : "none",
     mode,
-    scope: liveEvmEnabled ? "hosted preview: opt-in read-only Base RPC source observations; no finality or settlement" : HEALTH_SCOPE[mode],
+    scope: liveEnabled ? "pre-release: source observations on Base and Solana; no independent proof of settlement or finality" : HEALTH_SCOPE[mode],
   });
 }
 
@@ -168,11 +168,11 @@ function isJsonContentType(value: string | undefined): boolean {
 /** Start the MCP HTTP server (local by default). Fails closed on invalid configuration or unverified case data. */
 export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Promise<NeMcpHttpServer> {
   const { mode, host, port, maxBodyBytes, limits, allow } = validateHttpOptions(options);
-  if (options.liveEvm !== undefined && mode !== "hosted") throw new NeMcpConfigError("live EVM RPC requires explicit hosted mode");
+  if (options.liveEvidence !== undefined && mode !== "hosted") throw new NeMcpConfigError("live multichain RPC requires hosted mode");
   const cases = options.cases ?? loadReviewedCaseStore();
   const log = options.log ?? (() => {});
 
-  const mcp = createMcpHandler(() => createNeMcpServer({ cases, mode, ...(options.liveEvm === undefined ? {} : { liveEvm: options.liveEvm }) }), {
+  const mcp = createMcpHandler(() => createNeMcpServer({ cases, mode, ...(options.liveEvidence === undefined ? {} : { liveEvidence: options.liveEvidence }) }), {
     legacy: "stateless",
     maxRequestBodySize: maxBodyBytes,
     onerror: (error) => log(`mcp handler error: ${error.name}`),
@@ -185,7 +185,7 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
   const guards: RequestGuard[] =
     allow === undefined ? [localhostHostValidation(), localSamePortOriginGuard(() => boundPort)] : [hostedGuard(allow)];
   const limiter = new GlobalAbuseLimiter(limits);
-  const health = healthBody(mode, options.liveEvm !== undefined);
+  const health = healthBody(mode, options.liveEvidence !== undefined);
 
   async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     for (const guard of guards) if (!guard(req, res)) return;

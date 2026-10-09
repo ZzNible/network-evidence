@@ -4,7 +4,7 @@
 > See [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
 > and [`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
 
-> **Separate candidate, NOT DEPLOYED:** an opt-in, read-only live Base EVM transaction tool is under review on branch `work/ne-mcp-live-evm-20261009`; see [MCP live EVM candidate](../../docs/distribution/MCP_LIVE_EVM_CANDIDATE_20261009.md). The production/public MCP still has 3 offline tools. No public RPC functionality should be claimed for it until explicitly deployed and verified.
+> **Separate candidate, NOT DEPLOYED:** an opt-in read-only EVM + Solana exact-transaction tool is implemented only on branch `work/ne-mcp-multichain-20261009`; see [candidate and remaining COMPLETE gates](../../docs/distribution/MCP_MULTICHAIN_CANDIDATE_20261009.md). The existing public service still exposes 3 offline tools. This branch is NOT the complete MCP product and has NO public release authorization.
 
 A Model Context Protocol server over public Network Evidence code. It exposes
 three read-only tools and performs **no network I/O**: no RPC, crawler,
