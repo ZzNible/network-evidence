@@ -4,9 +4,14 @@
   "private": true,
   "type": "module",
   "description": "Local, read-only MCP server (v0) over public Network Evidence code: fixed profile inventory, Core-delegated Discovery over explicit caller-supplied candidate contexts, and exact-id reads of the shipped reviewed NE Maps collection. Loopback-only Streamable HTTP. No network I/O, no wallet, signing, funding or submission. Not published; not a public endpoint.",
-  "engines": { "node": ">=20.12" },
+  "engines": {
+    "node": ">=20.12"
+  },
   "exports": {
-    ".": { "types": "./src/index.ts", "default": "./src/index.ts" }
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
   },
   "dependencies": {
     "@modelcontextprotocol/node": "2.1.1",
@@ -17,7 +22,8 @@
     "@nec/resolver-opstack": "*",
     "@nec/resolver-solana": "*",
     "@nec/resolver-zksys": "*",
-    "zod": "^4.2.0"
+    "zod": "^4.2.0",
+    "@nec/resolver-evm": "*"
   },
   "devDependencies": {
     "@modelcontextprotocol/client": "2.3.1"

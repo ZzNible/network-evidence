@@ -24,6 +24,7 @@ describe("@nec/mcp source boundaries", () => {
       "http.ts",
       "index.ts",
       "limits.ts",
+      "live-evm.ts",
       "profiles.ts",
       "tools.ts",
     ]);
@@ -45,6 +46,15 @@ describe("@nec/mcp source boundaries", () => {
     for (const [name, text] of sources) {
       for (const pattern of forbidden) expect(`${name}: ${pattern.test(text)}`).toBe(`${name}: false`);
     }
+  });
+
+  it("keeps opt-in RPC limited to fixed Base origins and read methods", () => {
+    const live = sources.get("live-evm.ts")!;
+    expect(live).toContain("https://mainnet.base.org");
+    expect(live).toContain("https://sepolia.base.org");
+    expect(live).toContain('"eth_chainId", "eth_getTransactionReceipt", "eth_getBlockByHash"');
+    expect(live).not.toMatch(/process\.env|source\.transport\.url\s*=|eval\s*\(/);
+    expect(sources.get("cli.ts")).toContain("NE_MCP_LIVE_EVM_ENABLED");
   });
 
   it("reads exactly one fixed data file and never a caller-supplied path", () => {

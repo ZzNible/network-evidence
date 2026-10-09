@@ -26,7 +26,8 @@ export {
 } from "./cases.js";
 export type { EvidenceClass, ReviewedCaseOutput, ReviewedCaseStore } from "./cases.js";
 
-export { createNeMcpServer, READ_ONLY_ANNOTATIONS, SERVER_NAME, SERVER_VERSION, TOOL_NAMES } from "./tools.js";
+export { createNeMcpServer, READ_ONLY_ANNOTATIONS, SERVER_NAME, SERVER_VERSION, TOOL_NAMES, LIVE_TOOL_NAMES } from "./tools.js";
+export { createLiveEvmTool, LIVE_EVM_TOOL_NAME, LIVE_EVM_NETWORKS, restrictedBaseRpcFetch } from "./live-evm.js";
 
 export {
   DEFAULT_HOST,
