@@ -16,6 +16,7 @@ import { MAX_DISCOVERY_CANDIDATES, runDiscoverNetworkCandidates } from "./discov
 import { toSafeToolError } from "./errors.js";
 import { networkProfilesInventory, activeNetworkProfilesInventory } from "./profiles.js";
 import { LIVE_MULTICHAIN_TOOL, LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
+import { CLAIM_PROTOCOLS, resolveWithOptionalClaim } from "./live-claim.js";
 import { LIVE_BEFORE_TOOL_NAME, LIVE_BEFORE_MAX_CANDIDATES, LIVE_BEFORE_SCHEMA, createLiveBeforeTool } from "./live-before.js";
 import type { MultichainTool } from "./live-multichain.js";
 
@@ -394,13 +395,17 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       {
         title: "Evaluate EVM or Solana transaction evidence (read only)",
         description:
-          "Read-only opt-in pre-release: acquire and evaluate exact transactions on Base mainnet/Sepolia or Solana mainnet/devnet from fixed RPC sources. Return original Core-validated partial network-evidence-fragment with source provenance and capture digests. EVM L2 finality, withdrawal finalization and protocol settlement are not established; Solana finalized commitment is source-reported, not a cryptographic proof. Missing/pruned data does not prove nonexistence. No arbitrary URL/method, wallet, signing, submission or ranking.",
+          "Read-only opt-in pre-release: acquire an exact Base or Solana transaction from fixed RPC sources. Optionally assess ONE caller-supplied native x402 EVM, ERC-4337 or x402 SVM structured claim, validated and bound to the exact subject BEFORE the read. Return original Core fragment plus adapter-local claim result, if requested; neither is protocol settlement, cryptographic finality, or a full Core NetworkEvidenceResult. Caller-supplied protocol terms are NOT independently authenticated by this intake; no arbitrary RPC URLs, wallet, signing, submission or ranking.",
         inputSchema: z.object({
           subject: z.object({
             type: z.literal("transaction"),
             networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
             txId: z.string().min(43).max(100).describe("Exact transaction hash or Solana signature; family parser validates it."),
           }).strict(),
+          claim: z.object({
+            protocol: z.enum(CLAIM_PROTOCOLS),
+            claim: jsonObject.describe("Full native claim including caller-supplied original protocol terms, never synthesized by NEC."),
+          }).strict().optional(),
         }).strict(),
         outputSchema: z.object({
           schema: z.literal("ne-mcp-observation-envelope/v0.1"),
@@ -433,6 +438,12 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
           artifactType: z.literal("network-evidence-fragment"),
           fragment: jsonObject,
           nonClaims: z.array(z.string()),
+          claimAssessment: z.object({
+            protocol: z.enum(CLAIM_PROTOCOLS),
+            assessmentType: z.literal("adapter_local_protocol_assessment"),
+            evaluation: jsonObject,
+            nonClaims: z.array(z.string()),
+          }).optional(),
         }),
         annotations: {
           title: "Evaluate EVM or Solana transaction evidence (read only)",
@@ -444,7 +455,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       },
       async (args) => {
         try {
-          return ok(await deps.liveEvidence!(args));
+          return ok(await resolveWithOptionalClaim(deps.liveEvidence!, args));
         } catch (error) {
           return toolError(error);
         }

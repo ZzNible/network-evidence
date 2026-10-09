@@ -4,7 +4,7 @@
 > See [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
 > and [`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
 
-> **Separate candidate, NOT DEPLOYED:** Two opt-in hosted-only read-only EVM + Solana tools are available in the source branch: `resolve_transaction_evidence` (AFTER) and `discover_live_network_evidence` (source-backed BEFORE/Discovery). See [candidate and remaining COMPLETE gates](../../docs/distribution/MCP_MULTICHAIN_CANDIDATE_20261009.md). The public MCP remains a three-tool offline demo; neither of these new tools is deployed or authorized for publication.
+> **Separate candidate, NOT DEPLOYED:** Two opt-in hosted read-only Base/Solana tools exist: resolve_transaction_evidence (AFTER, optionally with one strict x402 EVM, ERC-4337, or x402-SVM native claim) and discover_live_network_evidence (source-backed BEFORE/Core Discovery). Claim outcomes remain ADAPTER-LOCAL, not complete Core results; caller-provided terms and a matching effect do not independently establish a historical x402 facilitator agreement or settlement. Refer to the existing MCP multichain candidate documentation. The public MCP remains a three-tool offline demo; no live deployment is authorized.
 
 A Model Context Protocol server over public Network Evidence code. It exposes
 three read-only tools and performs **no network I/O**: no RPC, crawler,
