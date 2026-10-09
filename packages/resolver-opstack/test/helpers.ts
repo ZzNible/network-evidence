@@ -369,7 +369,11 @@ export async function genericAcquisition(
     { expectMethod: "eth_chainId", resultJson: JSON.stringify(CHAIN_ID_HEX) },
     {
       expectMethod: "eth_getTransactionReceipt",
-      resultJson: receiptResultText({ blockHash, blockNumber: "0x" + blockNumber.toString(16), ...receiptOverrides }),
+      // This synthetic block contains only [TX]. A receipt index of 0x51
+      // (the separate public USDC fixture's actual index) would be FALSE
+      // in this one-transaction synthetic test block. Never waive the new
+      // exact tx-at-index production binding to accommodate bad test data.
+      resultJson: receiptResultText({ blockHash, blockNumber: "0x" + blockNumber.toString(16), transactionIndex: "0x0", ...receiptOverrides }),
     },
     {
       expectMethod: "eth_getBlockByHash",

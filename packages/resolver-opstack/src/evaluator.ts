@@ -375,6 +375,8 @@ export function evaluateOpStackFinality(input: OpStackFinalityEvaluationInput): 
     genericCheckOfCode(input.evm.checks, "RECEIPT_TX_HASH_MATCHES_SUBJECT")?.passed === true &&
     genericCheckOfCode(input.evm.checks, "RECEIPT_BLOCK_HASH_MATCHES_BLOCK")?.passed === true &&
     genericCheckOfCode(input.evm.checks, "RECEIPT_BLOCK_NUMBER_MATCHES_BLOCK")?.passed === true &&
+    // Finality of a block is NOT finality of a tx absent at the claimed index.
+    genericCheckOfCode(input.evm.checks, "RECEIPT_TRANSACTION_AT_BLOCK_INDEX")?.passed === true &&
     // An explicitly FAILED tx-by-hash/receipt binding cannot support
     // finality about the claimed subject even when receipt->block agrees.
     genericCheckOfCode(input.evm.checks, "TRANSACTION_COHERENT_WITH_RECEIPT")?.passed !== false;

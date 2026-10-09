@@ -43,6 +43,7 @@
  *   TRANSACTION_COHERENT_WITH_RECEIPT=false -> dimension dataBinding
  *   RECEIPT_BLOCK_HASH_MATCHES_BLOCK=false  -> dimension execution
  *   RECEIPT_BLOCK_NUMBER_MATCHES_BLOCK=false -> dimension execution
+ *   RECEIPT_TRANSACTION_AT_BLOCK_INDEX=false -> execution AND dataBinding
  *   LOG_* failures (per log)                -> dimension execution
  *
  * No Conflict is ever invented for a null receipt, an RPC failure or
@@ -231,6 +232,27 @@ export function evaluateTransactionAcquisition(
       );
     }
 
+    const membership = checkOfCode(acquisition.checks, "RECEIPT_TRANSACTION_AT_BLOCK_INDEX");
+    // If the receipt is for a different tx altogether, execution for THIS
+    // subject is INSUFFICIENT (not ambiguous). Only a receipt already bound
+    // to the requested tx can create a genuine membership contradiction
+    // for this exact subject against its purported containing block.
+    if (membership && !membership.passed &&
+        checkOfCode(acquisition.checks, "RECEIPT_TX_HASH_MATCHES_SUBJECT")?.passed === true) {
+      const evidenceIds = blockId === undefined ? [receiptId as string] : [receiptId as string, blockId];
+      // A receipt/block ordered-hash conflict invalidates BOTH propositions.
+      for (const scope of [EXECUTION_SCOPE, DATA_BINDING_SCOPE]) {
+        conflicts.push(buildCheckConflict({
+          check: membership,
+          qualifier: scope === EXECUTION_SCOPE ? "block-index-execution" : "block-index-data-binding",
+          scope,
+          material: true,
+          evidenceIds,
+          description: "The receipt transactionHash does not occupy transactionIndex in the claimed block's ordered transaction list.",
+        }));
+      }
+    }
+
     const txCoherence = checkOfCode(acquisition.checks, "TRANSACTION_COHERENT_WITH_RECEIPT");
     if (txCoherence && !txCoherence.passed) {
       conflicts.push(
@@ -301,7 +323,8 @@ export function evaluateTransactionAcquisition(
     receipt !== undefined &&
     receiptId !== undefined &&
     logCoherent.length === receipt.logs.length &&
-    checkOfCode(acquisition.checks, "RECEIPT_TX_HASH_MATCHES_SUBJECT")?.passed === true
+    checkOfCode(acquisition.checks, "RECEIPT_TX_HASH_MATCHES_SUBJECT")?.passed === true &&
+    checkOfCode(acquisition.checks, "RECEIPT_TRANSACTION_AT_BLOCK_INDEX")?.passed !== false
   ) {
     const seenEffectIds = new Set<string>();
     for (let i = 0; i < receipt.logs.length; i++) {
@@ -379,7 +402,8 @@ function baseDimensionInputs(
   }
 
   const bindsToSubject =
-    checkOfCode(acquisition.checks, "RECEIPT_TX_HASH_MATCHES_SUBJECT")?.passed === true;
+    checkOfCode(acquisition.checks, "RECEIPT_TX_HASH_MATCHES_SUBJECT")?.passed === true &&
+    checkOfCode(acquisition.checks, "RECEIPT_TRANSACTION_AT_BLOCK_INDEX")?.passed !== false;
 
   // Subject binding broken -> the receipt proves nothing about THIS subject;
   // the execution contribution is downgraded to insufficient (the scoped
