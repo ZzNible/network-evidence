@@ -72,6 +72,10 @@ export interface X402SvmPaymentEvaluation {
 }
 
 const DECIMAL = /^(0|[1-9][0-9]*)$/;
+/** Locale-invariant JavaScript UTF-16 code-unit ordering, like Core. */
+function compareUtf16(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
 
 function effectRecord(effect: ObservedEffect): { observation?: SvmTransferObservation; excluded?: ExcludedSvmCandidate; unrelated?: true } {
   if (effect.type !== TRANSFER_CHECKED_EFFECT_TYPE) return { unrelated: true };
@@ -126,7 +130,7 @@ function paymentRelevantFragmentConflicts(
     if (candidate.scope.kind === "dimension") return candidate.scope.dimension === "execution" || candidate.scope.dimension === "dataBinding";
     if (candidate.scope.kind === "observed_effect") return inspectedEffectIds.includes(candidate.scope.effectId);
     return samePropositionScope(candidate.scope, scope);
-  }).sort((a, b) => a.id.localeCompare(b.id));
+  }).sort((a, b) => compareUtf16(a.id, b.id));
 }
 
 export function assessX402SvmExactPayment(fragment: NetworkEvidenceFragment, claimValue: X402SvmPaymentClaim | unknown, context: X402SvmAssessmentContext = {}): X402SvmPaymentEvaluation {
@@ -145,8 +149,8 @@ export function assessX402SvmExactPayment(fragment: NetworkEvidenceFragment, cla
     if (interpreted.observation) observations.push(interpreted.observation);
     if (interpreted.excluded) excludedCandidates.push(interpreted.excluded);
   }
-  observations.sort((a, b) => locationKey(a).localeCompare(locationKey(b)));
-  excludedCandidates.sort((a, b) => a.effectId.localeCompare(b.effectId));
+  observations.sort((a, b) => compareUtf16(locationKey(a), locationKey(b)));
+  excludedCandidates.sort((a, b) => compareUtf16(a.effectId, b.effectId));
   const bound = observations.filter((observation) => observation.transactionSignature === claim.paymentSignature);
   const mismatched = observations.filter((observation) => observation.transactionSignature !== claim.paymentSignature);
   for (const observation of mismatched) adapterConflicts.push({ id: `x402-svm-conflict:signature:${observation.effectId}`, code: "X402_SVM_EFFECT_SIGNATURE_MISMATCH", description: "TransferChecked effect is bound to a different transaction signature.", scope, evidence: [...observation.evidenceIds], material: true });
@@ -161,35 +165,52 @@ export function assessX402SvmExactPayment(fragment: NetworkEvidenceFragment, cla
   const executionDimension = fragment.networkEvidence.execution;
   const dataBinding = fragment.networkEvidence.dataBinding;
   const traceComplete = dataBinding?.verdict === "supported" && dataBinding.metadata?.instructionTraceComplete === true;
+  // Token-2022 can deduct a transfer fee before the recipient receives the
+  // tokens. TransferChecked *instruction amount* is NOT necessarily the net
+  // credit to payTo. The current Solana resolver does not bind a recipient
+  // pre/post balance delta or prove absence of transfer-fee extensions.
+  // Keep the matching instruction visible, but NEVER certify payment outcome
+  // until a native net-credit evidence path exists.
+  const token2022NetCreditUnknown = matches.some((m) => m.tokenProgram === TOKEN_2022_PROGRAM);
+  // Even a source-supported instruction dataBinding cannot become
+  // a supported *payment* contribution without a net-recipient credit.
+  // This is an adapter-only evidentiary guard, not a downgrade of the
+  // underlying resolver's original dataBinding dimension.
+  const paymentOutcomeBound = traceComplete && !token2022NetCreditUnknown;
   const inspectedEffectIds = [...new Set([...bound.map((observation) => observation.effectId), ...excludedCandidates.map((candidate) => candidate.effectId)])];
   const relevantFragmentConflicts = paymentRelevantFragmentConflicts(fragment, scope, inspectedEffectIds);
-  const allConflicts = [...relevantFragmentConflicts, ...adapterConflicts].sort((a, b) => a.id.localeCompare(b.id));
+  const allConflicts = [...relevantFragmentConflicts, ...adapterConflicts].sort((a, b) => compareUtf16(a.id, b.id));
   const inputs: Array<{ scope: PropositionScope; applicability: Applicability; verdict?: EvidenceVerdict; basis: EvidenceBasis[]; evidence: string[] }> = [];
   const cleanNegative = allConflicts.length === 0 && (
     executionDimension?.verdict === "contradicted" ||
-    (subjectMatchesClaim && matches.length === 0 && traceComplete && executionDimension?.verdict === "supported")
+    (subjectMatchesClaim && matches.length === 0 && paymentOutcomeBound && executionDimension?.verdict === "supported")
   );
   if (cleanNegative) {
     if (executionDimension?.verdict === "contradicted") inputs.push({ scope: { kind: "dimension", dimension: "execution" }, applicability: "applicable", verdict: "contradicted", basis: [...executionDimension.basis], evidence: [...executionDimension.evidence] });
-    if (subjectMatchesClaim && matches.length === 0 && traceComplete && executionDimension?.verdict === "supported") inputs.push({ scope, applicability: "applicable", verdict: "contradicted", basis: ["source_observation", "deterministic_derivation"], evidence: [...new Set([...(executionDimension.evidence), ...(dataBinding?.evidence ?? [])])] });
+    if (subjectMatchesClaim && matches.length === 0 && paymentOutcomeBound && executionDimension?.verdict === "supported") inputs.push({ scope, applicability: "applicable", verdict: "contradicted", basis: ["source_observation", "deterministic_derivation"], evidence: [...new Set([...(executionDimension.evidence), ...(dataBinding?.evidence ?? [])])] });
     inputs.push({ scope: { kind: "dimension", dimension: "dataBinding" }, applicability: "applicable", basis: ["deterministic_derivation"], evidence: [] });
     for (const candidate of bound) inputs.push({ scope: { kind: "observed_effect", effectId: candidate.effectId }, applicability: "applicable", basis: ["source_observation"], evidence: [...candidate.evidenceIds] });
   } else {
     if (subjectMatchesClaim) {
-      if (matches.length === 1 && traceComplete && executionDimension?.verdict === "supported") inputs.push({ scope, applicability: "applicable", verdict: "supported", basis: ["source_observation", "deterministic_derivation"], evidence: [...matches[0]!.evidenceIds] });
-      else if (matches.length === 0 && traceComplete && executionDimension?.verdict === "supported") inputs.push({ scope, applicability: "applicable", verdict: "contradicted", basis: ["source_observation", "deterministic_derivation"], evidence: [...new Set([...(executionDimension.evidence), ...(dataBinding?.evidence ?? [])])] });
+      if (matches.length === 1 && paymentOutcomeBound && executionDimension?.verdict === "supported") inputs.push({ scope, applicability: "applicable", verdict: "supported", basis: ["source_observation", "deterministic_derivation"], evidence: [...matches[0]!.evidenceIds] });
+      else if (matches.length === 0 && paymentOutcomeBound && executionDimension?.verdict === "supported") inputs.push({ scope, applicability: "applicable", verdict: "contradicted", basis: ["source_observation", "deterministic_derivation"], evidence: [...new Set([...(executionDimension.evidence), ...(dataBinding?.evidence ?? [])])] });
       else inputs.push({ scope, applicability: "applicable", basis: ["deterministic_derivation"], evidence: [] });
     } else inputs.push({ scope, applicability: "applicable", basis: ["deterministic_derivation"], evidence: [] });
-    inputs.push(traceComplete
+    inputs.push(paymentOutcomeBound
       ? { scope: { kind: "dimension", dimension: "dataBinding" }, applicability: "applicable", verdict: "supported", basis: [...(dataBinding?.basis ?? [])], evidence: [...(dataBinding?.evidence ?? [])] }
       : { scope: { kind: "dimension", dimension: "dataBinding" }, applicability: "applicable", basis: ["deterministic_derivation"], evidence: [] });
-    for (const candidate of bound) inputs.push(matches.includes(candidate)
+    for (const candidate of bound) inputs.push(matches.includes(candidate) && paymentOutcomeBound
       ? { scope: { kind: "observed_effect", effectId: candidate.effectId }, applicability: "applicable", verdict: "supported", basis: ["source_observation", "deterministic_derivation"], evidence: [...candidate.evidenceIds] }
       : { scope: { kind: "observed_effect", effectId: candidate.effectId }, applicability: "applicable", basis: ["source_observation"], evidence: [...candidate.evidenceIds] });
     if (executionDimension?.verdict === "contradicted") inputs.push({ scope: { kind: "dimension", dimension: "execution" }, applicability: "applicable", verdict: "contradicted", basis: [...executionDimension.basis], evidence: [...executionDimension.evidence] });
     else if (executionDimension !== undefined && executionDimension.verdict !== "supported") inputs.push({ scope: { kind: "dimension", dimension: "execution" }, applicability: "applicable", basis: [...executionDimension.basis], evidence: [...executionDimension.evidence] });
   }
   if (!traceComplete) warnings.push({ code: "X402_SVM_INSTRUCTION_TRACE_INCOMPLETE", message: "The CPI instruction trace is unavailable, so exactly-one payment semantics cannot be established." });
+  if (token2022NetCreditUnknown) warnings.push({
+    code: "X402_SVM_TOKEN_2022_NET_RECEIPT_UNVERIFIED",
+    message: "Token-2022 TransferChecked instruction amount may exceed the recipient's net tokens credited after extension fees; no source-bound pre/post recipient balance delta or fee-extension exclusion was verified. Cannot assert x402 payment outcome.",
+    evidence: [...new Set(matches.filter(m => m.tokenProgram === TOKEN_2022_PROGRAM).flatMap(m => m.evidenceIds))],
+  });
   if (executionDimension === undefined || executionDimension.verdict !== "supported") warnings.push({ code: "X402_SVM_SUCCESSFUL_EXECUTION_NOT_ESTABLISHED", message: "A matching-looking instruction cannot establish payment without successful execution evidence." });
   if (matches.length === 0) warnings.push({ code: "X402_SVM_NO_QUALIFYING_TRANSFER", message: "No individual TransferChecked satisfied token program, mint, canonical destination ATA, and amount >= required." });
   if (matches.length > 1) warnings.push({ code: "X402_SVM_EXACTLY_ONE_VIOLATED", message: "Multiple qualifying transfers fail the exactly-one rule; candidates are exposed deterministically." });
@@ -219,8 +240,8 @@ export function assessX402SvmExactPayment(fragment: NetworkEvidenceFragment, cla
     qualifyingCandidateCount: matches.length,
     inspectedTransferCheckedCount: observations.length + excludedCandidates.length,
     excludedCandidates,
-    conflicts: [...fragment.conflicts, ...adapterConflicts].sort((a, b) => a.id.localeCompare(b.id)),
-    warnings: [...new Map(warnings.map((warning) => [`${warning.code}:${warning.message}`, warning])).values()].sort((a, b) => a.code.localeCompare(b.code)),
+    conflicts: [...fragment.conflicts, ...adapterConflicts].sort((a, b) => compareUtf16(a.id, b.id)),
+    warnings: [...new Map(warnings.map((warning) => [`${warning.code}:${warning.message}`, warning])).values()].sort((a, b) => compareUtf16(a.code, b.code)),
     ...(context.correlationStrength === undefined ? {} : { correlation: { strength: context.correlationStrength, historicalPaymentRequirementsPublic: context.historicalPaymentRequirementsPublic === true, historicalPaymentPayloadPublic: context.historicalPaymentPayloadPublic === true, historicalSettlementResponsePublic: context.historicalSettlementResponsePublic === true } }),
   };
   return deepFreeze(evaluation);

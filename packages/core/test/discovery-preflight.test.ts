@@ -6,6 +6,8 @@ import {
   buildEvidenceSnapshot,
   buildPreflightResult,
   composePreflightStatus,
+  computePreflightResultDigest,
+  verifyPreflightResult,
   computeEvidencePolicyDigest,
   decodeNecWireJson,
   encodeNecWireJson,
@@ -341,6 +343,27 @@ describe("Preflight auditability", () => {
       const { content, context } = subsetWorld();
       content.evidenceReadiness.execution = readiness("ready", { evidence: ["ev_unrelated"] });
       expect(() => buildPreflightResult(content, context)).toThrow(/NON-EMPTY SUBSET/);
+    });
+
+    it("H3: a same-id EvidenceRef with substituted source/digest is NOT verified against the snapshot", () => {
+      const { content, context } = subsetWorld();
+      const original = buildPreflightResult(content, context);
+      const attacker = structuredClone(original);
+      attacker.evidence[0] = {
+        ...attacker.evidence[0]!,
+        sourceId: "src.attacker",
+        locator: "untrusted-substituted-locator",
+        contentDigest: "sha256:" + "0".repeat(64),
+      };
+      // Re-hashing a structurally valid result must not make substituted
+      // provenance ready when the supplied capability snapshot disagrees.
+      attacker.artifactDigest = computePreflightResultDigest(attacker);
+      expect(verifyPreflightResultIntegrity(attacker)).toBe(true);
+      expect(verifyPreflightResult(attacker, context)).toBe(false);
+      const forgedContent = structuredClone(content);
+      forgedContent.evidence[0] = { ...attacker.evidence[0]! };
+      expect(() => buildPreflightResult(forgedContent, context))
+        .toThrow(/provenance substitution forbidden/);
     });
 
     it("ready citations EQUAL to the capability evidence => accept", () => {

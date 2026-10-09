@@ -267,6 +267,26 @@ describe("adversarial: log population", () => {
 });
 
 describe("adversarial: conflicts drive ambiguity through the frozen ladder", () => {
+  it("H2: material dataBinding disagreement defeats an otherwise matched x402 transfer", () => {
+    const dispute = conflict({
+      id: "conflict_transaction_receipt_identity",
+      scope: { kind: "dimension", dimension: "dataBinding" },
+      evidence: ["ev_receipt_1"],
+    });
+    const result = buildResult({
+      effects: [transferEffect("eff_1")],
+      dataBindingDim: {
+        applicability: "applicable", verdict: "ambiguous",
+        basis: ["source_observation"], evidence: ["ev_receipt_1"],
+      },
+      conflicts: [dispute],
+    });
+    const evaluation = evaluateX402ExactSettlement(BASE_REQUIREMENT, result);
+    expect(evaluation.outcome.verdict).toBe("ambiguous");
+    expect(evaluation.outcome.materialConflictIds).toContain(dispute.id);
+    expect(evaluation.claim).not.toBe(X402_CLAIM_LABELS.supported);
+  });
+
   it("goes ambiguous on a material conflict scoped to a relied-upon effect", () => {
     const c = conflict({
       id: "conflict_eff_1",
