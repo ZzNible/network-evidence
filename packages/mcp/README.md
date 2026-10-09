@@ -4,7 +4,7 @@
 > See [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
 > and [`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
 
-> **Separate candidate, NOT DEPLOYED:** Two opt-in hosted read-only Base/Solana tools exist: resolve_transaction_evidence (AFTER, optionally with one strict x402 EVM, ERC-4337, or x402-SVM native claim) and discover_live_network_evidence (source-backed BEFORE/Core Discovery). Claim outcomes remain ADAPTER-LOCAL, not complete Core results; caller-provided terms and a matching effect do not independently establish a historical x402 facilitator agreement or settlement. Refer to the existing MCP multichain candidate documentation. The public MCP remains a three-tool offline demo; no live deployment is authorized.
+> **Separate candidate, NOT DEPLOYED:** Two opt-in hosted read-only Base/Solana tools exist on the source branch: resolve_transaction_evidence (AFTER, with optional strict x402 EVM / ERC-4337 / x402 SVM native claim and optional source-bound OP Stack L2 block finality on Base only) and discover_live_network_evidence (BEFORE/Core Discovery). L2 finalized is a bounded single-source RPC interpretation, not Ethereum settlement or withdrawal finalization; INSUFFICIENT under an 8-link walk means not proven, NOT unfinalized. See the candidate technical and reproducibility notes; the PUBLIC MCP remains the original three-tool offline demo. No deployment or directory listing authorized.
 
 A Model Context Protocol server over public Network Evidence code. It exposes
 three read-only tools and performs **no network I/O**: no RPC, crawler,

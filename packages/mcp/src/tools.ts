@@ -395,13 +395,14 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       {
         title: "Evaluate EVM or Solana transaction evidence (read only)",
         description:
-          "Read-only opt-in pre-release: acquire an exact Base or Solana transaction from fixed RPC sources. Optionally assess ONE caller-supplied native x402 EVM, ERC-4337 or x402 SVM structured claim, validated and bound to the exact subject BEFORE the read. Return original Core fragment plus adapter-local claim result, if requested; neither is protocol settlement, cryptographic finality, or a full Core NetworkEvidenceResult. Caller-supplied protocol terms are NOT independently authenticated by this intake; no arbitrary RPC URLs, wallet, signing, submission or ranking.",
+          "Read-only opt-in pre-release: acquire an exact Base or Solana transaction from fixed RPC sources. On Base only, includeL2Finality optionally acquires a separate Core finality-only fragment under a bounded 8-ancestor native OP Stack ruleset; INSUFFICIENT has distinct native causes (unwalked ancestry, source head below the subject or missing facts); inspect the native warning and reason, do not infer a universal finalized or unfinalized state. This is a ONE-source L2 block view, NOT Ethereum settlement or withdrawal finalization. Optionally assess ONE caller-supplied native x402 EVM, ERC-4337 or x402 SVM structured claim, validated and bound to the exact subject BEFORE the read. Return original Core fragment plus adapter-local claim result, if requested; neither is protocol settlement, cryptographic finality, or a full Core NetworkEvidenceResult. Caller-supplied protocol terms are NOT independently authenticated by this intake; no arbitrary RPC URLs, wallet, signing, submission or ranking.",
         inputSchema: z.object({
           subject: z.object({
             type: z.literal("transaction"),
             networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
             txId: z.string().min(43).max(100).describe("Exact transaction hash or Solana signature; family parser validates it."),
           }).strict(),
+          includeL2Finality: z.boolean().optional().describe("Base OP Stack L2 block finality only, via native bounded source RPC read; never withdrawal settlement. Unsupported for Solana."),
           claim: z.object({
             protocol: z.enum(CLAIM_PROTOCOLS),
             claim: jsonObject.describe("Full native claim including caller-supplied original protocol terms, never synthesized by NEC."),
@@ -438,6 +439,23 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
           artifactType: z.literal("network-evidence-fragment"),
           fragment: jsonObject,
           nonClaims: z.array(z.string()),
+          opStackFinality: z.object({
+            ruleset: z.literal("opstack.rpc-finalized-head-v1"),
+            networkId: z.string(),
+            toolStatus: z.enum(["evaluated", "not_evaluated", "source_unavailable"]),
+            withdrawalFinalization: z.literal("not_evaluated"),
+            ethereumSettlement: z.literal("not_evaluated"),
+            maxAncestryDepth: z.number(),
+            reason: z.enum(["missing_exact_block_anchor","opstack_source_unavailable"]).optional(),
+            observedAt: z.string().optional(),
+            fragment: jsonObject.optional(),
+            captures: z.array(z.object({
+              rpcMethod: z.string(), rpcParams: z.array(z.unknown()),
+              contentDigest: z.string(), acquiredAt: z.string(),
+              httpStatus: z.number(), resultBytes: z.number(),
+            })).optional(),
+            nonClaims: z.array(z.string()),
+          }).optional(),
           claimAssessment: z.object({
             protocol: z.enum(CLAIM_PROTOCOLS),
             assessmentType: z.literal("adapter_local_protocol_assessment"),

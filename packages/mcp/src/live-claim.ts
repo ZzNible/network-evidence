@@ -22,6 +22,8 @@ export interface OptionalClaim {
 export interface ClaimBoundInput {
   readonly subject: TransactionSubject;
   readonly claim?: OptionalClaim;
+  /** OP Stack L2 block finality is a separate optional source-observed fragment. */
+  readonly includeL2Finality?: boolean;
 }
 export interface ClaimAssessmentEnvelope {
   readonly protocol: ClaimProtocol;
@@ -142,7 +144,10 @@ function assessPrepared(observation: MultichainObservation, prepared: Prepared):
 /** Exactly ONE outbound acquisition, reused by all three native claim adapters. */
 export async function resolveWithOptionalClaim(resolve: MultichainTool, input: ClaimBoundInput): Promise<ClaimBoundObservation> {
   const prepared = input.claim === undefined ? undefined : prepareLiveClaim(input.subject, input.claim);
-  const observation = await resolve({subject: input.subject});
+  const observation = await resolve({
+    subject: input.subject,
+    ...(input.includeL2Finality === undefined ? {} : {includeL2Finality: input.includeL2Finality}),
+  });
   if (prepared === undefined) return observation;
   const assessment = assessPrepared(observation, prepared);
   const response: ClaimBoundObservation = {...observation, claimAssessment:assessment};

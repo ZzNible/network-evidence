@@ -7,6 +7,7 @@ import { parseTransactionHashInput } from "@nec/resolver-evm";
 import { parseSignature } from "@nec/resolver-solana";
 import { decodeNecWireJson, encodeNecWireJson } from "@nec/core";
 import { createLiveEvmTool } from "./live-evm.js";
+import type { LiveOpStackFinality } from "./live-evm.js";
 import { acquireLiveSolana, SOLANA_NETWORKS } from "./live-solana.js";
 import type { SolanaLiveEvidence } from "./live-solana.js";
 import { NeMcpError } from "./errors.js";
@@ -60,10 +61,15 @@ export interface MultichainObservation {
   };
   readonly artifactType: "network-evidence-fragment";
   readonly fragment: Record<string, unknown>;
+  /** Optional SECOND Core fragment, OP Stack L2 block finality ONLY (no settlement). */
+  readonly opStackFinality?: LiveOpStackFinality;
   readonly nonClaims: readonly string[];
 }
 
-export type MultichainTool = (input: { readonly subject: TransactionSubject }) => Promise<MultichainObservation>;
+export type MultichainTool = (input: {
+  readonly subject: TransactionSubject;
+  readonly includeL2Finality?: boolean;
+}) => Promise<MultichainObservation>;
 
 function deny(code: "MCP_MULTICHAIN_INPUT" | "MCP_MULTICHAIN_RATE_LIMIT" | "MCP_MULTICHAIN_TOO_LARGE" | "MCP_MULTICHAIN_SOURCE_FAILED"): never {
   const message = {
@@ -90,6 +96,10 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
     const id = subject.networkId;
     if (!LIVE_MULTICHAIN_NETWORK_IDS.includes(id)) deny("MCP_MULTICHAIN_INPUT");
     const evmNetwork = id === "eip155:8453" ? "base-mainnet" : id === "eip155:84532" ? "base-sepolia" : null;
+    if (input.includeL2Finality !== undefined && typeof input.includeL2Finality !== "boolean")
+      deny("MCP_MULTICHAIN_INPUT");
+    if (input.includeL2Finality === true && evmNetwork === null)
+      deny("MCP_MULTICHAIN_INPUT");
     try {
       if (evmNetwork !== null) {
         if (!/^0x[0-9a-f]{64}$/.test(subject.txId)) deny("MCP_MULTICHAIN_INPUT");
@@ -106,7 +116,10 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
     try {
       let response: MultichainObservation;
       if (evmNetwork !== null) {
-        const result = await evm({ network: evmNetwork, txHash: subject.txId });
+        const result = await evm({
+          network: evmNetwork, txHash: subject.txId,
+          ...(input.includeL2Finality === undefined ? {} : {includeL2Finality: input.includeL2Finality}),
+        });
         response = {
           schema: LIVE_MULTICHAIN_SCHEMA,
           observationKind: "live_source_observation",
@@ -131,6 +144,7 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
           },
           artifactType: "network-evidence-fragment",
           fragment: result.fragment,
+          ...(result.opStackFinality === undefined ? {} : {opStackFinality: result.opStackFinality}),
           nonClaims: result.nonClaims,
         };
       } else {
@@ -173,6 +187,34 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
       }
       const coreText = encodeNecWireJson("network-evidence-fragment", core);
       response = { ...response, fragment: JSON.parse(coreText) as Record<string, unknown> };
+      const op = response.opStackFinality;
+      if (op !== undefined) {
+        if (evmNetwork === null || input.includeL2Finality !== true ||
+            op.networkId !== subject.networkId || op.withdrawalFinalization !== "not_evaluated" ||
+            op.ethereumSettlement !== "not_evaluated") deny("MCP_MULTICHAIN_SOURCE_FAILED");
+        if (op.toolStatus === "evaluated") {
+          if (!op.fragment || !op.captures?.length) deny("MCP_MULTICHAIN_SOURCE_FAILED");
+          const finality = decodeNecWireJson("network-evidence-fragment", JSON.stringify(op.fragment));
+          if (finality.subject.type !== "transaction" ||
+              finality.subject.txId !== subject.txId ||
+              finality.subject.networkId !== subject.networkId ||
+              finality.network.networkId !== subject.networkId ||
+              finality.networkEvidence.finality === undefined ||
+              finality.networkEvidence.settlement !== undefined ||
+              finality.networkEvidence.execution !== undefined ||
+              finality.networkEvidence.dataBinding !== undefined ||
+              finality.networkEvidence.finality.basis.some(x => x !== "source_observation") ||
+              !op.captures.every(c => finality.evidence.some(ref =>
+                ref.sourceId === response.source.sourceId && ref.contentDigest === c.contentDigest))) {
+            deny("MCP_MULTICHAIN_SOURCE_FAILED");
+          }
+          response = {...response, opStackFinality: {
+            ...op, fragment: JSON.parse(encodeNecWireJson("network-evidence-fragment",finality)) as Record<string,unknown>,
+          }};
+        } else if (op.fragment !== undefined || op.captures !== undefined) {
+          deny("MCP_MULTICHAIN_SOURCE_FAILED");
+        }
+      }
       if (Buffer.byteLength(JSON.stringify(response)) > MULTICHAIN_RESULT_MAX_BYTES) deny("MCP_MULTICHAIN_TOO_LARGE");
       return response;
     } finally {
