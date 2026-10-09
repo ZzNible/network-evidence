@@ -280,7 +280,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
         "Returns the FIXED public profile inventory (Base mainnet eip155:8453, Base Sepolia eip155:84532, Solana mainnet, Solana devnet, zkSYS Tanenbaum testnet eip155:57057 replay-only) with each resolver manifest's DECLARED capabilities and the truth boundaries. Nothing is observed: every currentSupport/currentAvailability is 'not_assessed'. Profile membership is not live availability. Takes no arguments.",
       inputSchema: z.object({}).strict(),
       outputSchema: profilesOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: { ...READ_ONLY_ANNOTATIONS, title: "List fixed Network Evidence profiles" },
     },
     async () => {
       try {
@@ -296,10 +296,10 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
     {
       title: "Core Discovery over explicit candidate contexts",
       description:
-        `Runs the real @nec/discovery discoverNetworks (classification by @nec/core only) over 1..${MAX_DISCOVERY_CANDIDATES} EXPLICIT, complete, already-derived candidate contexts you supply (network + ResolverManifest + CapabilitySnapshot in nec-wire-json-v1 form) and Core DiscoveryRequirements. Returns the Core-built, Core-verified DiscoverNetworksResult with digests and per-candidate eligible/conditional/ineligible copied from Core. The outcome depends ONLY on the supplied snapshots; this server observes nothing and does NOT choose, rank or recommend a network — you choose, then run the resolver-specific evidence preflight. Invalid or incoherent contexts fail closed with a coded error.`,
+        `Runs the real @nec/discovery discoverNetworks (classification by @nec/core only) over 1..${MAX_DISCOVERY_CANDIDATES} EXPLICIT, complete, already-derived candidate contexts you supply (network + ResolverManifest + CapabilitySnapshot in nec-wire-json-v1 form) and Core DiscoveryRequirements. Returns the Core-built, Core-verified DiscoverNetworksResult with digests and per-candidate eligible/conditional/ineligible copied from Core. The outcome depends ONLY on the supplied snapshots; this server observes nothing and does NOT choose, rank or recommend a network. Any resolver-specific evidence preflight is external to this tool. Invalid or incoherent contexts fail closed with a coded error.`,
       inputSchema: discoverInputSchema,
       outputSchema: discoverOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: { ...READ_ONLY_ANNOTATIONS, title: "Core Discovery over explicit candidate contexts" },
     },
     async (args) => {
       try {
@@ -320,7 +320,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
         .object({ caseId: z.enum(caseIds).describe("Exact case id; no paths, no prefixes, no fuzzy matching.") })
         .strict(),
       outputSchema: caseOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: { ...READ_ONLY_ANNOTATIONS, title: "Read one shipped reviewed NE Maps case" },
     },
     async ({ caseId }) => {
       try {

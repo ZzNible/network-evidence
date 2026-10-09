@@ -172,7 +172,7 @@ describe("raw MCP JSON-RPC (Inspector-style): initialize -> tools/list -> tools/
     const tools = list.message.result.tools as any[];
     expect(tools.map((t) => t.name)).toEqual([...TOOL_NAMES]);
     for (const tool of tools) {
-      expect(tool.annotations).toEqual({ readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false });
+      expect(tool.annotations).toEqual({ title: tool.title, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false });
       expect(tool.inputSchema.type).toBe("object");
       expect(tool.inputSchema.additionalProperties).toBe(false);
       expect(tool.outputSchema.type).toBe("object");
