@@ -166,3 +166,39 @@ The actual hosted MCP can serve **both Base and Solana from live read-only RPCs*
 **Risks still open:** Cloud Run and native rate caps remain per process; `max=1` and IAM privacy reduce exposure, not guarantee zero overscale. The shared **2 EUR Cloud Run spend-cap configuration** also applies to existing services and is neither instantaneous nor comprehensive; Cloud Build, Artifact Registry, storage, egress and logs may cost extra, and **actual accrued pilot cost was not queried**. Provider quotas and logging/retention policies have not been independently certified. The full per-action original Core `EvidenceRequest`/policy/manifest/snapshot, complete Core `NetworkEvidenceResult` → Hub/Lens and final exact SHA independent release review remain unfinished. **No public live rollout is implied by successful canary tests.**
 
 **Stop rule:** keep private canary at min 0 (no permanent worker); no additional deployments or consumers in this lot. Future owner decision: private/dedicated Solana RPC or explicitly accepted best-effort public endpoint, cross-instance quota semantics and when/if to enable publicly accessible live tools. The original public three-tool offline MCP is the safe fallback.
+
+## 8. Public Base + Solana beta — owner approved 2026-10-10
+
+**New owner decision superseding the 2026-10-09 private-only stop rule FOR THIS ONE SEPARATE BETA SERVICE ONLY:** publish a limited, anonymous, read-only MCP beta for Base mainnet/Sepolia and Solana mainnet/devnet. Do NOT overwrite the historical official 3-tool offline preview, change the Registry listing or silently claim NE Suite v1 completeness.
+
+**Public MCP beta endpoint:** `https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp` (stateless MCP over Streamable HTTP; POST and current SDK negotiation, GET /mcp is not a browsing homepage). Optional health: `https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/health`.
+
+### Release provenance and observed controls
+
+- Source is **the exact publicly accessible GitHub PR #3 branch commit** `24f1c23d7a86c306e41bb5fd056d16181d0d2dc6` checked out freshly from origin, not the current `main` branch. Source was built into a pinned Cloud Run image digest; the later documentation commit does NOT represent new executable code in that image. PR #3 remains OPEN/DRAFT and **is not merged**. An official Registry `server.json` still points at the existing 3-tool OFFLINE endpoint, NOT this beta.
+- Dedicated Google Cloud Run service `network-evidence-mcp-beta`, region `europe-west1`; observed ready live revision `network-evidence-mcp-beta-00002-d5z` at **100% traffic**. Anonymous `allUsers` **roles/run.invoker** was granted **only on this beta service** after the source/host/IAM/security/chain gates passed. It has a dedicated runtime service account with no project-level application roles, 1 vCPU / 512Mi memory, min 0, **max 1 configured both at service and revision level**, HTTP concurrency **1**, timeout **45 s**, exact allowed HTTPS origin, `NE_MCP_MULTICHAIN_ENABLED=1`.
+- Application admission: **4 HTTP MCP requests/minute per Node process**, max **1 in-flight** per process; live source acquisition has its own budget (**8 acquisitions/minute and 2 concurrent per process**, additionally constrained by HTTP concurrency 1). A single client can exhaust the small shared public budget. Neither Cloud Run max=1 nor these in-memory counters guarantee globally atomic limits or zero overages. No per-client auth, account tracking, fee payment, signature, wallet, chain transaction submission or uptime SLA.
+- The project has an observed **2 EUR Cloud Run configured spend cap** and a separate **5 EUR alerts-only** budget. They are not a hard all-services monetary ceiling; Cloud Build, Artifact Registry and other costs are not necessarily included. Do not promise a zero-cost public beta or provider SLA. Actual accrued cost was NOT measured in this release.
+- Source provider endpoints are bounded and allowlisted. Public Solana RPC services are SHARED/best-effort and may return 429/403 or omit older data. Failed acquisition is `unavailable`/insufficient, **not** evidence that Solana is unsupported or failed. Privacy: Google Cloud logs request metadata; public RPC providers' logging, retention and SLA were not verified. Avoid sending sensitive/private subjects; this is a public beta.
+
+### Verified acceptance gates, 2026-10-10
+
+- Independent clean **fresh GitHub clone of the exact source SHA**: `npm ci` PASS; strict TypeScript PASS; **89 files / 1,557 tests PASS**; `demo:integrability -- --verify` PASS; original offline MCP SDK smoke PASS; npm audit 0 vulnerabilities. The original historical F1/F2/F3 source/proof authority was not rewritten.
+- Independent read-only Claude Opus **RELEASE_BETA_GATE=PASS** for the inspected HTTP, limits, source boundary, MCP tool dispatch and Dockerfile **with explicit caveats**: no complete independent review of all live-before/preflight/claim/resolver modules, no global per-tool deadline linked to remote disconnect, unpinned base image and dependency runtime weight, anonymous shared-budget DoS, possible provider throttling and Cloud Run/IP logging. This is a bounded beta safety gate, **not full NE Suite v1 certification**.
+- Before granting public IAM: authenticated private `/health` showed 6 read-only tools; real remote Base mainnet and Solana mainnet exact transaction/source identity calls yielded source-observed `execution:supported` and `dataBinding:supported`, 4 source captures each; official MCP client SDK modern `2026-07-28` and raw legacy `2025-11-25` both PASS.
+- **After granting anonymous IAM:** GET `/health` HTTP 200 with 6 read-only tools and liveObservation true; anonymous `tools/list` plus **real Base + Solana read-only `resolve_transaction_evidence`** calls HTTP 200 with exact subject/source binding and explicitly `source_observation` basis; forged browser Origin HTTP 403. Independent post-script Cloud Run describe/IAM recheck PASS, service+revision max1 and budget settings intact. The existing official public `network-evidence-mcp` remains **3 tools OFFLINE**, and `network-evidence-mcp-live-canary` remains IAM-PRIVATE.
+- All results are **network-source observations and deterministic derivations**. Base generic finality is not evaluated. Solana RPC `finalized` does NOT establish independent cryptographic finality, L1 settlement, economic irreversibility or merchant payment completion. The opt-in SDK-only Solana block-signature membership check does NOT silently upgrade the MCP's historical basic fragment. A full Core `NetworkEvidenceResult` → Hub/Lens/Maps is **NOT automatically produced** without the real actor's request/expected action, policy and complete per-action resolver snapshot/manifest.
+
+### Exact rollback and release holds
+
+To instantly remove anonymous access to this beta **only**:
+
+```bash
+G=/home/nils/.local/bin/ne-gcloud
+P=$("$G" config get-value project)
+"$G" run services remove-iam-policy-binding network-evidence-mcp-beta \
+  --member=allUsers --role=roles/run.invoker \
+  --project="$P" --region=europe-west1
+```
+
+A future public-beta update requires fresh exact-SHA tests, a final review, explicit scope and verified live rollout. No automatic transfer from this beta to `main`, official MCP Registry, Claude Directory, ChatGPT connector, or main public Cloud Run endpoint. For wider load: evaluate dedicated/private Solana RPC, true distributed quota and monitoring as explicitly funded/approved infrastructure decisions—not requirements to remove Solana or claim universal finality.
