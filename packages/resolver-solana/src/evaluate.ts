@@ -53,19 +53,42 @@ export function evaluateSolanaTransaction(acquisition: SolanaTransactionAcquisit
   const blockRef = refFor("getBlock", acquisition, refs);
   const genesisRef = refFor("getGenesisHash", acquisition, refs);
   const conflicts: Conflict[] = [];
+  // Defense in depth for a NORMALIZED acquisition: rebind actual first
+  // signature and require exactly one matching recorded check. This does NOT
+  // authenticate an arbitrary caller-crafted acquisition or its RPC source.
+  const signatureChecks = acquisition.checks.filter(c => c.code === "TRANSACTION_SIGNATURE_MATCHES_SUBJECT");
+  const exactSubjectMatched = acquisition.transaction !== null &&
+    acquisition.transaction.signatures[0] === acquisition.subject.signature &&
+    signatureChecks.length === 1 && signatureChecks[0]?.passed === true;
   for (const check of acquisition.checks) {
     if (check.passed) continue;
+    // If getTransaction belongs to a different signature, its failure/success
+    // status is not an execution disagreement about the REQUESTED subject.
+    // Keep the signature conflict scoped to dataBinding, and execution
+    // insufficient for the requested subject; never invent ambiguity for it.
+    if (!exactSubjectMatched && check.code === "STATUS_ERROR_MATCHES_TRANSACTION") continue;
     const scope = check.code.includes("SIGNATURE") || check.code.includes("STATUS_SLOT") ? BINDING_SCOPE : check.code.includes("ERROR") ? EXECUTION_SCOPE : FINALITY_SCOPE;
     conflicts.push(conflict(check, scope, [txRef, statusRef, blockRef].filter((id): id is string => id !== undefined)));
   }
   const tx = acquisition.transaction;
   const transactionEvidence = txRef === undefined ? [] : [txRef];
+  // If getTransaction(R) returns T != R, execution of R is INSUFFICIENT.
+  // Never inherit a foreign transaction's success or failure verdict.
+  const subjectSignatureMatched = exactSubjectMatched;
   const executionBase = tx === null
     ? { scope: EXECUTION_SCOPE, applicability: "applicable" as const, basis: ["source_observation" as const], evidence: transactionEvidence }
-    : { scope: EXECUTION_SCOPE, applicability: "applicable" as const, verdict: tx.successful ? "supported" as const : "contradicted" as const, basis: ["source_observation" as const], evidence: transactionEvidence };
-  const bindingPassed = tx !== null && acquisition.checks.filter((c) => c.code === "TRANSACTION_SIGNATURE_MATCHES_SUBJECT" || c.code === "STATUS_SLOT_MATCHES_TRANSACTION").every((c) => c.passed);
+    : { scope: EXECUTION_SCOPE, applicability: "applicable" as const,
+        verdict: subjectSignatureMatched ? (tx.successful ? "supported" as const : "contradicted" as const) : "insufficient" as const,
+        basis: ["source_observation" as const], evidence: transactionEvidence };
+  // A null signature status does not negate getTransaction signature
+  // binding; it independently prevents finalized from being established.
+  const bindingPassed = subjectSignatureMatched &&
+    acquisition.checks.filter((c) => c.code === "STATUS_SLOT_MATCHES_TRANSACTION").every((c) => c.passed);
   const bindingBase = { scope: BINDING_SCOPE, applicability: "applicable" as const, ...(bindingPassed ? { verdict: "supported" as const } : {}), basis: ["source_observation" as const, "deterministic_derivation" as const], evidence: [genesisRef, txRef, statusRef].filter((id): id is string => id !== undefined) };
-  const finalized = tx !== null && acquisition.signatureStatus.value?.confirmationStatus === "finalized" && acquisition.block !== null && acquisition.block !== undefined && acquisition.consistent;
+  const finalized = tx !== null && exactSubjectMatched && bindingPassed &&
+    acquisition.signatureStatus.value?.confirmationStatus === "finalized" &&
+    acquisition.block !== null && acquisition.block !== undefined &&
+    acquisition.consistent && acquisition.checks.every(c => c.passed);
   const finalityBase = { scope: FINALITY_SCOPE, applicability: "applicable" as const, ...(finalized ? { verdict: "supported" as const } : {}), basis: ["source_observation" as const], evidence: [txRef, statusRef, blockRef].filter((id): id is string => id !== undefined) };
   const executionComposed = composeProposition(executionBase, { conflicts, evidenceRefs: refs });
   const bindingComposed = composeProposition(bindingBase, { conflicts, evidenceRefs: refs });
@@ -75,7 +98,11 @@ export function evaluateSolanaTransaction(acquisition: SolanaTransactionAcquisit
   const finality: EvidenceDimension = { applicability: finalityComposed.applicability, ...(finalityComposed.verdict === undefined ? {} : { verdict: finalityComposed.verdict }), basis: [...finalityComposed.basis], evidence: [...finalityComposed.evidence], metadata: { basis: "source_observation", commitment: "finalized", economicIrreversibilityEstablished: false } };
 
   const effects: ObservedEffect[] = [];
-  if (tx?.successful === true && bindingPassed && txRef !== undefined) {
+  // An execution or subject-binding conflict cannot produce a clean effect,
+  // even if one disputed RPC response reports successful TransferChecked.
+  if (tx?.successful === true && bindingPassed && txRef !== undefined &&
+      execution.verdict === "supported" && dataBinding.verdict === "supported" &&
+      acquisition.checks.every(c => c.code !== "STATUS_ERROR_MATCHES_TRANSACTION" || c.passed)) {
     for (const transfer of tx.transferChecked) {
       const fields = { tokenProgram: transfer.tokenProgram, mint: transfer.mint, source: transfer.source, destination: transfer.destination, authority: transfer.authority, amount: transfer.amount, decimals: transfer.decimals, location: transfer.location, transactionSignature: acquisition.subject.signature };
       const digest = digestCanonicalJson("resolver-solana-transfer-checked-v1", fields);

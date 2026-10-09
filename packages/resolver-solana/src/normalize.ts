@@ -1,5 +1,6 @@
 import { parseGenesisHash, parsePublicKey, parseSignature, decodeBase58 } from "./base58.js";
 import { NecResolverSolanaError, solanaFail } from "./errors.js";
+import { stableJsonKey } from "./rpc.js";
 
 export const SPL_TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 export const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
@@ -62,6 +63,26 @@ function record(value: unknown, label: string): Record<string, unknown> {
 function array(value: unknown, label: string): unknown[] {
   if (!Array.isArray(value)) solanaFail("SOLANA_MALFORMED_RESPONSE", `${label}: must be an array`);
   return value;
+}
+
+/** TransactionError: null (success), nonempty string or one-field Solana
+ * enum record. Missing, numeric, boolean or array err is NOT evidence of
+ * on-chain failed execution. This is strictly shape checking, NOT proof.
+ */
+function transactionError(container: Record<string, unknown>, label: string): unknown {
+  if (!Object.prototype.hasOwnProperty.call(container, "err")) {
+    solanaFail("SOLANA_MALFORMED_RESPONSE", `${label}: err is required`);
+  }
+  const value = container.err;
+  if (value === null) return null;
+  if (typeof value === "string" && value.length > 0 && value.length <= 128) return value;
+  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    const proto: unknown = Object.getPrototypeOf(value);
+    const keys = Object.keys(value);
+    if ((proto === Object.prototype || proto === null) &&
+        keys.length === 1 && (keys[0] as string).length > 0) return value;
+  }
+  solanaFail("SOLANA_MALFORMED_RESPONSE", `${label}: invalid Solana TransactionError shape`);
 }
 
 function safeInteger(value: unknown, label: string): number {
@@ -163,6 +184,7 @@ export function parseTransactionResult(value: unknown): SolanaTransactionObserva
   const staticKeys = array(message.accountKeys, "transaction.message.accountKeys").map((v, i) => responsePublicKey(v, `transaction.message.accountKeys[${i}]`));
   if (staticKeys.length === 0) solanaFail("SOLANA_MALFORMED_RESPONSE", "transaction.message.accountKeys: must not be empty");
   const meta = record(root.meta, "transaction.meta");
+  const executionError = transactionError(meta, "transaction.meta.err");
   const lookups = message.addressTableLookups === undefined ? [] : array(message.addressTableLookups, "transaction.message.addressTableLookups");
   let loadedWritable: string[] = [];
   let loadedReadonly: string[] = [];
@@ -225,8 +247,8 @@ export function parseTransactionResult(value: unknown): SolanaTransactionObserva
     recentBlockhash: responsePublicKey(message.recentBlockhash, "transaction.message.recentBlockhash"),
     feePayer: staticKeys[0] as string,
     effectiveAccountKeys: keys,
-    successful: meta.err === null,
-    executionError: meta.err,
+    successful: executionError === null,
+    executionError,
     transferChecked: transfers,
     instructionTraceComplete,
   };
@@ -240,6 +262,26 @@ export function parseSignatureStatusesResult(value: unknown): SolanaSignatureSta
   const entry = values[0];
   if (entry === null) return { contextSlot: BigInt(safeInteger(context.slot, "signatureStatuses.context.slot")), value: null };
   const status = record(entry, "signatureStatuses.value[0]");
+  const executionError = transactionError(status, "signatureStatuses.value[0].err");
+  // Legacy status.Ok/status.Err is deprecated; it may be absent.
+  // If a source DOES return it, it cannot contradict the mandatory err.
+  if (status.status !== undefined) {
+    const statusEnum = record(status.status, "signatureStatuses.value[0].status");
+    const variants = Object.keys(statusEnum);
+    if (variants.length !== 1 || (variants[0] !== "Ok" && variants[0] !== "Err")) {
+      solanaFail("SOLANA_MALFORMED_RESPONSE", "signatureStatuses.value[0].status: expected exactly Ok or Err");
+    }
+    if (variants[0] === "Ok") {
+      if (statusEnum.Ok !== null || executionError !== null) {
+        solanaFail("SOLANA_MALFORMED_RESPONSE", "signatureStatuses.value[0].status.Ok contradicts status.err");
+      }
+    } else {
+      const enumError = transactionError({ err: statusEnum.Err }, "signatureStatuses.value[0].status.Err");
+      if (enumError === null || stableJsonKey(enumError) !== stableJsonKey(executionError)) {
+        solanaFail("SOLANA_MALFORMED_RESPONSE", "signatureStatuses.value[0].status.Err contradicts status.err");
+      }
+    }
+  }
   const confirmation = status.confirmationStatus;
   if (confirmation !== null && confirmation !== "processed" && confirmation !== "confirmed" && confirmation !== "finalized") solanaFail("SOLANA_MALFORMED_RESPONSE", "invalid confirmationStatus");
   const confirmations = status.confirmations;
@@ -249,7 +291,7 @@ export function parseSignatureStatusesResult(value: unknown): SolanaSignatureSta
     value: {
       slot: BigInt(safeInteger(status.slot, "signatureStatuses.value[0].slot")),
       confirmations: confirmations as number | null,
-      err: status.err,
+      err: executionError,
       confirmationStatus: confirmation,
     },
   };

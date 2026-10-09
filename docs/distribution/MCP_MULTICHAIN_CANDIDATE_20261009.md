@@ -129,3 +129,11 @@
 - 17 dedicated adversarial regressions, real read-only Base indexed-membership and Base/Solana exact-subject BEFORE observations. No extra RPC methods, no Core mutation. Detailed rationale in the existing security correction report.
 - **Limit:** provider-supplied block hash list is not a cryptographically verified transactionsRoot/Merkle-trie inclusion. Public Cloud Run remains the three-tool offline demo. Other unreproduced audit findings and release security, ingress and quota gates remain open.
 - **Final VM source-integrity gate:** clean npm ci, TypeScript strict typecheck, **86 files / 1,504 tests PASS**, offline MCP smoke PASS, reproducible integrability fixture PASS, npm audit 0 vulnerabilities. Read-only Base exact-index and Base/Solana BEFORE source checks PASS; this is NOT a public-release security signoff.
+
+## Solana source-integrity gate 2026-10-09
+
+- Original requested signature now binds to the first signature in the normalized Solana getTransaction payload before any execution or positive TransferChecked effect. Native source-error validation requires transaction.meta.err and getSignatureStatuses.err; mismatched optional legacy Ok/Err and contradictory status-error observations fail closed.
+- 23 new adversarial/positive tests; real F3 signature and transfer effect id stable. Read-only independent Opus follow-up review PASS for unmerged source patch, not full release or security certification. Real Solana mainnet RPC after patch PASS for source/subject binding.
+- Open important limitation: compact getBlock(transactionDetails:none) does not return a signature list and cannot establish direct membership of THIS signature in the observed block; do not promote source-observed finalized to independently verified transaction inclusion, settlement or economic irreversibility. Maintain frozen F3 bytes and test a versioned signature-bearing path in a separate bounded lot.
+- No registry publication, new chain, Core mutation, wallet/signing/submission or public Cloud Run deployment.
+- FINAL EXACT WORKTREE GATES: fresh npm ci, strict TypeScript, 87 Vitest files / 1,527 tests PASS; demo:integrability -- --verify PASS, original offline MCP smoke PASS, npm audit --audit-level=high 0 vulnerabilities. Solana real public read-only RPC PASS, no transaction submitted. Final candidate SHA must still undergo release-specific approval.

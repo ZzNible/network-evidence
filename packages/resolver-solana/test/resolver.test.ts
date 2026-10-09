@@ -152,7 +152,8 @@ describe("strict acquisition and decoding", () => {
   });
   it("failed transaction containing TransferChecked emits no positive effect", async () => {
     const p = parts(); p.meta.err = { InstructionError: [2, "Custom"] }; setResult(p.f, "getTransaction", p.tx);
-    const status = result(p.f, "getSignatureStatuses"); status.value[0].err = p.meta.err; setResult(p.f, "getSignatureStatuses", status);
+    const status = result(p.f, "getSignatureStatuses"); status.value[0].err = p.meta.err;
+    status.value[0].status = { Err: p.meta.err }; setResult(p.f, "getSignatureStatuses", status);
     const out = evaluateSolanaTransaction(await replaySolanaTransaction(p.f)).fragment;
     expect(out.networkEvidence.execution?.verdict).toBe("contradicted"); expect(out.networkEvidence.observedEffects).toEqual([]);
   });
@@ -168,7 +169,8 @@ describe("strict acquisition and decoding", () => {
     expect(evaluateSolanaTransaction(await replaySolanaTransaction(fixture())).fragment.networkEvidence.finality?.verdict).toBe("supported");
   });
   it("surfaces transaction/status error disagreement", async () => {
-    const f = fixture(); const status = result(f, "getSignatureStatuses"); status.value[0].err = { Different: true }; setResult(f, "getSignatureStatuses", status);
+    const f = fixture(); const status = result(f, "getSignatureStatuses"); status.value[0].err = { Different: true };
+    status.value[0].status = { Err: status.value[0].err }; setResult(f, "getSignatureStatuses", status);
     const out = evaluateSolanaTransaction(await replaySolanaTransaction(f)).fragment;
     expect(out.conflicts.some((c) => c.code === "STATUS_ERROR_MATCHES_TRANSACTION")).toBe(true); expect(out.networkEvidence.execution?.verdict).toBe("ambiguous");
   });

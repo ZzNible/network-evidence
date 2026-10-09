@@ -10,13 +10,17 @@ Legacy and version-0 transactions are supported. Version-0 effective account key
 
 Compiled top-level instructions are decoded locally. An actual-array `meta.innerInstructions` (including `[]`) supplies complete CPI-trace metadata; `null` or an absent field does not establish a complete trace and is preserved as `instructionTraceComplete: false`. Only discriminator `12` `TransferChecked` under canonical SPL Token or Token-2022 is emitted. Source, mint, destination, authority, u64 amount, decimals, deterministic instruction location, stack height when observed, and transaction signature are preserved. A failed transaction never emits a positive observed effect.
 
+**Source/subject and error binding (security audit 2026-10-09):** The requested first signature is rechecked against the normalized getTransaction first signature. A foreign transaction must never establish successful or failed execution of this requested subject; it yields insufficient execution. Both transaction.meta.err and signatureStatuses.value[0].err are mandatory when those result objects exist. Their Solana TransactionError JSON shape is validated. The deprecated status.Ok/status.Err field is optional, but if supplied must agree with the mandatory err. When source-error observations materially disagree, execution cannot provide a clean positive observed transfer effect. These checks remain source observations, not independent consensus verification.
+
+**Direct tx-to-block membership NOT established:** The current getBlock call uses transactionDetails:none and returns no signatures. The resolver observes a block at the transaction slot reported by getTransaction/getSignatureStatuses, but it cannot verify THIS signature in that block from the block response. The source-reported finalized commitment remains bounded as such; it does not establish independently verified block membership, economic irreversibility or settlement. A versioned signature-bearing getBlock read and reproducible new fixtures are required before any stronger membership claim. Do not rewrite historical F3 authority.
+
 ## Fixture and replay
 
 `nec-resolver-solana-fixture-v1` stores schema version, acquisition time, endpoint-free source identity, network, signature, and ordered raw RPC result text (or controlled RPC error). Replay is strict and offline: requests must match the next capture, duplicates/unmatched/unused captures fail, and repeated replay is deterministic. Fixtures reject endpoint URLs, credentials, private paths, secret-like text, exotic objects, accessors, and malformed raw results.
 
 ## Claim boundary
 
-Execution means only that this source returned `meta.err == null` for the exact signature. Finality requires mutually consistent finalized transaction, signature-status, error, slot, and containing-block observations. Its basis is `source_observation`, not `cryptographic_verification`. Solana finalized commitment is not a claim of economic irreversibility. Generic acquisition does not infer settlement and contains no x402 interpretation.
+Execution means only that this source returned `meta.err == null` for the exact signature. Finality requires mutually consistent finalized transaction, signature-status, error, slot, and a block-at-reported-slot observation. Its basis is `source_observation`, not `cryptographic_verification`. Solana finalized commitment is not a claim of economic irreversibility. Generic acquisition does not infer settlement and contains no x402 interpretation.
 
 ## BEFORE foundation (Solana mainnet + devnet)
 
