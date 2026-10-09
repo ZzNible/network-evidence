@@ -1,4 +1,4 @@
-name: Publish Network Evidence MCP v0.0.1 to official registry
+name: Publish Network Evidence MCP v0.0.2 to official registry
 
 on:
   push:
@@ -31,12 +31,12 @@ jobs:
           from pathlib import Path
           x=json.loads(Path('server.json').read_text())
           assert x['name']=='io.github.ZzNible/network-evidence'
-          assert x['version']=='0.0.1'
-          assert x['remotes']==[{'type':'streamable-http','url':'https://network-evidence-mcp-preview-jrkc26rjga-ew.a.run.app/mcp'}]
+          assert x['version']=='0.0.2'
+          assert x['remotes']==[{'type':'streamable-http','url':'https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp'}]
           print('Manifest identity/scope PASS')
           PY
           curl -fsSL --max-time 25 --retry 2 \
-            'https://network-evidence-mcp-preview-jrkc26rjga-ew.a.run.app/health' |
+            'https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/health' |
             python3 -c 'import json,sys;x=json.load(sys.stdin);assert x["status"]=="ok" and x["readOnly"] is True and x["liveObservation"] is False and len(x["tools"])==3;print("Public preview health PASS")'
 
       - name: Install pinned official MCP publisher
@@ -55,5 +55,5 @@ jobs:
       - name: Authenticate via GitHub OIDC (no personal token)
         run: ./mcp-publisher login github-oidc
 
-      - name: Publish v0.0.1 to official MCP Registry
+      - name: Publish v0.0.2 to official MCP Registry
         run: ./mcp-publisher publish server.json
