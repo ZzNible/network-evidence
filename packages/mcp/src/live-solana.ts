@@ -96,22 +96,56 @@ export function restrictedSolanaRpcFetch(inner: typeof fetch, network: SolanaNet
     try {
       const res = await inner(url, { method: "POST", body: init.body, headers: { "content-type": "application/json" },
         redirect: "error", credentials: "omit", signal });
-      if (res.redirected || res.url !== exactUrl) fail("MCP_MULTICHAIN_SOURCE_FAILED");
+      if (res.redirected || res.url !== exactUrl || res.status !== 200) {
+        // Even a rejected/redirected public response might still have a
+        // streaming body. Cancel it without buffering any untrusted bytes.
+        void res.body?.cancel().catch(() => {});
+        fail("MCP_MULTICHAIN_SOURCE_FAILED");
+      }
       const len = res.headers.get("content-length");
-      if (len !== null && (!/^\d+$/.test(len) || Number(len) > SOLANA_RESPONSE_MAX_BYTES)) fail("MCP_MULTICHAIN_TOO_LARGE");
-      const reader = res.clone().body?.getReader();
+      if (len !== null && (!/^\d+$/.test(len) || Number(len) > SOLANA_RESPONSE_MAX_BYTES)) {
+        // Do not leave a rejected oversized provider body draining.
+        void res.body?.cancel().catch(() => {});
+        fail("MCP_MULTICHAIN_TOO_LARGE");
+      }
+      // Never tee a source stream with Response.clone(): the unread second
+      // branch may buffer without our byte bound. Consume ONLY the original
+      // stream, cancel it on failure, and give the native RPC parser a fresh
+      // in-memory Response containing at most SOLANA_RESPONSE_MAX_BYTES.
+      const reader = res.body?.getReader();
       if (!reader) fail("MCP_MULTICHAIN_SOURCE_FAILED");
+      // Some mocked or nonstandard fetch implementations do not propagate
+      // AbortSignal cancellation to the returned body. Explicitly cancel
+      // this reader on the caller's abort OR the existing 8-second deadline.
+      const onAbort = () => { void reader.cancel().catch(() => {}); };
+      signal.addEventListener("abort", onAbort, { once: true });
+      if (signal.aborted) onAbort();
+      const chunks: Uint8Array[] = [];
       let bytes = 0;
+      let finished = false;
       try {
         while (true) {
+          if (signal.aborted) fail("MCP_MULTICHAIN_SOURCE_FAILED");
           const next = await reader.read();
-          if (next.done) break;
+          if (signal.aborted) fail("MCP_MULTICHAIN_SOURCE_FAILED");
+          if (next.done) { finished = true; break; }
           bytes += next.value.byteLength;
           if (bytes > SOLANA_RESPONSE_MAX_BYTES) fail("MCP_MULTICHAIN_TOO_LARGE");
+          chunks.push(next.value);
         }
-      } finally { reader.releaseLock(); }
+      } finally {
+        signal.removeEventListener("abort", onAbort);
+        // Cancellation itself may be asynchronous; never hold the MCP
+        // worker waiting for a non-cooperative source to acknowledge it.
+        if (!finished) void reader.cancel().catch(() => {});
+        reader.releaseLock();
+      }
       completed = true;
-      return res;
+      // Keep provider headers, redirects and error text away from downstream
+      // clients. The trusted reader needs only exact bounded JSON bytes.
+      return new Response(new Uint8Array(Buffer.concat(chunks, bytes)), {
+        status: 200, headers: { "content-type": "application/json" },
+      });
     } catch (error) {
       // Keep our own bounded-size error for direct fetch-guard tests; never
       // forward untrusted provider error strings, headers or URL.

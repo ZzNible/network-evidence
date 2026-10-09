@@ -119,6 +119,33 @@ Logging is one stderr line per request: method, route (`/mcp`, `/healthz` or
 addresses and identifiers are never logged. The abuse limiter keeps two global
 counters only. It stores no IP, payload, credential or client identifier.
 
+
+### Hosted ingress and live-source security (2026-10-09 draft candidate)
+
+JSON-RPC ARRAY/BATCH messages are rejected with HTTP 400 and JSON-RPC -32600
+before the SDK can dispatch any operation, including one-element, empty and
+notifications-only arrays. The process-local HTTP admission limiter counts HTTP
+requests, not arbitrary numbers of tool calls inside a single batch. Existing
+single-call MCP clients (both protocol eras) still work. Core strict duplicate
+key and JSON resource bounds remain in place before any SDK processing.
+
+Live Solana provider reads now stream through ONE original response body only:
+maximum 800,000 delivered bytes, fixed-origin and method allowlist, 8-second
+source deadline plus caller abort, cancellation on rejected URL/status/length
+or excess bytes. No Response.clone tee buffering or provider error body leak.
+The SDK-only new Solana block signatures membership read is NOT admitted by
+the hosted method allowlist; the public hosted endpoint is still 3-tool OFFLINE.
+
+IMPORTANT RELEASE BLOCKER: hosted HTTP limits and the multichain live
+acquisition quotas are global to one NODE PROCESS, not across Cloud Run
+instances or revisions. The anonymous preview has no per-client quota.
+A public live rollout requires independently verified Cloud Run instance
+and rollout bounds plus provider/billing limits, or a genuine distributed
+rate budget with verified cross-instance admission. Do not treat source
+configuration as evidence of global enforcement. Owner authorization is
+required before any public live change. See the existing candidate release
+and security correction documents for reproduction and remaining gaps.
+
 ## Tools
 
 All three tools carry explicit annotations

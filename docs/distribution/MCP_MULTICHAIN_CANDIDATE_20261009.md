@@ -144,3 +144,27 @@
 - IMPORTANT: **default MCP `resolve_transaction_evidence` still uses the old historical 4-call path** and cannot claim direct signature-to-block membership from `getBlock(none)`. SDK-only feature is not integrated into the hosted MCP or a new normative Core result. Public deploy remains the original 3-tool offline demo. A separate ingress/quotas/security review, including streamed response byte enforcement and timeout (native reader currently buffers first), and explicit approval are required before exposing this extra RPC read through a public MCP tool. The SDK source label and URL are application-supplied, not independently authenticated.
 - Do NOT infer cryptographic signature authenticity, consensus verification, payment settlement, economic irreversibility or universal finality from membership of a signature in one RPC source's block list.
 - **Final SDK source-integration gate (2026-10-09):** clean npm ci, strict TypeScript typecheck, 88 files / 1,549 tests PASS; 22 direct-membership adversarial and positive cases green; historical integrability demo SHA256 ee7263927cf3470ecd524f6321287bd056b3f444e5285a5d355a07d8440bc1ef PASS, offline MCP smoke PASS, npm audit zero vulnerabilities. Real read-only SDK on mainnet returned 1,304 block signatures, exact requested index 1295, same blockhash, digest-backed source capture. Independent Opus read-only DRAFT review PASS (minor findings bounded/addressed); NOT a final release security certification. MCP ingress/streaming limits and public exposure remain OPEN.
+
+## Hosted ingress and original Solana stream safety — 2026-10-09
+
+- Real exploit reproduced: JSON-RPC arrays accepted two tools/call items
+  behind one HTTP admission. The strict Core JSON parser now supplies its
+  parsed value and rejects ANY batch with 400/-32600 before SDK operation
+  dispatch. One-message modern and legacy MCP request handling remains.
+- Real unbounded tee path closed: fixed-source Solana provider reads now
+  consume the original stream, never clone it, count actually delivered bytes
+  against 800,000, cancel on rejection/timeout/abort, and sanitize provider
+  headers/errors before native Solana RPC evaluation. No new network/read
+  method, source-based finality claim or Core schema modification.
+- Eight adversarial ingress/source test cases PASS. Independent Opus
+  read-only review PASS only for this source candidate after bounded minor
+  cleanup. Bounded read-only real Solana mainnet AFTER RPC path PASS with
+  four fixed methods. The new Solana getBlock(signatures) verifier stays
+  SDK-only and is explicitly not allowed in the hosted read method gate.
+- PUBLIC LIVE RELEASE BLOCKED: process-local HTTP and RPC budgets are not
+  global across Cloud Run instances/revisions. Anonymous client concurrency,
+  potential provider costs, actual max-instance/revision constraints and
+  effective cross-instance quota require verification or a real distributed
+  limiter before deployment. The public Cloud Run MCP remains a three-tool
+  OFFLINE preview. No merge, registry update or publication authorization.
+- Final read-only VM safety gate on 2026-10-09: clean npm ci, typecheck, **89 test files / 1,557 tests PASS**, integrability demo PASS, original offline MCP SDK smoke PASS, npm audit 0 vulnerabilities. Live Solana mainnet source PASS (four fixed methods), Opus candidate-only independent review PASS; public live deployment remains blocked by process-local quotas and owner authorization.

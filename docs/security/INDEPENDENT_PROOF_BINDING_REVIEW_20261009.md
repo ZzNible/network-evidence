@@ -56,3 +56,50 @@
 - The versioned output includes baseline acquisition capture digests for evidence provenance but cannot independently authenticate the application-configured RPC transport or prove that its sourceId label represents a genuine independent provider. Invalid initial acquisitions give controlled errors; a null initial transaction has no invented slot. 6,000 signatures is a deliberate cap and may reject legitimate busy blocks. The native reader buffers RPC body content before its size test and has no inherent timeout; this is **OPEN FOR PUBLIC INGRESS** and must be fixed/reviewed before exposing this extra RPC read through MCP.
 - Hard boundaries: still a SINGLE RPC source, no independent cryptographic block authentication or fully verified consensus finality, transaction success or program side effects, settlement or real-world consequence. The original 4-read `getBlock(none)` remains the default; SDK v1 is NOT an MCP public parameter, no new Core dimension or network. Provider-specific max signatures and response-size limits can return unavailable; they never justify unsupported verdicts.
 - **Final SDK source-integration gate (2026-10-09):** clean npm ci, strict TypeScript typecheck, 88 files / 1,549 tests PASS; 22 direct-membership adversarial and positive cases green; historical integrability demo SHA256 ee7263927cf3470ecd524f6321287bd056b3f444e5285a5d355a07d8440bc1ef PASS, offline MCP smoke PASS, npm audit zero vulnerabilities. Real read-only SDK on mainnet returned 1,304 block signatures, exact requested index 1295, same blockhash, digest-backed source capture. Independent Opus read-only DRAFT review PASS (minor findings bounded/addressed); NOT a final release security certification. MCP ingress/streaming limits and public exposure remain OPEN.
+
+## Hosted MCP ingress and source stream hardening — 2026-10-09 (SOURCE DRAFT ONLY)
+
+- HTTP-B1 CONFIRMED RED -> GREEN: one hosted HTTP POST carrying a JSON-RPC
+  batch of two valid tools/call messages previously got HTTP 200 and executed
+  multiple tool operations for ONE GlobalAbuseLimiter admission. The handler
+  now consumes its existing Core strict parse result and rejects every JSON
+  array BEFORE SDK dispatch, with HTTP 400/-32600. Single tools and
+  notifications continue to work through modern and legacy MCP clients.
+  JSON syntax/duplicate-key errors remain 400/-32700. No list amplification.
+- HTTP-B2 CONFIRMED RED -> GREEN: the Solana fixed-source RPC wrapper formerly
+  counted the bytes of Response.clone().body and returned the unread original
+  Response. Tee branch buffering was not guaranteed to respect that cap.
+  Its new single-consumer original stream enforces 800,000 delivered bytes,
+  cancels oversized and rejected provider response bodies, uses the existing
+  8-second timeout/caller signal to cancel even a stalled body and returns a
+  bounded fresh in-memory response. No dynamic URL, signing or submission.
+- Negative safety tests: genuine batch bypass; empty, one-element and
+  mixed notification+call batch; ordinary single-message fallback; no-clone
+  bounded provider response; streamed oversized body cancellation; declared
+  content-length oversize; stalled provider abort; SDK-only signature-block
+  read denied by hosted RPC allowlist before egress; cancelled sanitized 503
+  source response. Eight tests PASS. Full hosted/modern/legacy MCP and source
+  suites remain preserved.
+- REAL READ-ONLY Solana mainnet after patch: four fixed RPC methods and
+  authentic Core source/subject/network-bound fragment; largest individual
+  bounded capture 3,558 bytes. No cryptographic verification claim.
+- Independent Claude Opus read-only review: CANDIDATE_GATE=PASS for SOURCE
+  patch, no verified MAJOR/BLOCKER. Minor suggestions about cancelling
+  wrong-URL/non-200 responses and not awaiting uncooperative stream
+  cancellation were implemented and targeted tests rerun.
+- OPEN LIVE DEPLOY BLOCKER: HTTP admission quotas and the shared 8/min,
+  2-concurrent multichain source budget are PROCESS LOCAL. Multiple Cloud Run
+  revisions/instances may multiply provider reads; there is no verified
+  cross-instance admission or per-client authentication and spending controls.
+  A verified max-instances and rollout constraint reduces risk but is not
+  itself proof of a globally coordinated quota. Before any owner-authorized
+  live/public deploy verify actual Cloud Run settings, provider usage, cost,
+  rate budgets or a distributed enforcement service. The three-tool offline
+  Cloud Run preview remains unchanged.
+- The standalone SDK-only Solana signatures-membership probe is NOT exposed
+  in hosted MCP. Its 6,000-signature bound can reject a legitimately busy
+  block as unavailable; do not misstate it as blockchain non-membership.
+  Core full real-action result+Hub/Lens admission and final release review
+  are still OPEN. Neither these source patches nor Core wire validation
+  authenticates the external RPC itself.
+- Final read-only VM safety gate on 2026-10-09: clean npm ci, typecheck, **89 test files / 1,557 tests PASS**, integrability demo PASS, original offline MCP SDK smoke PASS, npm audit 0 vulnerabilities. Live Solana mainnet source PASS (four fixed methods), Opus candidate-only independent review PASS; public live deployment remains blocked by process-local quotas and owner authorization.

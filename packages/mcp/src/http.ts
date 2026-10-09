@@ -232,15 +232,24 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
       }
       return;
     }
+    let parsed: unknown;
     try {
       // Core strict parser: duplicate keys, unpaired surrogates and resource
       // bounds fail closed BEFORE the SDK's own JSON.parse could collapse them.
-      parseNecWireJson(text);
+      parsed = parseNecWireJson(text);
     } catch {
       jsonRpcError(res, 400, -32700, "Parse error: body is not strict JSON (duplicate keys, malformed JSON or resource bounds exceeded)");
       return;
     }
-    await mcpNode(req, res, JSON.parse(text) as unknown);
+    // The hosted limiter accounts ONE HTTP request, while the MCP SDK can
+    // execute MANY tools from an array. Refuse *all* JSON-RPC batches,
+    // including single-element and notifications-only arrays, BEFORE SDK
+    // dispatch so quota cost cannot be multiplied by one HTTP admission.
+    if (Array.isArray(parsed)) {
+      jsonRpcError(res, 400, -32600, "Bad Request: JSON-RPC batches are not accepted; use one operation per HTTP request");
+      return;
+    }
+    await mcpNode(req, res, parsed);
   }
 
   const server: Server = createServer((req, res) => {
