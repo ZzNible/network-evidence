@@ -1046,6 +1046,23 @@ function verifyPreflightContext(
     );
   }
   assertSnapshotAgreesWithManifest(snapshot, context.resolver);
+
+  // PREFLIGHT/SNAPSHOT EVIDENCE CLOSURE: equal IDs are not proof of equal
+  // provenance. No caller may replace sourceId, locator, contentDigest or
+  // metadata under a ready-cited EvidenceId and retain a verified result.
+  // Snapshot's complete table MAY be a superset of preflight's table.
+  const snapshotRefs = new Map<string, string>();
+  for (const ref of snapshot.evidence) snapshotRefs.set(ref.id, canonicalJson(ref));
+  for (let i = 0; i < result.evidence.length; i++) {
+    const ref = result.evidence[i]!;
+    const expected = snapshotRefs.get(ref.id);
+    if (expected === undefined || canonicalJson(ref) !== expected) {
+      throw new NecValidationError(
+        "NEC_VALIDATION_FAILED",
+        `preflight evidence[${i}] (${JSON.stringify(ref.id)}) differs from the complete EvidenceRef under this id in the capability snapshot; provenance substitution forbidden`,
+      );
+    }
+  }
   assertReadinessDerivable(result, snapshot, context.resolver);
 }
 

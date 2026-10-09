@@ -284,6 +284,7 @@ interface FragmentView {
   readonly chainId?: number;
   readonly subject: SubjectRef;
   readonly execution?: EvidenceDimension;
+  readonly dataBinding?: EvidenceDimension;
   readonly settlement?: EvidenceDimension;
   readonly finality?: EvidenceDimension;
   readonly observedEffects: readonly ObservedEffect[];
@@ -579,6 +580,7 @@ function assessInternal(
     if (
       c.scope.kind === "dimension" &&
       (c.scope.dimension === "execution" ||
+        c.scope.dimension === "dataBinding" ||
         c.scope.dimension === "settlement" ||
         c.scope.dimension === "finality")
     ) {
@@ -678,6 +680,13 @@ function assessInternal(
         : stripped(scope, networkEvidenceIds, ["deterministic_derivation"]),
     );
     inputs.push(executionInput());
+    // Material conflicts on carried dimensions must reach the composer.
+    for (const dimension of ["dataBinding", "settlement", "finality"] as const) {
+      const carried = view[dimension];
+      if (carried !== undefined) {
+        inputs.push(stripped({ kind: "dimension", dimension }, carried.evidence, ["source_observation"]));
+      }
+    }
     for (const candidate of candidates) {
       inputs.push(
         matchesRequirement(candidate, req)
@@ -908,6 +917,7 @@ export function assessX402ExactPayment(
     ...(fragment.network.chainId === undefined ? {} : { chainId: fragment.network.chainId }),
     subject: fragment.subject,
     execution: fragment.networkEvidence.execution,
+    dataBinding: fragment.networkEvidence.dataBinding,
     settlement: fragment.networkEvidence.settlement,
     finality: fragment.networkEvidence.finality,
     observedEffects: fragment.networkEvidence.observedEffects ?? [],
@@ -946,6 +956,7 @@ export function evaluateX402ExactSettlement(
     ...(result.network.chainId === undefined ? {} : { chainId: result.network.chainId }),
     subject,
     execution: result.networkEvidence.execution,
+    dataBinding: result.networkEvidence.dataBinding,
     settlement: result.networkEvidence.settlement,
     finality: result.networkEvidence.finality,
     observedEffects: result.networkEvidence.observedEffects,

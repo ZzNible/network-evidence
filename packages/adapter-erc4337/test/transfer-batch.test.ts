@@ -49,6 +49,26 @@ const BURN = {
 };
 
 describe("pinned TransferBatch topic0 derivation", () => {
+  it("H2: dispute on multi-member TransferBatch carrier defeats matching burn support", () => {
+    const carrier=transferBatchEffect("batch",{
+      from:SENDER,to:ZERO_ADDRESS,ids:[TOKEN_ID,"2"],values:["1","1"],
+    });
+    const good=buildFragment({effects:[userOpEventEffect("uop"),carrier]});
+    expect(assessErc4337UserOperation({...CLAIM,expectedEffect:BURN},good).outcome.verdict).toBe("supported");
+    const conflict={
+      id:"conflict_batch_carrier",code:"BATCH_CARRIER_DISAGREEMENT",
+      description:"batch carrier log disputed",
+      scope:{kind:"observed_effect" as const,effectId:"batch"},
+      evidence:["ev_batch"],material:true,
+    };
+    const fragment=buildFragment({
+      effects:[userOpEventEffect("uop"),carrier],conflicts:[conflict],
+    });
+    const assessed=assessErc4337UserOperation({...CLAIM,expectedEffect:BURN},fragment);
+    expect(assessed.outcome.verdict).toBe("ambiguous");
+    expect(assessed.outcome.materialConflictIds).toContain(conflict.id);
+  });
+
   it("keccak256 of the canonical TransferBatch signature equals the pin", () => {
     expect(`0x${keccak256Hex(utf8Bytes(TRANSFER_BATCH_SIGNATURE))}`).toBe(TRANSFER_BATCH_TOPIC0);
     expect(TRANSFER_BATCH_TOPIC0).toBe(

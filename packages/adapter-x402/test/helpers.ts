@@ -231,6 +231,7 @@ export interface WorldOptions {
   readonly chainId?: number | undefined;
   readonly effects?: readonly ObservedEffect[];
   readonly executionDim?: Partial<EvidenceDimension>;
+  readonly dataBindingDim?: Partial<EvidenceDimension>;
   readonly settlementDim?: Partial<EvidenceDimension>;
   readonly finalityDim?: Partial<EvidenceDimension>;
   readonly conflicts?: readonly Conflict[];
@@ -299,7 +300,7 @@ export function buildResult(opts: WorldOptions = {}): NetworkEvidenceResult {
       networkEvidence: {
         execution: executionDim,
         observedEffects: [...effects],
-        dataBinding: dimension({ applicability: "not_applicable" }),
+        dataBinding: mergeDimension(dimension({ applicability: "not_applicable" }), opts.dataBindingDim),
         settlement: mergeDimension(dimension({ applicability: "unknown" }), opts.settlementDim),
         finality: mergeDimension(
           dimension({
@@ -332,6 +333,7 @@ export interface FragmentOptions {
   /** Omit the execution dimension entirely (null-receipt worlds). */
   readonly omitExecution?: boolean;
   readonly executionDim?: Partial<EvidenceDimension>;
+  readonly dataBindingDim?: Partial<EvidenceDimension>;
   readonly settlementDim?: Partial<EvidenceDimension>;
   readonly finalityDim?: Partial<EvidenceDimension>;
   readonly conflicts?: readonly Conflict[];

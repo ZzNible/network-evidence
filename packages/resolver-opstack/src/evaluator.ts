@@ -374,7 +374,10 @@ export function evaluateOpStackFinality(input: OpStackFinalityEvaluationInput): 
     evmBlock != null &&
     genericCheckOfCode(input.evm.checks, "RECEIPT_TX_HASH_MATCHES_SUBJECT")?.passed === true &&
     genericCheckOfCode(input.evm.checks, "RECEIPT_BLOCK_HASH_MATCHES_BLOCK")?.passed === true &&
-    genericCheckOfCode(input.evm.checks, "RECEIPT_BLOCK_NUMBER_MATCHES_BLOCK")?.passed === true;
+    genericCheckOfCode(input.evm.checks, "RECEIPT_BLOCK_NUMBER_MATCHES_BLOCK")?.passed === true &&
+    // An explicitly FAILED tx-by-hash/receipt binding cannot support
+    // finality about the claimed subject even when receipt->block agrees.
+    genericCheckOfCode(input.evm.checks, "TRANSACTION_COHERENT_WITH_RECEIPT")?.passed !== false;
 
   if (!bindsSubject) {
     warnings.push({
@@ -397,7 +400,6 @@ export function evaluateOpStackFinality(input: OpStackFinalityEvaluationInput): 
 
   const S = evmBlock.number;
   const Hs = evmBlock.hash;
-
   // --- ladder step 1: explicit network identity (fail closed) ---------------
   const subjectNetworkMatches =
     input.evm.source.networkId === config.networkId &&
@@ -445,6 +447,23 @@ export function evaluateOpStackFinality(input: OpStackFinalityEvaluationInput): 
         reason:
           "Evidence network identities do not match the explicitly configured OP Stack network; no finality is possible under this configuration.",
       },
+    });
+  }
+
+  // Every downstream finalized-head ancestry/canonical-height check was
+  // collected for finality.subjectBlock, NOT automatically for evm.block.
+  // Identity MUST match by both height AND hash before ANY positive verdict.
+  // A mismatch is not proof of unfinality, only evidence for another block.
+  if (input.finality.subjectBlock.number !== S ||
+      input.finality.subjectBlock.hash.toLowerCase() !== Hs.toLowerCase()) {
+    warnings.push({
+      code: "OP_SUBJECT_ANCHOR_MISMATCH",
+      message: "OP Stack finality observation was anchored to a different exact block than the subject transaction receipt/block; no finality conclusion applies to this subject.",
+    });
+    return assemble({
+      configMeta, config, evm: input.evm, finality: input.finality,
+      refs, citations, conflicts, warnings,
+      contribution: { applicability: "unknown", evidence: [] },
     });
   }
 
