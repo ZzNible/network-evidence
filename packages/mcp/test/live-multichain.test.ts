@@ -161,7 +161,7 @@ describe("single opt-in multichain MCP boundary", () => {
       const fetchLocal=simulatedHostFetch(hosted.port,host);
       const health=await (await fetchLocal(new URL(origin+"/health"))).json() as any;
       expect(health).toMatchObject({networkIo:"bounded_evm_solana_rpc",liveObservation:true});
-      expect(health.tools).toHaveLength(4);
+      expect(health.tools).toHaveLength(5);
       for(const era of ["legacy","auto"] as const){
         const client=new Client({name:"multichain-integration-test",version:"1"}, {versionNegotiation:{mode:era}});
         await client.connect(new StreamableHTTPClientTransport(new URL(origin+"/mcp"),{fetch:fetchLocal}));

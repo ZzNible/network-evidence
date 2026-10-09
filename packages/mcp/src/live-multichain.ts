@@ -8,6 +8,7 @@ import { parseSignature } from "@nec/resolver-solana";
 import { decodeNecWireJson, encodeNecWireJson } from "@nec/core";
 import { createLiveEvmTool } from "./live-evm.js";
 import { acquireLiveSolana, SOLANA_NETWORKS } from "./live-solana.js";
+import type { SolanaLiveEvidence } from "./live-solana.js";
 import { NeMcpError } from "./errors.js";
 
 export const LIVE_MULTICHAIN_TOOL = "resolve_transaction_evidence";
@@ -37,10 +38,16 @@ export interface MultichainObservation {
     readonly sourceId: string;
     readonly sourceType: string;
     readonly networkId: string;
+    /** Source-configured chain ID, checked against RPC by existing EVM resolver. */
+    readonly chainId?: number;
     readonly independenceGroup?: string;
   };
   readonly acquisition: {
     readonly transactionObserved: boolean;
+    /** EVM-only: non-null eth_getTransactionByHash response, not inferred from receipt. */
+    readonly transactionLookupUsable?: boolean;
+    /** Only for Solana: authoritative resolver projection from this acquisition. */
+    readonly solanaProbe?: SolanaLiveEvidence["beforeProbe"];
     readonly blockObserved: boolean;
     readonly consistent: boolean;
     readonly captures: readonly {
@@ -72,7 +79,7 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
   if (typeof nativeFetch !== "function") deny("MCP_MULTICHAIN_INPUT");
   // Shared process-local budget across EVM and Solana. Max 1 instance in a
   // proposed public deployment; multi-instance rollout needs a global quota.
-  const evm = createLiveEvmTool(nativeFetch);
+  const evm = createLiveEvmTool(nativeFetch, { includeTransaction: true });
   let windowStart = Date.now();
   let count = 0;
   let inflight = 0;
@@ -109,10 +116,12 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
           source: {
             sourceId: result.source.sourceId, sourceType: result.source.sourceType,
             networkId: result.source.networkId,
+            chainId: result.source.chainId,
             ...(result.source.independenceGroup === undefined ? {} : { independenceGroup: result.source.independenceGroup }),
           },
           acquisition: {
             transactionObserved: result.acquisition.receiptObserved,
+            transactionLookupUsable: result.acquisition.transactionLookupUsable,
             blockObserved: result.acquisition.blockObserved,
             consistent: result.acquisition.consistent,
             captures: result.acquisition.captures.map(x => ({
@@ -137,6 +146,7 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
           acquisition: {
             transactionObserved: result.transactionObserved,
             blockObserved: result.blockObserved, consistent: result.consistent,
+            solanaProbe: result.beforeProbe,
             captures: result.captures,
           },
           artifactType: "network-evidence-fragment",

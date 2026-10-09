@@ -24,7 +24,7 @@ const SOURCES = {
 
 export type LiveEvmNetwork = keyof typeof SOURCES;
 export const LIVE_EVM_NETWORKS = Object.freeze(Object.keys(SOURCES) as LiveEvmNetwork[]);
-const ALLOWED_METHODS = new Set(["eth_chainId", "eth_getTransactionReceipt", "eth_getBlockByHash"]);
+const ALLOWED_METHODS = new Set(["eth_chainId", "eth_getTransactionReceipt", "eth_getBlockByHash", "eth_getTransactionByHash"]);
 
 export type LiveEvmTool = (input: { network: LiveEvmNetwork; txHash: string }) => Promise<LiveEvmOutput>;
 
@@ -38,6 +38,8 @@ export interface LiveEvmOutput {
   readonly source: { readonly sourceId: string; readonly sourceType: string; readonly independenceGroup?: string; readonly chainId: number; readonly networkId: string };
   readonly acquisition: {
     readonly receiptObserved: boolean;
+    /** Parsed transaction actually returned and exactly coherent with subject/receipt. */
+    readonly transactionLookupUsable: boolean;
     readonly blockObserved: boolean;
     readonly consistent: boolean;
     readonly captures: readonly { readonly rpcMethod: string; readonly rpcParams: readonly unknown[]; readonly httpStatus: number; readonly resultText: string; readonly acquiredAt: string; readonly contentDigest: string }[];
@@ -79,6 +81,7 @@ export function restrictedBaseRpcFetch(inner: typeof fetch, network: LiveEvmNetw
       const shapeOk =
         (method === "eth_chainId" && params.length === 0)
         || (method === "eth_getTransactionReceipt" && params.length === 1 && hash(params[0]))
+        || (method === "eth_getTransactionByHash" && params.length === 1 && hash(params[0]))
         || (method === "eth_getBlockByHash" && params.length === 2 && hash(params[0]) && params[1] === false);
       if (!shapeOk) liveFail("MCP_LIVE_EVM_RPC_FAILED");
     } catch { return liveFail("MCP_LIVE_EVM_RPC_FAILED"); }
@@ -128,7 +131,10 @@ export function restrictedBaseRpcFetch(inner: typeof fetch, network: LiveEvmNetw
   };
 }
 
-export function createLiveEvmTool(nativeFetch: typeof fetch): LiveEvmTool {
+export function createLiveEvmTool(
+  nativeFetch: typeof fetch,
+  options: { readonly includeTransaction?: boolean } = {},
+): LiveEvmTool {
   if (typeof nativeFetch !== "function") liveFail("MCP_LIVE_EVM_CONFIG");
   let windowStart = Date.now();
   let used = 0;
@@ -159,7 +165,8 @@ export function createLiveEvmTool(nativeFetch: typeof fetch): LiveEvmTool {
         source: config,
         txHash,
         now: new Date().toISOString(),
-        includeTransaction: false,
+        // Only the multichain candidate opts in to the additional read.
+        includeTransaction: options.includeTransaction === true,
         fetchFn: restrictedBaseRpcFetch(nativeFetch, network),
       });
       const evaluated = evaluateTransactionAcquisition(acquired);
@@ -173,6 +180,13 @@ export function createLiveEvmTool(nativeFetch: typeof fetch): LiveEvmTool {
         source: acquired.source,
         acquisition: {
           receiptObserved: acquired.receipt !== null,
+          transactionLookupUsable: acquired.consistent
+            && acquired.transaction !== null && acquired.transaction !== undefined
+            && acquired.transaction.hash === acquired.subject.txHash
+            && (acquired.receipt === null || (
+              acquired.transaction.blockHash === acquired.receipt.blockHash
+              && acquired.transaction.blockNumber === acquired.receipt.blockNumber
+            )),
           blockObserved: acquired.block !== null && acquired.block !== undefined,
           consistent: acquired.consistent,
           captures: acquired.captures.map((cap) => ({

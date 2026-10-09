@@ -14,7 +14,7 @@ const HOST = "mcp.example.org";
 const ORIGIN = "https://mcp.example.org";
 const ERROR_TEXT = "SECRET_INTERNAL_PROVIDER_MESSAGE_NEVER_EXPOSED";
 
-function provider(overrides: { chain?: string; receipt?: unknown; block?: unknown; redirect?: string; oversized?: boolean } = {}) {
+function provider(overrides: { chain?: string; receipt?: unknown; block?: unknown; transaction?: unknown; redirect?: string; oversized?: boolean } = {}) {
   const methods: string[] = [];
   const fetchFn: typeof fetch = async (input, init) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
@@ -25,6 +25,7 @@ function provider(overrides: { chain?: string; receipt?: unknown; block?: unknow
       : JSON.stringify({ jsonrpc: "2.0", id: req.id, result:
         req.method === "eth_chainId" ? (overrides.chain ?? "0x2105")
           : req.method === "eth_getBlockByHash" ? (overrides.block ?? null)
+          : req.method === "eth_getTransactionByHash" ? (overrides.transaction ?? null)
           : (overrides.receipt ?? null) });
     const result = new Response(responseBody, { status: 200, headers: { "content-type": "application/json" } });
     Object.defineProperty(result, "url", { value: overrides.redirect ?? new URL(url).href });
@@ -44,7 +45,7 @@ describe("opt-in read-only live EVM source", () => {
     } finally { await server.close(); }
   });
 
-  it("accepts exactly two known origins and three read methods, rejecting SSRF and methods that write", async () => {
+  it("accepts exactly two known origins and the strict read-only method allowlist, rejecting SSRF and methods that write", async () => {
     const p = provider();
     const scoped = restrictedBaseRpcFetch(p.fetchFn, "base-mainnet");
     const read = JSON.stringify({ jsonrpc: "2.0", method: "eth_chainId", id: 1 });
@@ -89,7 +90,13 @@ describe("opt-in read-only live EVM source", () => {
     const oldTx = "0x" + "1".repeat(64);
     const receipt = JSON.parse(fixture.captures[1]!.resultJson.replaceAll(oldTx, TX));
     const block = JSON.parse(fixture.captures[2]!.resultJson.replaceAll(oldTx, TX));
-    const p = provider({ receipt, block });
+    const transaction = {
+      hash: TX, nonce: "0x0", blockHash: receipt.blockHash,
+      blockNumber: receipt.blockNumber, transactionIndex: receipt.transactionIndex,
+      from: receipt.from, to: receipt.to, value: "0x0",
+      gas: "0x5208", input: "0x",
+    };
+    const p = provider({ receipt, block, transaction });
     const server = await startNeMcpHttpServer({
       host: "127.0.0.1", port: 0, hosted: {publicOrigin: ORIGIN},
       liveEvidence: createMultichainTool(p.fetchFn),
@@ -104,12 +111,12 @@ describe("opt-in read-only live EVM source", () => {
         expect(result.isError).toBeFalsy();
         const value = result.structuredContent as any;
         expect(value.acquisition).toMatchObject({transactionObserved:true,blockObserved:true,consistent:true});
-        expect(value.acquisition.captures.map((x:any)=>x.rpcMethod)).toEqual(["eth_chainId","eth_getTransactionReceipt","eth_getBlockByHash"]);
+        expect(value.acquisition.captures.map((x:any)=>x.rpcMethod)).toEqual(["eth_chainId","eth_getTransactionReceipt","eth_getBlockByHash","eth_getTransactionByHash"]);
         expect(value.fragment.networkEvidence.execution.verdict).toBe("supported");
         expect(value.fragment.networkEvidence.dataBinding.verdict).toBe("supported");
         expect(value.fragment.networkEvidence).not.toHaveProperty("finality");
         expect(value.fragment.networkEvidence).not.toHaveProperty("settlement");
-        expect(p.methods).toEqual(["eth_chainId","eth_getTransactionReceipt","eth_getBlockByHash"]);
+        expect(p.methods).toEqual(["eth_chainId","eth_getTransactionReceipt","eth_getBlockByHash","eth_getTransactionByHash"]);
       } finally { await client.close(); }
     } finally { await server.close(); }
   });
@@ -164,13 +171,13 @@ describe("opt-in read-only live EVM source", () => {
       await client.connect(new StreamableHTTPClientTransport(new URL(ORIGIN + "/mcp"),{fetch:fetchLocal}));
       try {
         const {tools} = await client.listTools();
-        expect(tools.map(x=>x.name)).toEqual(["list_network_profiles","discover_network_candidates","get_reviewed_evidence_case",LIVE_MULTICHAIN_TOOL]);
+        expect(tools.map(x=>x.name)).toEqual(["list_network_profiles","discover_network_candidates","get_reviewed_evidence_case","discover_live_network_evidence",LIVE_MULTICHAIN_TOOL]);
         const live = tools.find(x=>x.name===LIVE_MULTICHAIN_TOOL)!;
         expect(live.annotations).toMatchObject({readOnlyHint:true,destructiveHint:false,idempotentHint:false,openWorldHint:true});
         const result = await client.callTool({name:LIVE_MULTICHAIN_TOOL,arguments:{subject:{type:"transaction",networkId:"eip155:8453",txId:TX}}});
         expect(result.isError).toBeFalsy();
         expect((result.structuredContent as any).acquisition.transactionObserved).toBe(false);
-        expect(p.methods).toEqual(["eth_chainId","eth_getTransactionReceipt"]);
+        expect(p.methods).toEqual(["eth_chainId","eth_getTransactionReceipt","eth_getTransactionByHash"]);
         const prior = p.methods.length;
         const invalid = await client.callTool({name:LIVE_MULTICHAIN_TOOL,arguments:{subject:{type:"transaction",networkId:"eip155:57057",txId:TX}}});
         expect(invalid.isError).toBe(true);

@@ -4,7 +4,7 @@
 > See [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
 > and [`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
 
-> **Separate candidate, NOT DEPLOYED:** an opt-in read-only EVM + Solana exact-transaction tool is implemented only on branch `work/ne-mcp-multichain-20261009`; see [candidate and remaining COMPLETE gates](../../docs/distribution/MCP_MULTICHAIN_CANDIDATE_20261009.md). The existing public service still exposes 3 offline tools. This branch is NOT the complete MCP product and has NO public release authorization.
+> **Separate candidate, NOT DEPLOYED:** Two opt-in hosted-only read-only EVM + Solana tools are available in the source branch: `resolve_transaction_evidence` (AFTER) and `discover_live_network_evidence` (source-backed BEFORE/Discovery). See [candidate and remaining COMPLETE gates](../../docs/distribution/MCP_MULTICHAIN_CANDIDATE_20261009.md). The public MCP remains a three-tool offline demo; neither of these new tools is deployed or authorized for publication.
 
 A Model Context Protocol server over public Network Evidence code. It exposes
 three read-only tools and performs **no network I/O**: no RPC, crawler,

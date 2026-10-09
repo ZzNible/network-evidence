@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Three read-only offline MCP tools by default; an unreleased, hosted-only opt-in EVM+Solana source-observation adapter uses existing Core fragments. No wallet, signing, submission, or ranking.",
+  "description": "Three offline tools by default; unreleased hosted-only opt-in Base+Solana exact-action AFTER and source-backed BEFORE/Discovery using native Core contracts. Read only; no signing, submission or ranking.",
   "engines": {
     "node": ">=20.12"
   },

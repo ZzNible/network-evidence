@@ -1,8 +1,9 @@
 /**
  * @nec/mcp — local, read-only MCP server v0 over public Network Evidence code.
  *
- * Three offline tools by default. This UNDEPLOYED candidate adds one
- * hosted-only opt-in EVM + Solana source-evidence tool. Streamable HTTP at
+ * Three offline tools by default. This UNDEPLOYED candidate adds two
+ * hosted-only opt-in EVM + Solana source-evidence tools (AFTER + BEFORE).
+ * Streamable HTTP at
  * /mcp; loopback-only by default. No signing/funding/submission/ranking.
  */
 
@@ -26,6 +27,7 @@ export type { EvidenceClass, ReviewedCaseOutput, ReviewedCaseStore } from "./cas
 
 export { createNeMcpServer, READ_ONLY_ANNOTATIONS, SERVER_NAME, SERVER_VERSION, TOOL_NAMES, LIVE_TOOL_NAMES } from "./tools.js";
 export { createMultichainTool, LIVE_MULTICHAIN_TOOL, LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
+export { createLiveBeforeTool, LIVE_BEFORE_TOOL_NAME, LIVE_BEFORE_SCHEMA } from "./live-before.js";
 export { restrictedBaseRpcFetch } from "./live-evm.js";
 export { restrictedSolanaRpcFetch } from "./live-solana.js";
 

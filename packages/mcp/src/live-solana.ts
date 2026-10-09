@@ -4,7 +4,8 @@
  * The existing resolver owns capture normalization and Core evaluation.
  */
 import { encodeNecWireJson } from "@nec/core";
-import { acquireSolanaTransaction, evaluateSolanaTransaction, parseSignature } from "@nec/resolver-solana";
+import { acquireSolanaTransaction, evaluateSolanaTransaction, parseSignature, solanaProbeObservationFromAcquisition } from "@nec/resolver-solana";
+import type { SolanaCapabilityProbeObservation } from "@nec/resolver-solana";
 import type { SolanaRpcSourceDescriptor } from "@nec/resolver-solana";
 import { NeMcpError } from "./errors.js";
 
@@ -23,6 +24,8 @@ export interface SolanaLiveEvidence {
   readonly transactionObserved: boolean;
   readonly blockObserved: boolean;
   readonly consistent: boolean;
+  /** Derived by the resolver's own exact acquisition-to-probe projection. */
+  readonly beforeProbe: Pick<SolanaCapabilityProbeObservation, "paths" | "finalizedCommitmentObserved" | "lookupsCoherent">;
   readonly captures: readonly { readonly rpcMethod: string; readonly contentDigest: string; readonly acquiredAt: string; readonly httpStatus: number; readonly resultBytes: number }[];
   readonly fragment: Record<string, unknown>;
 }
@@ -135,6 +138,7 @@ export async function acquireLiveSolana(nativeFetch: typeof fetch, network: Sola
       source, signature, now: new Date().toISOString(), fetchFn: restrictedSolanaRpcFetch(nativeFetch, network),
     });
     const evaluated = evaluateSolanaTransaction(acquired);
+    const beforeProbe = solanaProbeObservationFromAcquisition(acquired);
     const fragment = JSON.parse(encodeNecWireJson("network-evidence-fragment", evaluated.fragment)) as Record<string, unknown>;
     return {
       source: {
@@ -148,6 +152,11 @@ export async function acquireLiveSolana(nativeFetch: typeof fetch, network: Sola
       transactionObserved: acquired.transaction !== null,
       blockObserved: acquired.block !== null && acquired.block !== undefined,
       consistent: acquired.consistent,
+      beforeProbe: {
+        paths: beforeProbe.paths,
+        finalizedCommitmentObserved: beforeProbe.finalizedCommitmentObserved,
+        lookupsCoherent: beforeProbe.lookupsCoherent,
+      },
       captures: acquired.captures.map(x => ({
         rpcMethod: x.rpcMethod, contentDigest: x.contentDigest, acquiredAt: x.acquiredAt,
         httpStatus: x.httpStatus, resultBytes: Buffer.byteLength(x.resultText),

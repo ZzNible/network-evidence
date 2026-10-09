@@ -16,6 +16,7 @@ import { MAX_DISCOVERY_CANDIDATES, runDiscoverNetworkCandidates } from "./discov
 import { toSafeToolError } from "./errors.js";
 import { networkProfilesInventory, activeNetworkProfilesInventory } from "./profiles.js";
 import { LIVE_MULTICHAIN_TOOL, LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
+import { LIVE_BEFORE_TOOL_NAME, LIVE_BEFORE_MAX_CANDIDATES, LIVE_BEFORE_SCHEMA, createLiveBeforeTool } from "./live-before.js";
 import type { MultichainTool } from "./live-multichain.js";
 
 export const SERVER_NAME = "network-evidence-mcp";
@@ -23,7 +24,7 @@ export const SERVER_VERSION = "0.0.1";
 
 export const TOOL_NAMES = ["list_network_profiles", "discover_network_candidates", "get_reviewed_evidence_case"] as const;
 /** Only available behind the explicit hosted live-RPC switch. */
-export const LIVE_TOOL_NAMES = [...TOOL_NAMES, LIVE_MULTICHAIN_TOOL] as const;
+export const LIVE_TOOL_NAMES = [...TOOL_NAMES, LIVE_MULTICHAIN_TOOL, LIVE_BEFORE_TOOL_NAME] as const;
 
 /** Explicit boolean hints for every tool. */
 export const READ_ONLY_ANNOTATIONS: ToolAnnotations = Object.freeze({
@@ -278,6 +279,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       "Network Evidence MCP: opt-in anonymous, read-only, non-production preview; EVM and Solana source evidence from four fixed network profiles.",
       "The three other tools remain offline; their historical, synthetic and caller-supplied observations do not become live.",
       "resolve_transaction_evidence obtains ONE source observation using an existing EVM or Solana resolver and returns an authentic Core partial fragment. Solana finalized commitment is source-reported; no cryptographic verification, protocol settlement, L1 withdrawal or economic finality assertion.",
+      "discover_live_network_evidence probes 1-2 exact transactions, produces native Core capability snapshots and a Core-verified Discovery result. It never ranks or chooses networks. Availability applies only to the probed source, action and acquisition time.",
       "No wallet, signing, transaction submission, ranking, or policy engine.",
     ].join("\n");
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { instructions });
@@ -287,8 +289,9 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
     "list_network_profiles",
     {
       title: "List fixed Network Evidence profiles",
-      description:
-        "Returns the FIXED public profile inventory (Base mainnet eip155:8453, Base Sepolia eip155:84532, Solana mainnet, Solana devnet, zkSYS Tanenbaum testnet eip155:57057 replay-only) with each resolver manifest's DECLARED capabilities and the truth boundaries. Nothing is observed: every currentSupport/currentAvailability is 'not_assessed'. Profile membership is not live availability. Takes no arguments.",
+      description: deps.liveEvidence === undefined
+        ? "Returns the fixed OFFLINE demo inventory: Base mainnet/Sepolia, Solana mainnet/devnet and zkSYS Tanenbaum historical replay only; no current availability is assessed."
+        : "Returns four live-mode DECLARED profiles: Base mainnet/Sepolia and Solana mainnet/devnet, without zkSYS. Listing is NOT an actual availability probe; use discover_live_network_evidence with exact subjects for source observations.",
       inputSchema: z.object({}).strict(),
       outputSchema: profilesOutputSchema,
       annotations: { ...READ_ONLY_ANNOTATIONS, title: "List fixed Network Evidence profiles" },
@@ -343,6 +346,49 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
   );
 
   if (deps.liveEvidence !== undefined) {
+    const liveBefore = createLiveBeforeTool(deps.liveEvidence);
+    server.registerTool(
+      LIVE_BEFORE_TOOL_NAME,
+      {
+        title: "Discover networks from exact live Base or Solana evidence",
+        description:
+          "Read-only opt-in PRE-RELEASE: acquire 1-2 source-bound transaction/signature probes on fixed Base/Solana profiles, derive existing Core CapabilitySnapshots and run Core-verified Discovery. A probe supports only those exact read paths at observation time, not global uptime, settlement, cryptographic finality or a network recommendation. No arbitrary RPC, signing or submission.",
+        inputSchema: z.object({
+          requestId: z.string().min(2).max(90),
+          requirements: jsonObject.describe("Exact Core DiscoveryRequirements; no policy is inferred."),
+          subjects: z.array(z.object({
+            type: z.literal("transaction"),
+            networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
+            txId: z.string().min(43).max(100),
+          }).strict()).min(1).max(LIVE_BEFORE_MAX_CANDIDATES),
+        }).strict(),
+        outputSchema: z.object({
+          schema: z.literal(LIVE_BEFORE_SCHEMA),
+          observationKind: z.literal("live_source_observation"),
+          builtAndVerifiedBy: z.literal("@nec/discovery + @nec/core"),
+          generatedAt: z.string(),
+          result: jsonObject,
+          candidates: z.array(z.object({
+            id: z.string(), environment: z.enum(["mainnet", "testnet"]),
+            networkId: z.string(), classification: z.enum(["eligible", "conditional", "ineligible"]),
+            observedAt: z.string(), sourceId: z.string(), sourceType: z.string(),
+            snapshotId: z.string(), snapshotDigest: z.string(),
+            resolver: z.object({id: z.string(), version: z.string(), digest: z.string()}),
+            evidenceCaptures: z.array(z.object({rpcMethod:z.string(), contentDigest:z.string()})),
+            capabilities: jsonObject,
+          })),
+          nonClaims: z.array(z.string()),
+        }),
+        annotations: {
+          title: "Discover networks from exact live Base or Solana evidence",
+          readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true,
+        },
+      },
+      async (args) => {
+        try { return ok(await liveBefore(args)); }
+        catch (error) { return toolError(error); }
+      },
+    );
     server.registerTool(
       LIVE_MULTICHAIN_TOOL,
       {
@@ -366,6 +412,17 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
           source: jsonObject,
           acquisition: z.object({
             transactionObserved: z.boolean(),
+            transactionLookupUsable: z.boolean().optional(),
+            solanaProbe: z.object({
+              paths: z.object({
+                genesisidentity: z.enum(["usable","not_established","unusable"]),
+                transaction: z.enum(["usable","not_established","unusable"]),
+                signaturestatus: z.enum(["usable","not_established","unusable"]),
+                finalizedblock: z.enum(["usable","not_established","unusable"]),
+              }),
+              finalizedCommitmentObserved: z.boolean(),
+              lookupsCoherent: z.boolean(),
+            }).optional(),
             blockObserved: z.boolean(),
             consistent: z.boolean(),
             captures: z.array(z.object({
