@@ -103,6 +103,48 @@ function mergeFinalityInto(
 }
 
 describe("OP Stack finality evaluation (case matrix)", () => {
+  it("H1: finality acquired for same height but WRONG block hash cannot support this subject", async () => {
+    const evm = await genericAcquisition();
+    const { fetchFn } = scriptedOpstackFetch(opstackResponses({}));
+    const observation = await acquireOpStackFinalityObservation({
+      source: opstackSource(),
+      subjectBlock: { number: SUBJECT_NUMBER, hash: SUBJECT_HASH },
+      now: NOW, fetchFn,
+    });
+    for (const subjectBlock of [
+      { number: SUBJECT_NUMBER, hash: OTHER_HASH },
+      { number: SUBJECT_NUMBER + 1n, hash: SUBJECT_HASH },
+    ]) {
+      const result = evaluateOpStackFinality({
+        config: config(), evm, finality: { ...observation, subjectBlock },
+      });
+      expect(result.dimension.dimension.applicability).toBe("unknown");
+      expect(result.dimension.dimension.verdict).toBeUndefined();
+      expect(result.conflicts).toHaveLength(0);
+      expect(result.warnings.some(w => w.code === "OP_SUBJECT_ANCHOR_MISMATCH")).toBe(true);
+    }
+  });
+
+  it("H1: an explicit EVM transaction/receipt dataBinding failure cannot support finality", async () => {
+    const evm = await genericAcquisition();
+    const { fetchFn } = scriptedOpstackFetch(opstackResponses({}));
+    const observation = await acquireOpStackFinalityObservation({
+      source: opstackSource(),
+      subjectBlock: { number: SUBJECT_NUMBER, hash: SUBJECT_HASH },
+      now: NOW, fetchFn,
+    });
+    const checks = [
+      ...evm.checks.filter(c => c.code !== "TRANSACTION_COHERENT_WITH_RECEIPT"),
+      { code: "TRANSACTION_COHERENT_WITH_RECEIPT" as const, passed: false, detail: "tx/receipt disagreement" },
+    ];
+    const result = evaluateOpStackFinality({
+      config: config(), evm: { ...evm, checks }, finality: observation,
+    });
+    expect(result.dimension.dimension.applicability).toBe("unknown");
+    expect(result.dimension.dimension.verdict).toBeUndefined();
+    expect(result.warnings.some(w => w.code === "OP_GENERIC_BINDING_NOT_ESTABLISHED")).toBe(true);
+  });
+
   it("A: complete walked finalized->subject ancestry at/below the finalized head -> SUPPORTED with basis EXACTLY [source_observation]", async () => {
     const result = await evaluate({});
     const dim = result.dimension.dimension;

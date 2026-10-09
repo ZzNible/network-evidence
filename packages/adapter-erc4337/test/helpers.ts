@@ -350,6 +350,7 @@ export interface FragmentOptions {
   /** Omit the execution dimension entirely (null-receipt worlds). */
   readonly omitExecution?: boolean;
   readonly executionDim?: Partial<EvidenceDimension>;
+  readonly dataBindingDim?: Partial<EvidenceDimension>;
   readonly settlementDim?: Partial<EvidenceDimension>;
   readonly finalityDim?: Partial<EvidenceDimension>;
   readonly conflicts?: readonly Conflict[];
@@ -390,6 +391,9 @@ export function buildFragment(opts: FragmentOptions = {}): NetworkEvidenceFragme
             ),
           }),
       ...(effects.length > 0 ? { observedEffects: [...effects] } : {}),
+      ...(opts.dataBindingDim === undefined
+        ? {}
+        : { dataBinding: mergeDimension(dimension({ applicability: "unknown" }), opts.dataBindingDim) }),
       ...(opts.settlementDim === undefined
         ? {}
         : { settlement: mergeDimension(dimension({ applicability: "unknown" }), opts.settlementDim) }),

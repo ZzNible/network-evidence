@@ -41,6 +41,27 @@ const BURN = {
 };
 
 describe("malformed relevant evidence fails closed", () => {
+  it("H2: material EVM dataBinding disagreement defeats matching UserOperation", () => {
+    const dispute: Conflict = {
+      id:"conflict_bundle_receipt_identity",
+      code:"TRANSACTION_COHERENT_WITH_RECEIPT",
+      description:"different transaction returned under receipt",
+      scope:{kind:"dimension",dimension:"dataBinding"},
+      evidence:["ev_receipt_1"],material:true,
+    };
+    const fragment=buildFragment({
+      effects:[userOpEventEffect("uop")],
+      dataBindingDim:{
+        applicability:"applicable",verdict:"ambiguous",
+        basis:["source_observation"],evidence:["ev_receipt_1"],
+      },
+      conflicts:[dispute],
+    });
+    const evaluated=assessErc4337UserOperation(CLAIM,fragment);
+    expect(evaluated.outcome.verdict).toBe("ambiguous");
+    expect(evaluated.outcome.materialConflictIds).toContain(dispute.id);
+  });
+
   it("a malformed UserOperationEvent beside an exact valid target forces ambiguity", () => {
     // The malformed event's userOpHash is undecodable: it COULD be a second
     // emission of the target hash (replay/double-execution), so competing
