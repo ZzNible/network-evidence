@@ -1,0 +1,79 @@
+name: One-time real agent quickstart — Base and Solana beta
+on:
+  push:
+    branches:
+      - audit/ne-mcp-agent-quickstart-20261010
+    paths:
+      - .github/workflows/audit-ne-mcp-agent-quickstart-20261010.yml
+
+permissions:
+  contents: read
+
+jobs:
+  public-read-only-sdk-example:
+    if: github.repository == 'ZzNible/network-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout candidate public documentation
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare official Node SDK
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact documented SDK without executing install scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ne-mcp-beta-client"
+          cd "$RUNNER_TEMP/ne-mcp-beta-client"
+          npm init -y >/dev/null
+          npm install --save-exact --ignore-scripts --no-audit --no-fund @modelcontextprotocol/client@2.3.1
+      - name: Extract executable snippet from public guide
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, re, os
+          path=pathlib.Path('docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md')
+          text=path.read_text(encoding='utf-8')
+          match=re.search(r"cat > probe[.]mjs <<'JS'\n(.*?)\nJS\n", text, re.S)
+          assert match, 'documented Node.js sample missing'
+          script=match.group(1)
+          assert 'new StreamableHTTPClientTransport' in script
+          assert 'resolve_transaction_evidence' in script
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'ne-mcp-beta-client'/'probe.mjs'
+          out.write_text(script+'\n', encoding='utf-8')
+          print('PUBLIC_GUIDE_EXACT_SNIPPET_EXTRACTION=PASS')
+          PY
+      - name: Real MCP client — profiles, low rate, no secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ne-mcp-beta-client"
+          node probe.mjs profiles
+          echo 'EXTERNAL_AGENT_PROFILES=PASS'
+      - name: Pace global anonymous MCP quota
+        run: sleep 75
+      - name: Real MCP client — Base mainnet read-only evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ne-mcp-beta-client"
+          node probe.mjs base
+          echo 'EXTERNAL_AGENT_BASE_LIVE_READ=PASS'
+      - name: Pace global anonymous MCP quota for Solana
+        run: sleep 75
+      - name: Real MCP client — Solana mainnet read-only evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ne-mcp-beta-client"
+          node probe.mjs solana
+          echo 'EXTERNAL_AGENT_SOLANA_LIVE_READ=PASS'
+      - name: Close exact documentation smoke
+        run: |
+          echo 'MCP_BETA_AGENT_PUBLIC_GUIDE=PASS'
+          echo 'NO_KEYS; NO_WALLET; NO_CHAIN_SUBMISSION; NO_RELEASE_OR_DEPLOY'
