@@ -1,25 +1,27 @@
 # @nec/mcp — local, read-only Network Evidence MCP server (v0)
 
-> **Status (2026-10-09):** local mode stays loopback-only by default. The separate **public, anonymous, read-only Google Cloud Run service** is LIVE at `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp`, checked in both MCP protocol eras. The official MCP Registry lists `io.github.ZzNible/network-evidence` **v0.0.2 ACTIVE**. The existing PRIVATE ChatGPT plugin v0.1.2, Codex and Claude Code have migrated to this URL; the latter two were tested with real tool calls, while a ChatGPT-conversation invocation remains unverified. The former `network-evidence-mcp-preview` Cloud Run service is kept temporarily as rollback. This is an **offline, limited read-only preview**, not live monitoring, an npm publication, a public ChatGPT/Claude catalog listing, or a production uptime commitment. See the [hosted preview](#hosted-preview-mode-opt-in-public-cloud-run-preview).
-> See [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
-> and [`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
+> **Current (2026-10-10):** the **original three-tool OFFLINE** public service remains at `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp` and MCP Registry `io.github.ZzNible/network-evidence` v0.0.2. Its tools never fetch live RPC. The separately approved **six-tool Base + Solana public read-only beta** is LIVE at `https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp`, Cloud Run revision `network-evidence-mcp-beta-00003-v6q`, exactly four active profile declarations. This beta performs bounded source observations of exact actions via pinned public RPC endpoints. It is **not** a fully verified Core NetworkEvidenceResult or independent cryptographic settlement/finality certification. Use the [public agent quickstart](../../docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md); source release v1.1.0 and old Registry listing do not automatically publish the beta to ChatGPT or Claude directories.
 
-> **Separate candidate — IAM-PRIVATE live canary tested; NOT publicly deployed:** Source branch has THREE hosted-only, read-only tools beyond the original offline three: resolve_transaction_evidence (AFTER; optional native x402/4337 claim and optional Base-only OP Stack L2 finality), discover_live_network_evidence (source-bound BEFORE/Core Discovery), and preflight_live_network_evidence (caller-chosen Base/Solana network, complete original Core action+policy, separate capability probe, contextually Core-verified preflight). No tool ranks or chooses networks, invents expected actions/wallet readiness, submits anything, or creates full Core results from fragments. See the candidate technical limits. The PUBLIC MCP remains the original three-tool OFFLINE demo. An owner-authorized **IAM-private Cloud Run canary** (service `network-evidence-mcp-live-canary`) has successfully called actual Base and Solana public RPCs with six MCP tools in both protocol eras. It is **not anonymous, not an official registry endpoint, and not permission for a PUBLIC live rollout**. See `docs/distribution/CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md` section 7 for tested quotas/cost/privacy limitations and rollback.
+> **Three hosted-only beta tools:** `resolve_transaction_evidence` (AFTER, optional original caller-supplied claim/OP Stack L2 block-finality), `discover_live_network_evidence` (BEFORE/Core Discovery from exact sources), and `preflight_live_network_evidence` (caller-selected native Core evidence preflight requiring **complete original input/policy**). There is no automatic network choice/ranking, wallet, signing, submission, settlement inference, Core schema replacement or manufactured full Core Result from fragments. Caller-supplied protocol terms are not independently authenticated. Public beta Cloud Run limits are **max one instance, concurrent request one, four HTTP MCP admissions per minute per process**, shared among all anonymous clients. These constraints are NOT the local default values shown below. Earlier IAM-private live canary remains IAM-private; the old original offline service remains separate for rollback.
 
-A Model Context Protocol server over public Network Evidence code. In its **default and currently public OFFLINE mode**, it exposes
-three read-only tools and performs **no network I/O**: no RPC, crawler,
-transaction watcher, explorer, indexer or live monitoring. It has no wallet,
-signer, funding/gas or transaction submission, and it never chooses, scores,
-ranks or recommends a network.
+> Full [beta deployment, exact source, tests and rollback](../../docs/distribution/CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md) and [distribution launch checklist](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md).
+
+A Model Context Protocol server over public Network Evidence code. In its **default local and official Registry v0.0.2 OFFLINE mode**, it exposes
+three read-only tools and performs **no network I/O**. In the separate,
+hosted-only public beta mode it exposes **three more read-only source-fetching
+tools** for Base/Solana. Neither mode is a wallet, signer, funding/gas or
+transaction submission service; neither scores, ranks or chooses networks.
 
 - **BEFORE** asks: what can an exact network/deployment support, and what is
   currently observable/usable *with evidence*?
 - **AFTER** asks: what can the network itself independently support about one
   exact action?
 
-This server observes nothing, so it never answers "now". Current support is
-not current availability. Manifest membership is not live availability.
-Archived replay keeps current availability `unknown`.
+In default offline mode the server observes nothing and never answers
+"now". Hosted public beta sources can observe exact transactions in real time,
+but do not infer worldwide availability, consensus or settlement from one RPC.
+Current support is distinct from current availability. Manifest membership is
+not live availability. Archived replay keeps current availability `unknown`.
 
 ## Run it
 
@@ -136,15 +138,14 @@ or excess bytes. No Response.clone tee buffering or provider error body leak.
 The SDK-only new Solana block signatures membership read is NOT admitted by
 the hosted method allowlist; the public hosted endpoint is still 3-tool OFFLINE.
 
-IMPORTANT RELEASE BLOCKER: hosted HTTP limits and the multichain live
-acquisition quotas are global to one NODE PROCESS, not across Cloud Run
-instances or revisions. The anonymous preview has no per-client quota.
-A public live rollout requires independently verified Cloud Run instance
-and rollout bounds plus provider/billing limits, or a genuine distributed
-rate budget with verified cross-instance admission. Do not treat source
-configuration as evidence of global enforcement. Owner authorization is
-required before any public live change. See the existing candidate release
-and security correction documents for reproduction and remaining gaps.
+**Public beta operational limit (not a blocker retroactively):** the approved
+six-tool Base/Solana beta is already LIVE with one Cloud Run instance and a
+small process-local shared 4/minute MCP request quota; non-POST GET returning
+405 also consumes admission. Additional instances or production-scale agent
+traffic would require independently justified cross-instance admission and
+provider/cost controls; do NOT widen quotas on the basis of beta success.
+The official 3-tool Registry listing remains offline until a separate
+full-result product/compliance release decision.
 
 ## Tools
 
