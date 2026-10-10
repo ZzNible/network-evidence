@@ -21,6 +21,18 @@ It reports explicit verdicts: `supported`, `contradicted`, `insufficient`, or
 effect, settlement, and finality are separate questions; support for one is
 not support for another.
 
+## Public MCP beta for agents — Base + Solana
+
+**Try the [six-tool Base + Solana read-only beta](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md)** in any compatible remote Streamable HTTP MCP client:
+
+- **MCP endpoint:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp
+- **Current supported live profiles:** Base mainnet / Base Sepolia, Solana mainnet / Solana devnet.
+- **Read-only RPC observations:** exact public transaction/signature, native Core fragment, provenance and explicit non-claims; source-reported block-finality signals are **not** cryptographic settlement proof.
+- **Small public beta:** shared four HTTP MCP requests/minute per running process; 429 and unavailable source observations are possible. No wallet, signing or submission.
+- **Different product identities:** the source Suite release v1.1.0 and official MCP Registry v0.0.2 **still list the older offline three-tool endpoint**. The beta is neither MCP COMPLETE v1 nor a public ChatGPT/Claude directory listing.
+
+[Connect and reproduce a Base/Solana agent call](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md) · [Privacy and RPC provider disclosure](docs/distribution/MCP_PRIVACY_POLICY.md) · [GitHub Issues](https://github.com/ZzNible/network-evidence/issues).
+
 This source capsule contains `@nec/core`, `@nec/resolver-evm`,
 `@nec/adapter-x402`, `@nec/resolver-opstack`, `@nec/adapter-erc4337`,
 `@nec/resolver-solana`, `@nec/adapter-x402-svm`, `@nec/resolver-zksys`,
