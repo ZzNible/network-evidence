@@ -56,6 +56,31 @@ describe("hosted HTTP JSON-RPC ingress admission — each request must mean ONE 
   expect(good.status).toBe(200);
   expect(good.body).toContain("list_network_profiles");
  });
+ it("refuses infinite subscription streams without blocking a single-concurrency hosted MCP client",async()=>{
+  const solo=await startNeMcpHttpServer({
+   host:"127.0.0.1",port:0,hosted:{publicOrigin:"https://"+HOST},
+   limits:{maxConcurrent:1,maxRequestsPerMinute:4},
+  });
+  try{
+   const listen=await post(solo.port,JSON.stringify({jsonrpc:"2.0",id:17,method:"subscriptions/listen",params:{}}));
+   expect(listen.status).toBe(200);
+   expect(JSON.parse(listen.body)).toEqual({
+    jsonrpc:"2.0",id:17,error:{code:-32601,message:"subscriptions/listen is unavailable on this stateless server"},
+   });
+   // A rejected indefinite subscription must release the sole request slot.
+   const tools=await post(solo.port,JSON.stringify({jsonrpc:"2.0",id:18,method:"tools/list"}));
+   expect(tools.status).toBe(200);
+   // The legacy SDK may return JSON-RPC over text/event-stream when Accept allows SSE.
+   expect(tools.body).toContain("list_network_profiles");
+   const invalid=await post(solo.port,JSON.stringify({jsonrpc:"2.0",id:{spoof:true},method:"subscriptions/listen"}));
+   expect(invalid.status).toBe(400);
+   const last=await post(solo.port,JSON.stringify({jsonrpc:"2.0",id:19,method:"tools/list"}));
+   expect(last.status).toBe(200);
+   // Refusal still consumes an HTTP admission, preventing quota bypass.
+   const over=await post(solo.port,JSON.stringify({jsonrpc:"2.0",id:20,method:"tools/list"}));
+   expect(over.status).toBe(429);
+  }finally{await solo.close();}
+ });
 });
 
 describe("bounded fixed-source Solana provider fetch cannot clone/tee response bodies",()=>{

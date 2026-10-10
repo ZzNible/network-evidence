@@ -249,6 +249,25 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
       jsonRpcError(res, 400, -32600, "Bad Request: JSON-RPC batches are not accepted; use one operation per HTTP request");
       return;
     }
+    // The read-only stateless server publishes no subscription events. The
+    // generic SDK would keep subscriptions/listen open indefinitely, which can
+    // monopolize a Cloud Run revision configured for one concurrent request.
+    // Answer explicitly before SDK dispatch; still charge the normal ingress
+    // admission and preserve the JSON-RPC id for standards-compliant clients.
+    const operation = parsed as Record<string, unknown>;
+    if (operation !== null && typeof operation === "object" && operation.method === "subscriptions/listen") {
+      const id = operation.id;
+      if (typeof id !== "string" && !(typeof id === "number" && Number.isSafeInteger(id))) {
+        jsonRpcError(res, 400, -32600, "Bad Request: invalid JSON-RPC id");
+        return;
+      }
+      sendJson(res, 200, JSON.stringify({
+        jsonrpc: "2.0",
+        id,
+        error: { code: -32601, message: "subscriptions/listen is unavailable on this stateless server" },
+      }));
+      return;
+    }
     await mcpNode(req, res, parsed);
   }
 
