@@ -173,7 +173,7 @@ export function parseErc4337Claim(raw: unknown): Erc4337Claim {
     erc4337Fail("ERC4337_CLAIM_INVALID", 'missing required field "entryPointProfile"');
   }
   const rawProfile = record["entryPointProfile"];
-  if (typeof rawProfile !== "string" || !(rawProfile in ENTRY_POINT_PROFILES)) {
+  if (typeof rawProfile !== "string" || !Object.prototype.hasOwnProperty.call(ENTRY_POINT_PROFILES, rawProfile)) {
     erc4337Fail(
       "ERC4337_ENTRYPOINT_PROFILE_UNKNOWN",
       `entryPointProfile must be one of ${Object.keys(ENTRY_POINT_PROFILES).join(", ")}; got ${JSON.stringify(rawProfile)}`,

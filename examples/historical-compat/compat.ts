@@ -121,7 +121,17 @@ function authorityBytes(path: string): Buffer {
 }
 
 function publicBytes(path: string, expectedSha256: string): Buffer {
-  const bytes = readFileSync(new URL(path, REPO_ROOT));
+  // F3 authority pins the PUBLIC source of the historical review at its
+  // original digest, not an eternally frozen editable test file in HEAD.
+  // The test itself now evolves to reject Token-2022 unverified net credit.
+  // Preserve the EXACT original, SHA-checked bytes in a separate archival
+  // read-only source copy; do not rewrite F3 reference/proof artifacts.
+  const reviewedSourcePath =
+    path === "packages/adapter-x402-svm/test/adapter.test.ts" &&
+    expectedSha256 === "5e95d96f0df32b47631a46f814e7c4b371bfd8bed52f4545486b6492a81a932c"
+      ? "examples/historical-compat/reviewed-source/adapter-x402-svm-adapter-test.5e95d96f.reviewed.txt"
+      : path;
+  const bytes = readFileSync(new URL(reviewedSourcePath, REPO_ROOT));
   assert.equal(sha256(bytes), expectedSha256, `public source digest mismatch: ${path}`);
   return bytes;
 }

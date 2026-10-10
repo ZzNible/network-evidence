@@ -1,17 +1,14 @@
-# MCP launch checklist (NOT YET LAUNCHED)
+# MCP launch checklist (Cloud Run preview LIVE; official Registry ACTIVE; other directories PENDING)
 
-> **Status: nothing in this document is live.** No public HTTPS endpoint, domain,
-> registry entry, Smithery listing, ChatGPT/Codex app or plugin, ARD descriptor
-> or `llms.txt` exists for Network Evidence. Every value written
-> `<NOT-FOR-PUBLICATION:…>` is a placeholder and must not be copied into any
-> public artifact as-is.
+> **Updated 2026-10-09:** Cloud Run service `network-evidence-mcp` is PUBLIC at `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp`, verified via anonymous health and SDK tools for both protocol eras. Official MCP Registry version `0.0.2` is ACTIVE (see GitHub [publication run 37905012273](https://github.com/ZzNible/network-evidence/actions/runs/37905012273)). The existing private ChatGPT plugin `0.1.2`, Codex, and Claude Code point to the new URL; Codex and Claude executed genuine tool calls. The former `network-evidence-mcp-preview` server remains online for rollback. **Claude/Anthropic directory, ChatGPT public catalog, and Smithery are NOT submitted**, and the Anthropic draft in the user's browser still needs its URL edited. Sections below retain historical prelaunch checkboxes: read this status first, not their old state. This is still an offline read-only preview, not a production monitoring service.
 
-Today the server is `@nec/mcp` v0: local, read-only, loopback-only
-Streamable HTTP, no authentication. See
-[`packages/mcp/README.md`](../../packages/mcp/README.md).
+The local `@nec/mcp` v0 remains loopback-only by default. Its opt-in hosted version runs as a bounded, anonymous, read-only Cloud Run preview. Use `/health` on Cloud Run; `/healthz` is reserved upstream. Three MCP tools retain the exact offline and non-live evidence boundaries. Render Free remains a tertiary fallback; the old Cloud Run preview remains immediate rollback. The PRIVATE ChatGPT plugin configuration was migrated and re-read, but end-to-end invocation from a ChatGPT conversation is not yet verified.
 
 Legend:
-- **[verified-local]** — checked in this repository during lot NE-MCP-V0.0.1.
+- **[verified-local]** — checked in this repository during lot NE-MCP-V0.0.1
+  (or NE-MCP-RENDER-PREP where marked **[prepared]**).
+- **[prepared]** — code/docs exist and were tested locally; **not deployed**.
+- **[deployed]** — current Cloud Run preview is live; some unchecked list items below remain historical.
 - **[external — verify at launch]** — an external platform requirement. It was
   NOT verified in this lot (no external accounts or network calls were used).
   Re-check it against that platform's current official documentation before acting.
@@ -28,22 +25,28 @@ Legend:
       the raw body. Body/candidate bounds. No stack traces in errors. No payload logging.
 - [x] [verified-local] Raw JSON-RPC and official SDK-client protocol tests
       (`npx vitest run packages/mcp`, `npm run -s mcp:smoke`).
-- [ ] Nothing below this line is done.
+- [x] [prepared] Opt-in hosted mode: `NE_MCP_MODE=hosted` + exact validated
+      `NE_MCP_PUBLIC_ORIGIN`, binds `0.0.0.0:$PORT`. Exact `Host`/`Origin`
+      allowlist, `X-Forwarded-*` never read. Global rate/concurrency `429`.
+      Mode-specific `/healthz` scope. Tested in `packages/mcp/test/hosted.test.ts`.
+- [x] [prepared] Render runbook with exact settings, FAILED/STOP states and
+      rollback: [`RENDER_DEPLOY_RUNBOOK.md`](RENDER_DEPLOY_RUNBOOK.md).
+- [x] [deployed] New clean Cloud Run public endpoint and official MCP Registry `0.0.2` live and verified; direct Codex and Claude Code tool calls PASS. Anthropic/ChatGPT public directory and Smithery submissions remain pending.
 
-## 1. Remote HTTPS service (prerequisite for every listing)
+## 1. Remote HTTPS service (Cloud Run public preview verified; other gates pending)
 
-- [ ] [HUMAN] Choose the operator, domain and hosting. Placeholder origin:
-      `<NOT-FOR-PUBLICATION:HTTPS_ORIGIN>`. Placeholder MCP URL:
-      `<NOT-FOR-PUBLICATION:HTTPS_ORIGIN>/mcp`.
-- [ ] Code change (new lot): v0 deliberately refuses non-loopback binds. A
-      remote deployment needs a reviewed reverse proxy / TLS termination
-      design. It also needs an explicit `Host`/`Origin` allowlist for the
-      public hostname instead of the loopback-only guards.
+- [x] [deployed] Owner chose Google Cloud Run (`europe-west1`) with its assigned `run.app` origin and the exact public `/mcp` endpoint. No custom-owned domain is configured.
+- [x] [prepared] Code change: hosted mode with an exact `Host`/`Origin`
+      allowlist for the public hostname (TLS terminated by the platform).
+      Local mode still refuses non-loopback binds.
+- [ ] Independent review of the hosted mode, then explicit approval to create
+      the service (plan, name, workspace: [HUMAN]).
 - [ ] Decide authentication. The tools are read-only and closed-world, so
       anonymous access may be acceptable. If not, add OAuth per the MCP
       authorization spec. [external — verify at launch]
-- [ ] Rate limiting and per-IP/request quotas at the edge. Keep the 1 MiB body
-      and 16-candidate bounds.
+- [x] [prepared] Global in-memory rate + concurrency limits (`429`, no client
+      identity stored). 1 MiB body and 16-candidate bounds kept.
+- [ ] Per-client quotas / edge protection, if required. [HUMAN]
 - [ ] Logging policy for the hosted service. Keep v0's rule: no bodies,
       arguments or client identifiers. Document retention.
 - [ ] Data handling. `get_reviewed_evidence_case` serves only the shipped,
@@ -53,6 +56,8 @@ Legend:
 - [ ] Re-run all gates on the exact deployed commit. Record the commit SHA in
       the canonical STATUS before any listing.
 
+**Publication verified 2026-10-09:** `io.github.ZzNible/network-evidence` registry version `0.0.2` is **ACTIVE** and points to the clean Google Cloud Run URL; official GitHub OIDC publisher workflow [run 37905012273](https://github.com/ZzNible/network-evidence/actions/runs/37905012273) succeeded and the exact Registry REST GET returned HTTP 200 with status `active`. The older registry version `0.0.1` and preview endpoint remain available during migration ([first publish run 37853843152](https://github.com/ZzNible/network-evidence/actions/runs/37853843152)). Old unchecked items below are historical prelaunch checklist entries. Other directories are NOT published.
+
 ## 2. Official MCP Registry (remote server)
 
 [external — verify at launch] against the registry's current publishing guide and `server.json` schema.
@@ -61,7 +66,7 @@ Legend:
       `io.github.<owner>/<server>`. The publisher proves control of the GitHub
       account/org. For a custom-domain namespace, the domain-verification
       challenge (DNS or HTTP) must be completed. [HUMAN: owner account]
-- [ ] Prepare `server.json` with a **remote** entry (no npm package: `@nec/mcp`
+- [x] [deployed] Root `server.json` defines the remote Streamable HTTP endpoint and was published to the official MCP Registry as `0.0.2`; source package `@nec/mcp` remains **private and NOT published to npm**.
       is `private: true` and must stay unpublished). Draft shape:
 
       ```jsonc

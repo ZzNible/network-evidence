@@ -212,6 +212,25 @@ export function networkProfilesInventory(): NetworkProfilesInventory {
   return inventoryCache;
 }
 
+/** Four active live profiles only. Historical Tanenbaum is excluded from
+ * the opt-in multichain mode; the original demo inventory remains untouched. */
+export function activeNetworkProfilesInventory(): NetworkProfilesInventory {
+  const base = networkProfilesInventory();
+  return deepFreeze({
+    ...base,
+    profiles: base.profiles.filter(p => p.family !== "zksys"),
+    truthBoundaries: [
+      "Inventory declarations do not establish live network support or availability.",
+      "Only the separate opt-in exact-action tool reads selected RPC sources; it does not prove source independence or network consensus.",
+      "Source-reported OP Stack finality differs from withdrawal finalization; Solana finalized commitment is source observation, not cryptographic verification.",
+      "Missing or pruned evidence is insufficient; it does not establish nonexistence.",
+      "Tanenbaum historical replay remains in the source suite, never as an active live MCP network.",
+      "No wallet, signing, funding, submission, policy or network ranking/choice.",
+    ],
+    howToAssess: "The opt-in resolve_transaction_evidence tool reads exact actions. BEFORE Discovery requires fresh, independently acquired complete CapabilitySnapshots; this inventory alone does not establish availability.",
+  });
+}
+
 /** networkId -> presentation environment of the fixed inventory (MCP presentation guard only). */
 export function fixedProfileEnvironments(): ReadonlyMap<string, ProfileEnvironment> {
   return new Map(networkProfilesInventory().profiles.map((profile) => [profile.networkId, profile.environment]));

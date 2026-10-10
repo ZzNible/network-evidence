@@ -1,25 +1,27 @@
 # @nec/mcp — local, read-only Network Evidence MCP server (v0)
 
-> **Status: local v0 only.** This is NOT a public endpoint, NOT published to npm,
-> NOT listed in any MCP registry or directory, and NOT a ChatGPT/Codex/Claude
-> plugin. It binds loopback only and has no authentication. See
-> [`docs/distribution/MCP_LAUNCH_CHECKLIST.md`](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md)
-> for what remains before any public launch.
+> **Current (2026-10-10):** the **original three-tool OFFLINE** public service remains at `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp` and MCP Registry `io.github.ZzNible/network-evidence` v0.0.2. Its tools never fetch live RPC. The separately approved **six-tool Base + Solana public read-only beta** is LIVE at `https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp`, Cloud Run revision `network-evidence-mcp-beta-00003-v6q`, exactly four active profile declarations. This beta performs bounded source observations of exact actions via pinned public RPC endpoints. It is **not** a fully verified Core NetworkEvidenceResult or independent cryptographic settlement/finality certification. Use the [public agent quickstart](../../docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md); source release v1.1.0 and old Registry listing do not automatically publish the beta to ChatGPT or Claude directories.
 
-A Model Context Protocol server over public Network Evidence code. It exposes
-three read-only tools and performs **no network I/O**: no RPC, crawler,
-transaction watcher, explorer, indexer or live monitoring. It has no wallet,
-signer, funding/gas or transaction submission, and it never chooses, scores,
-ranks or recommends a network.
+> **Three hosted-only beta tools:** `resolve_transaction_evidence` (AFTER, optional original caller-supplied claim/OP Stack L2 block-finality), `discover_live_network_evidence` (BEFORE/Core Discovery from exact sources), and `preflight_live_network_evidence` (caller-selected native Core evidence preflight requiring **complete original input/policy**). There is no automatic network choice/ranking, wallet, signing, submission, settlement inference, Core schema replacement or manufactured full Core Result from fragments. Caller-supplied protocol terms are not independently authenticated. Public beta Cloud Run limits are **max one instance, concurrent request one, four HTTP MCP admissions per minute per process**, shared among all anonymous clients. These constraints are NOT the local default values shown below. Earlier IAM-private live canary remains IAM-private; the old original offline service remains separate for rollback.
+
+> Full [beta deployment, exact source, tests and rollback](../../docs/distribution/CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md) and [distribution launch checklist](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md).
+
+A Model Context Protocol server over public Network Evidence code. In its **default local and official Registry v0.0.2 OFFLINE mode**, it exposes
+three read-only tools and performs **no network I/O**. In the separate,
+hosted-only public beta mode it exposes **three more read-only source-fetching
+tools** for Base/Solana. Neither mode is a wallet, signer, funding/gas or
+transaction submission service; neither scores, ranks or chooses networks.
 
 - **BEFORE** asks: what can an exact network/deployment support, and what is
   currently observable/usable *with evidence*?
 - **AFTER** asks: what can the network itself independently support about one
   exact action?
 
-This server observes nothing, so it never answers "now". Current support is
-not current availability. Manifest membership is not live availability.
-Archived replay keeps current availability `unknown`.
+In default offline mode the server observes nothing and never answers
+"now". Hosted public beta sources can observe exact transactions in real time,
+but do not infer worldwide availability, consensus or settlement from one RPC.
+Current support is distinct from current availability. Manifest membership is
+not live availability. Archived replay keeps current availability `unknown`.
 
 ## Run it
 
@@ -41,6 +43,51 @@ The CLI replaces global `fetch` with a throwing guard.
 | host (`--host`, `NE_MCP_HOST`) | `127.0.0.1` | only `127.0.0.1`, `::1`, `localhost` accepted; anything else fails at startup |
 | port (`--port`, `NE_MCP_PORT`) | `4178` | `0` = ephemeral |
 | request body | 1 MiB | `startNeMcpHttpServer({ maxBodyBytes })`, 1 KiB..4 MiB |
+| `/mcp` concurrency (`NE_MCP_MAX_CONCURRENT`) | 16 | global, 1..64; excess → `429`, `Retry-After: 1` |
+| `/mcp` rate (`NE_MCP_RATE_LIMIT_PER_MINUTE`) | 600 / 60 s | global fixed window, 1..6000; excess → `429` + `Retry-After` |
+
+Local mode ignores the platform variable `PORT`. Setting `NE_MCP_PUBLIC_ORIGIN`
+or `NE_MCP_CUSTOM_ORIGIN` without `NE_MCP_MODE=hosted` is refused at startup.
+
+## Hosted preview mode (opt-in; public Cloud Run preview)
+
+For a **separately approved** deployment behind a platform that terminates
+HTTPS and forwards plain HTTP (e.g. a Render Web Service). It is an
+**anonymous, read-only preview**, not a reviewed production service: no
+authentication, no per-client quota, global limits only. Runbook:
+[`docs/distribution/RENDER_DEPLOY_RUNBOOK.md`](../../docs/distribution/RENDER_DEPLOY_RUNBOOK.md).
+
+| variable | required | rule |
+| --- | --- | --- |
+| `NE_MCP_MODE` | yes | exactly `hosted` (anything other than unset/`local`/`hosted` is refused) |
+| `NE_MCP_PUBLIC_ORIGIN` | yes | exact canonical origin `https://<public hostname>`: lowercase, no path, port, trailing slash, query, credentials or wildcard; not an IP, not localhost-class or special-use (`.local`, `.internal`, `.test`, …) |
+| `NE_MCP_CUSTOM_ORIGIN` | no | a second exact origin for an explicitly configured custom domain; same rules; must differ |
+| `PORT` | yes | set by the platform; decimal 1..65535 |
+| `NE_MCP_MAX_CONCURRENT` | no | default 8 in hosted mode (1..64) |
+| `NE_MCP_RATE_LIMIT_PER_MINUTE` | no | default 240 in hosted mode (1..6000) |
+
+```sh
+NE_MCP_MODE=hosted NE_MCP_PUBLIC_ORIGIN=https://<exact-public-hostname> PORT=<n> npm run mcp:serve
+```
+
+Behaviour:
+
+- binds `0.0.0.0:$PORT` (the only non-loopback bind in the package);
+  `--host`, `--port`, `NE_MCP_HOST`, `NE_MCP_PORT` are refused in hosted mode;
+- `Host` must be exactly a configured hostname (case-insensitive, **no port**).
+  Loopback names, IPs, `:443`, sub/superdomains and anything else → `403`;
+- no `Origin` (server-to-server MCP clients) passes; any present `Origin` must
+  equal a configured `https://` origin byte-for-byte. `http://`, other ports,
+  `localhost`, `null`, wildcards → `403`;
+- `X-Forwarded-*`, `Forwarded`, `X-Real-IP` are **never read**; the client
+  address is never read either;
+- 403 bodies are static and never echo the rejected header;
+- `/healthz` reports `"mode": "hosted"` and
+  `"scope": "hosted preview v0: anonymous, read-only, offline; not a reviewed production service"`;
+- all other guards, limits, tools, outputs and digests are identical to local mode.
+
+Refusals exit with status 1 before anything is bound, e.g.
+`Network Evidence MCP v0: NE_MCP_PUBLIC_ORIGIN is required in hosted mode (exact https origin)`.
 
 ## Transport and protocol
 
@@ -53,17 +100,52 @@ The CLI replaces global `fetch` with a throwing guard.
   - **modern** (`2026-07-28`): `server/discover` + per-request `_meta` envelope.
 - `GET`/`DELETE /mcp` → `405` (stateless; no standalone SSE stream).
 - `GET /healthz` → static JSON (`status`, tool names, `readOnly: true`,
-  `liveObservation: false`, `networkIo: "none"`).
+  `liveObservation: false`, `networkIo: "none"`, `mode`, and a mode-specific
+  `scope`: `"local v0; not a public endpoint"` locally).
 
-Request guards, in order: `Host`/`Origin` validation (loopback names only,
-DNS-rebinding protection) → `Content-Type: application/json` (`415`) →
+Request guards, in order: `Host`/`Origin` validation (DNS-rebinding
+protection; local: loopback `Host` names and, when an `Origin` is sent, only
+the exact same-port loopback origin `http://{127.0.0.1|localhost|[::1]}:<port>`.
+A browser page on another local port is refused. Hosted: see above) →
+global `/mcp` abuse limiter (`429`) → `Content-Type: application/json` (`415`) →
 byte-bounded body read (`413`) → the **@nec/core strict wire parser** over the
 raw body (duplicate JSON keys, malformed JSON, depth/node/string bounds →
 `400`, JSON-RPC `-32700`) → SDK. Each request gets a fresh `McpServer`.
 
+For **Google Cloud Run**, use `GET /health` (or HEAD) in hosted mode for health checks. Cloud Run reserves some URL paths ending in `z`, so `/healthz` can return a Google frontend 404 without reaching the application. Hosted `/health` returns the identical static payload and keeps the exact Host/Origin guards. `/healthz` stays available for Render and local mode; local mode deliberately does not serve `/health`.
+
+Browser-based cross-origin clients are not supported in hosted preview mode (no CORS preflight headers). Server-to-server MCP clients with no `Origin` header are supported; any supplied `Origin` must exactly match an explicitly configured HTTPS origin.
+
 Logging is one stderr line per request: method, route (`/mcp`, `/healthz` or
 `(other)`), status and duration. Headers, bodies, tool arguments, client
-addresses and identifiers are never logged.
+addresses and identifiers are never logged. The abuse limiter keeps two global
+counters only. It stores no IP, payload, credential or client identifier.
+
+
+### Hosted ingress and live-source security (2026-10-09 draft candidate)
+
+JSON-RPC ARRAY/BATCH messages are rejected with HTTP 400 and JSON-RPC -32600
+before the SDK can dispatch any operation, including one-element, empty and
+notifications-only arrays. The process-local HTTP admission limiter counts HTTP
+requests, not arbitrary numbers of tool calls inside a single batch. Existing
+single-call MCP clients (both protocol eras) still work. Core strict duplicate
+key and JSON resource bounds remain in place before any SDK processing.
+
+Live Solana provider reads now stream through ONE original response body only:
+maximum 800,000 delivered bytes, fixed-origin and method allowlist, 8-second
+source deadline plus caller abort, cancellation on rejected URL/status/length
+or excess bytes. No Response.clone tee buffering or provider error body leak.
+The SDK-only new Solana block signatures membership read is NOT admitted by
+the hosted method allowlist; the public hosted endpoint is still 3-tool OFFLINE.
+
+**Public beta operational limit (not a blocker retroactively):** the approved
+six-tool Base/Solana beta is already LIVE with one Cloud Run instance and a
+small process-local shared 4/minute MCP request quota; non-POST GET returning
+405 also consumes admission. Additional instances or production-scale agent
+traffic would require independently justified cross-instance admission and
+provider/cost controls; do NOT widen quotas on the basis of beta success.
+The official 3-tool Registry listing remains offline until a separate
+full-result product/compliance release decision.
 
 ## Tools
 
@@ -221,5 +303,9 @@ npx vitest run packages/mcp
 - Discovery byte-equality with direct `@nec/discovery`, plus fail-closed negatives;
 - case verbatim/pin/label checks;
 - raw JSON-RPC `initialize → tools/list → tools/call` and SDK client (both eras);
-- HTTP guards;
+- HTTP guards, including the same-port local `Origin` rule;
+- hosted mode (`test/hosted.test.ts`): configuration refusals, a real
+  `0.0.0.0` bind, exact `Host`/`Origin` admission with simulated public `Host`
+  headers, spoofed `X-Forwarded-*`, raw JSON-RPC and SDK-client (both eras)
+  through the hosted guards, malformed bodies, and `429` rate/concurrency bounds;
 - static source boundaries (no outbound I/O primitives).

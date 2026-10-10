@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   assessErc4337UserOperation,
   ENTRY_POINT_PROFILES,
+  entryPointAddressForProfile,
   ERC4337_CONFLICT_CODES,
   parseErc4337Claim,
 } from "../src/index.js";
@@ -24,6 +25,22 @@ const V06 = ENTRY_POINT_PROFILES["v0.6"];
 const V07 = ENTRY_POINT_PROFILES["v0.7"];
 
 describe("EntryPoint profile/version binding (fail closed)", () => {
+  it("H5: every pinned EntryPoint is 20 bytes; v0.8 matches the official deployed address", () => {
+    for (const address of Object.values(ENTRY_POINT_PROFILES)) {
+      expect(address).toMatch(/^0x[0-9a-f]{40}$/);
+    }
+    expect(ENTRY_POINT_PROFILES["v0.8"]).toBe("0x4337084d9e255ff0702461cf8895ce9e3b5ff108");
+    expect(entryPointAddressForProfile("constructor")).toBeUndefined();
+    expect(entryPointAddressForProfile("toString")).toBeUndefined();
+    expect(() => parseErc4337Claim({
+      network: "eip155:8453",
+      bundleTransactionHash: TX,
+      entryPoint: ENTRY_POINT_PROFILES["v0.8"],
+      entryPointProfile: "v0.8",
+      userOperation: { sender: SENDER },
+    })).not.toThrow();
+  });
+
   it("rejects an unknown profile at intake", () => {
     expect(() =>
       parseErc4337Claim({

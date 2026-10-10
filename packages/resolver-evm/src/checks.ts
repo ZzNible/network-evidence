@@ -22,6 +22,7 @@ export type EvmConsistencyCheckCode =
   | "RECEIPT_TX_HASH_MATCHES_SUBJECT"
   | "RECEIPT_BLOCK_HASH_MATCHES_BLOCK"
   | "RECEIPT_BLOCK_NUMBER_MATCHES_BLOCK"
+  | "RECEIPT_TRANSACTION_AT_BLOCK_INDEX"
   | "TRANSACTION_COHERENT_WITH_RECEIPT"
   | "LOG_BLOCK_COHERENT"
   | "LOG_TRANSACTION_COHERENT"
@@ -52,7 +53,12 @@ export interface ConsistencyInput {
     }[];
   };
   /** Present = acquired; null = queried but the source returned no block. */
-  readonly block?: { readonly hash: string; readonly number: bigint } | null;
+  readonly block?: {
+    readonly hash: string;
+    readonly number: bigint;
+    /** Source-returned transaction hashes in EXACT block order. */
+    readonly transactions: readonly string[];
+  } | null;
   readonly transaction?: {
     readonly hash: string;
     readonly blockHash: string | null;
@@ -109,6 +115,17 @@ export function runConsistencyChecks(input: ConsistencyInput): EvmConsistencyChe
           `receipt.blockNumber=${input.receipt.blockNumber} block.number=${input.block.number}`,
         ),
       );
+      // Receipt block identity alone does not prove transaction membership.
+      // Block hash array is already observed through eth_getBlockByHash(false).
+      const index = input.receipt.transactionIndex;
+      const within = index !== undefined && index >= 0n &&
+        index < BigInt(input.block.transactions.length);
+      const recorded = within ? input.block.transactions[Number(index as bigint)] : undefined;
+      checks.push(check(
+        "RECEIPT_TRANSACTION_AT_BLOCK_INDEX",
+        recorded === input.receipt.transactionHash,
+        `receipt.transactionIndex=${String(index)} block.transactions[index]=${String(recorded)} receipt.transactionHash=${input.receipt.transactionHash} blockTransactionCount=${input.block.transactions.length}`,
+      ));
     }
   }
 

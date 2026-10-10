@@ -38,3 +38,6 @@ export type {
 } from "./before.js";
 export { SOLANA_BEFORE_PROFILES, SOLANA_DEVNET_BEFORE_PROFILE, SOLANA_MAINNET_BEFORE_PROFILE } from "./profiles.js";
 export type { SolanaBeforeEnvironment, SolanaBeforeProfile } from "./profiles.js";
+
+export { SOLANA_BLOCK_MEMBERSHIP_PROFILE, SOLANA_BLOCK_SIGNATURE_MAX_COUNT, acquireSolanaBlockSignatureMembershipV1 } from "./block-membership.js";
+export type { SolanaBlockMembershipV1, SolanaBlockMembershipInput } from "./block-membership.js";

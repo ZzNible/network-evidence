@@ -1,39 +1,64 @@
 /**
- * `npm run mcp:serve` — start the local, read-only Network Evidence MCP v0.
+ * `npm run mcp:serve` — start the read-only Network Evidence MCP v0.
  *
+ * Local mode (default; unchanged):
  *   --port <n>  | NE_MCP_PORT   (default 4178; 0 = ephemeral)
  *   --host <h>  | NE_MCP_HOST   (default 127.0.0.1; loopback names only)
  *
- * The process replaces global `fetch` with a throwing guard: this server
- * performs no outbound network I/O by construction.
+ * Hosted mode (opt-in, for a separately approved deployment only):
+ *   NE_MCP_MODE=hosted  NE_MCP_PUBLIC_ORIGIN=https://<exact host>  PORT=<n>
+ *   [NE_MCP_CUSTOM_ORIGIN=https://<exact custom host>]
+ *   binds 0.0.0.0:$PORT; refuses to start on missing or unsafe configuration.
+ *
+ * Both modes: [NE_MCP_MAX_CONCURRENT] [NE_MCP_RATE_LIMIT_PER_MINUTE].
+ *
+ * The process replaces global `fetch` with a throwing guard. Only when
+ * NE_MCP_MULTICHAIN_ENABLED=1 in hosted mode does a separately scoped fetch
+ * permit read-only calls to fixed public Base and Solana RPC endpoints. Default
+ * deployment remains offline with three tools.
  */
 
-import { DEFAULT_HOST, DEFAULT_PORT, NeMcpConfigError, startNeMcpHttpServer } from "./http.js";
+import { DEFAULT_HOST, DEFAULT_PORT, HEALTH_SCOPE, NeMcpConfigError, startNeMcpHttpServer } from "./http.js";
+import { resolveServeConfig } from "./hosted.js";
+import { createMultichainTool } from "./live-multichain.js";
 
-function argValue(name: string): string | undefined {
-  const index = process.argv.indexOf(name);
-  return index === -1 ? undefined : process.argv[index + 1];
-}
-
-function parsePort(raw: string | undefined): number {
-  if (raw === undefined) return DEFAULT_PORT;
-  if (!/^\d{1,5}$/.test(raw)) throw new NeMcpConfigError("port must be a decimal integer");
-  return Number(raw);
-}
-
+// Capture only the native fetch passed through a fixed-origin/method/budget
+// adapter. All generic global outbound fetches remain impossible.
+const nativeFetch = globalThis.fetch.bind(globalThis);
 globalThis.fetch = (() => {
   throw new Error("Network Evidence MCP v0 performs no outbound network I/O");
 }) as typeof fetch;
 
 try {
+  const config = resolveServeConfig(process.argv.slice(2), process.env, { host: DEFAULT_HOST, port: DEFAULT_PORT });
+  if (process.env.NE_MCP_LIVE_EVM_ENABLED !== undefined) {
+    throw new NeMcpConfigError("legacy Base-only flag disabled; this branch requires a multichain adapter");
+  }
+  const enableLiveRpc = process.env.NE_MCP_MULTICHAIN_ENABLED === "1";
+  if (process.env.NE_MCP_MULTICHAIN_ENABLED !== undefined && !enableLiveRpc) {
+    throw new NeMcpConfigError("NE_MCP_MULTICHAIN_ENABLED must be exactly 1 or absent");
+  }
+  if (enableLiveRpc && config.mode !== "hosted") {
+    throw new NeMcpConfigError("live multichain RPC requires hosted mode");
+  }
   const server = await startNeMcpHttpServer({
-    host: argValue("--host") ?? process.env.NE_MCP_HOST ?? DEFAULT_HOST,
-    port: parsePort(argValue("--port") ?? process.env.NE_MCP_PORT),
+    host: config.host,
+    port: config.port,
+    ...(config.hosted === undefined ? {} : { hosted: config.hosted }),
+    ...(config.limits === undefined ? {} : { limits: config.limits }),
+    ...(enableLiveRpc ? { liveEvidence: createMultichainTool(nativeFetch) } : {}),
     log: (line) => process.stderr.write(`${line}\n`),
   });
-  process.stdout.write(
-    `Network Evidence MCP v0 (local, read-only, offline) listening on ${server.mcpUrl}  health: ${server.url}/healthz\n`,
-  );
+  if (server.mode === "hosted") {
+    process.stdout.write(
+      `Network Evidence MCP v0 [${HEALTH_SCOPE.hosted}] listening on ${server.host}:${server.port}; ` +
+        `accepted public origin(s): ${[config.hosted!.publicOrigin, config.hosted!.customOrigin].filter(Boolean).join(", ")}; endpoint /mcp, health /health\n`,
+    );
+  } else {
+    process.stdout.write(
+      `Network Evidence MCP v0 (local, read-only, offline) listening on ${server.mcpUrl}  health: ${server.url}/healthz\n`,
+    );
+  }
   const stop = () => {
     void server.close().then(() => process.exit(0));
   };

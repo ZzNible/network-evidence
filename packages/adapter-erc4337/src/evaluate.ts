@@ -363,6 +363,7 @@ interface FragmentView {
   readonly chainId?: number;
   readonly subject: SubjectRef;
   readonly execution?: EvidenceDimension;
+  readonly dataBinding?: EvidenceDimension;
   readonly settlement?: EvidenceDimension;
   readonly finality?: EvidenceDimension;
   readonly observedEffects: readonly ObservedEffect[];
@@ -1005,6 +1006,8 @@ function assessInternal(claim: Erc4337Claim, view: FragmentView): Erc4337Evaluat
   const inspectedEffectIds = [
     ...uopCandidates.map((o) => o.effectId),
     ...tsCandidates.map((o) => o.effectId),
+    // Batch members share the actual enclosing on-chain log's effectId.
+    ...tbCandidates.map((o) => o.effectId),
     ...txHashMismatches.map((m) => m.effectId),
     ...excludedCandidates.map((e) => e.effectId),
   ];
@@ -1017,7 +1020,8 @@ function assessInternal(claim: Erc4337Claim, view: FragmentView): Erc4337Evaluat
   const relevantDispute = allConflicts.some((c) => {
     if (!c.material) return false;
     if (c.scope.kind === "result") return true;
-    if (c.scope.kind === "dimension" && c.scope.dimension === "execution") {
+    if (c.scope.kind === "dimension" &&
+        (c.scope.dimension === "execution" || c.scope.dimension === "dataBinding")) {
       return true;
     }
     if (c.scope.kind === "observed_effect") {
@@ -1114,6 +1118,26 @@ function assessInternal(claim: Erc4337Claim, view: FragmentView): Erc4337Evaluat
         : stripped(scope, networkEvidenceIds, ["deterministic_derivation"]),
     );
     inputs.push(executionInput());
+    if (view.dataBinding !== undefined) {
+      // A receipt/transaction identity dispute defeats log-level support.
+      inputs.push(stripped(
+        { kind: "dimension", dimension: "dataBinding" },
+        view.dataBinding.evidence,
+        ["source_observation"],
+      ));
+    }
+    const batchCarriersSeen = new Set<string>();
+    for (const batch of tbCandidates) {
+      // An observed effect is a log carrier; multiple projected members
+      // must never make duplicate composition scopes.
+      if (batchCarriersSeen.has(batch.effectId)) continue;
+      batchCarriersSeen.add(batch.effectId);
+      inputs.push(stripped(
+        { kind: "observed_effect", effectId: batch.effectId },
+        batch.evidenceIds,
+        ["source_observation"],
+      ));
+    }
     if (userOpLayer.selected !== undefined) {
       inputs.push(
         userOpFailed
@@ -1448,6 +1472,7 @@ export function assessErc4337UserOperation(
     ...(fragment.network.chainId === undefined ? {} : { chainId: fragment.network.chainId }),
     subject: fragment.subject,
     execution: fragment.networkEvidence.execution,
+    dataBinding: fragment.networkEvidence.dataBinding,
     settlement: fragment.networkEvidence.settlement,
     finality: fragment.networkEvidence.finality,
     observedEffects: fragment.networkEvidence.observedEffects ?? [],
@@ -1474,6 +1499,7 @@ export function evaluateErc4337Bundle(
     ...(result.network.chainId === undefined ? {} : { chainId: result.network.chainId }),
     subject: result.subject,
     execution: result.networkEvidence.execution,
+    dataBinding: result.networkEvidence.dataBinding,
     settlement: result.networkEvidence.settlement,
     finality: result.networkEvidence.finality,
     observedEffects: result.networkEvidence.observedEffects,

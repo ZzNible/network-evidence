@@ -81,14 +81,39 @@ describe("HTTP host", () => {
   it("serves /healthz with a static, non-evidential body", async () => {
     const res = await fetch(`${server.url}/healthz`);
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = (await res.json()) as Record<string, unknown>;
     expect(body).toMatchObject({ status: "ok", tools: [...TOOL_NAMES], readOnly: true, liveObservation: false, networkIo: "none" });
+    expect(body.mode).toBe("local");
+    expect(body.scope).toBe("local v0; not a public endpoint");
+    expect(server.mode).toBe("local");
+    expect((await fetch(`${server.url}/health`)).status).toBe(404); // Hosted-only Cloud Run health alias
   });
 
   it("rejects DNS-rebinding Host and foreign Origin headers", async () => {
     expect((await rawRequest("/healthz", { host: "evil.example" })).status).toBe(403);
     expect((await rawRequest("/mcp", { host: `localhost:${server.port}`, origin: "https://evil.example" }, "POST")).status).toBe(403);
     expect((await rawRequest("/healthz", { host: `localhost:${server.port}` })).status).toBe(200);
+    // Caller-supplied forwarding headers never widen the loopback Host check.
+    expect((await rawRequest("/healthz", { host: "evil.example", "x-forwarded-host": "localhost" })).status).toBe(403);
+  });
+
+  it("accepts only the exact same-port loopback Origin (cross-port localhost pages are refused)", async () => {
+    const host = `127.0.0.1:${server.port}`;
+    for (const origin of [`http://127.0.0.1:${server.port}`, `http://localhost:${server.port}`, `http://[::1]:${server.port}`]) {
+      expect((await rawRequest("/healthz", { host, origin })).status, origin).toBe(200);
+    }
+    const otherPort = server.port === 65535 ? 65534 : server.port + 1;
+    for (const origin of [
+      `http://localhost:${otherPort}`,
+      `http://127.0.0.1:${otherPort}`,
+      "http://localhost",
+      "http://localhost:6274",
+      `https://localhost:${server.port}`,
+      `http://localhost:${server.port}/`,
+      "null",
+    ]) {
+      expect((await rawRequest("/healthz", { host, origin })).status, origin).toBe(403);
+    }
   });
 
   it("fails closed on content type, duplicate keys, malformed JSON and oversized bodies", async () => {
@@ -147,7 +172,7 @@ describe("raw MCP JSON-RPC (Inspector-style): initialize -> tools/list -> tools/
     const tools = list.message.result.tools as any[];
     expect(tools.map((t) => t.name)).toEqual([...TOOL_NAMES]);
     for (const tool of tools) {
-      expect(tool.annotations).toEqual({ readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false });
+      expect(tool.annotations).toEqual({ title: tool.title, readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false });
       expect(tool.inputSchema.type).toBe("object");
       expect(tool.inputSchema.additionalProperties).toBe(false);
       expect(tool.outputSchema.type).toBe("object");

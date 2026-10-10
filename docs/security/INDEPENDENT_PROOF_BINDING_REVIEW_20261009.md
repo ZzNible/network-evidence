@@ -1,0 +1,105 @@
+# 2026-10-09 independent proof-binding audit — verified fixes (DRAFT)
+
+**Source:** User-provided independent Opus review "Relecture network-evidence" of public main `a5dad639ac7798a1246442f67d5e870a39f6a957`. **Patch base:** same exact SHA, isolated branch `work/ne-proof-integrity-20261009`. This document records *verified code changes* and gate results, not a security certification, universal-finality claim, or approval to merge/deploy. No mutation of source proof data or historical authority.
+
+| Audit finding | Verified source defect | Bounded correction and adversarial gate |
+| --- | --- | --- |
+| H1 — OP Stack | The finalized ancestry was collected for `finality.subjectBlock`, not guaranteed to be the subject's `evm.block`. | Before OP finality composition, enforce equal **height AND normalized hash** after network identity checks; mismatches return `unknown` + `OP_SUBJECT_ANCHOR_MISMATCH`. An explicitly failed `TRANSACTION_COHERENT_WITH_RECEIPT` blocks subject binding. Tests: mismatched hash/height; failed tx/receipt check; existing finalized/reorg paths. No claim of L1 settlement. |
+| H2 — x402 / ERC-4337 | Material `dataBinding` conflicts could be dropped from payment/user-operation assessment. ERC-4337 omitted the enclosing `TransferBatch` log carrier from inspected effects. | Both adapters include `dataBinding` in relevant dispute scope, carry its actual dimension and pass disputed scopes to Core verdict composition. ERC-4337 adds deduplicated batch carrier IDs (multiple members remain one log). Tests: matching x402/ERC-4337 effects + disputed tx/receipt; 2-member batch with material carrier conflict becomes `ambiguous`. |
+| H3 — Core preflight | Matching an `EvidenceId` in readiness did not prove that preflight's cited `EvidenceRef` equaled the capability snapshot's ref. | `verifyPreflightContext` now enforces complete **canonical equality** of each preflight evidence reference with the same ID in the actual supplied snapshot; snapshot MAY be a superset. Test: mutate `sourceId`, `locator`, `contentDigest` under a referenced ID and recompute result digest; structural integrity remains possible but contextual Core verification fails. This is a narrow security integrity patch, NOT a new Core feature. |
+| H4 — x402-SVM | Token-2022's instruction `TransferChecked` amount was treated as net payment received despite possible extension fees; six `localeCompare` sorts varied by locale. | Locale-invariant UTF-16 sorts. For a Token-2022 instruction matching nominal amount, result is **`insufficient`**, never `supported`, until a verified recipient net-credit evidence path exists. Explicit `X402_SVM_TOKEN_2022_NET_RECEIPT_UNVERIFIED` warning. Existing standard SPL Token flow remains supported. Tests: Token-2022 fail-closed + forced localeCompare rejection. **Remaining:** true Token-2022 net credit is NOT implemented or claimed. |
+| H5 — ERC-4337 | EntryPoint v0.8 pinned address had 41 hexadecimal digits; inherited prototype property keys could crash lookups. | Correct 20-byte v0.8 literal `0x4337084d9e255ff0702461cf8895ce9e3b5ff108`, own-property guard; tests pin all configured address lengths, accept real v0.8 claim, reject `constructor`/`toString`. |
+
+## Historical proof preservation and reproducibility
+
+- The F3 historical reviewed authority pins original **test-source bytes** for `packages/adapter-x402-svm/test/adapter.test.ts` with SHA256 `5e95d96f0df32b47631a46f814e7c4b371bfd8bed52f4545486b6492a81a932c`. Updating active tests understandably changes that file, but **must not rewrite historical F3 authority, verdict, or proof-summary hashes**.
+- An immutable byte-identical source copy is retained under `examples/historical-compat/reviewed-source/adapter-x402-svm-adapter-test.5e95d96f.reviewed.txt` and hash-checked against the **original unchanged expected digest**. Only the EXACT archived path+digest pair is redirected in historical replay; every other source uses normal direct paths. Historical F1/F2/F3 test suite **50/50 PASS** and unchanged byte-for-byte runtime outputs verified.
+- Independent read-only Claude Opus patch review **CANDIDATE_GATE=PASS for unmerged draft**, after explicitly reported minor fixes (hash normalization, after-network anchor, batch carrier dedup). This does not prove a security release sign-off.
+
+## Test gates and scope
+
+- Fresh `npm ci`, TypeScript typecheck, **77 Vitest files / 1,412 PASS**, `demo:integrability -- --verify` PASS, offline MCP SDK smoke PASS, `npm audit --audit-level=high`: **0 vulnerabilities**.
+- No chain addition, wallet/signing/submission, public MCP/registry/Anthropic publication, main-branch merge, tag or deploy. PR #3 Base+Solana MCP remains **separate, unmerged** and must consume these proof-integrity fixes **before any release**.
+- **Not fixed by this bounded H1–H5 lot:** multiple medium/low claims in the same audit still require *independent confirmation* and scoped patches. High-value next checks: EVM receipt/block transaction-index membership and EVM BEFORE chain identity; Solana subject-signature conflict scope, `meta.err` shape and on-chain containing-block evidence; Unicode CAIP/network ID and noncanonical wire numeric tokens; Lens browser projection allowlisting; hosted MCP JSON-RPC batch/ingress safeguards and the separate Cloud Run deployment branch. No global architecture or new shared package was started.
+- Honest limitation: a legacy reviewed F3 source may describe its **historical verdict** as `supported` under its old rules. That statement is preserved as **historical evidence** and MUST NOT be reinterpreted as current Token-2022 net-payment verification.
+
+
+## 2026-10-09 medium-severity EVM source-binding follow-up — corrected in MCP draft, NOT DEPLOYED
+
+- **EV-M1 (reproduced, patched):** A provider could return a receipt with a matching tx hash, successful status, and matching block hash/height but with an index whose ordered eth_getBlockByHash(false).transactions[index] did **not** contain that transaction. Generic EVM could incorrectly claim supported execution/dataBinding and OP Stack could attach finalized-block evidence to a wrongly bound subject. Added native RECEIPT_TRANSACTION_AT_BLOCK_INDEX check against already acquired ordered block hashes (no extra RPC); exact mismatch creates material execution and dataBinding conflicts only when the receipt already names the requested subject. Unbound **foreign receipts** remain execution insufficient, never a fabricated subject-level conflict. Observed effects cannot bypass an explicit membership contradiction; OP Stack refuses finality support when the index check is failed OR missing.
+- **EV-M2 (reproduced, patched):** Generic EVM BEFORE accepted chainIdentityObserved and numeric chainId not compared with explicit requested eip155 chain identity, potentially classifying a different EVM chain as available. Supplied observed chainId must be safe/positive and equal to canonical eip155 reference; a positive observed flag MUST include numeric observed chainId. If identity was not observed, readiness remains unknown; explicit requested network still must equal the observation network.
+- **Adversarial RED to GREEN:** dedicated files packages/resolver-evm/test/cross-object-binding-audit.test.ts (15 cases) and packages/resolver-opstack/test/evm-index-finality-audit.test.ts (2 cases). Baseline unpatched failed 8 of 9 original adversarial EVM tests. Wrong/out-of-bounds index, empty block, foreign receipt, structurally absent index, noncanonical hash, missing block, numeric precision and cross-network BEFORE spoofing are tested; OP Stack requires positive block membership.
+- **Synthetic fixture repaired, NOT historical authority:** one-tx generic OP Stack test block formerly had receipt index 81 despite block transactions=[TX]; synthetic helper only changed to index 0. Historical F1/F2/F3 authority and all real source captures remain unchanged; real mainnet source fixtures have matching indexed subject.
+- **REAL read-only VM observation:** an exact Base mainnet public transaction yielded its own indexed hash in the observed ordered block transactions (222 tx hashes, four RPC captures), and live Base + Solana AFTER/BEFORE observations passed their source/subject/network context checks. No signed/submitted transaction or independent trie/consensus proof.
+- **Independent Opus review:** no verified BLOCKER/MAJOR and CANDIDATE_GATE=PASS for unmerged draft. Minor verification requests checked against code and targeted tests: raw transactionIndex is REQUIRED by normalizer and malformed omission raises EVM_MALFORMED_RESPONSE, parseHexHash accepts canonical lowercase only, Number.isSafeInteger precedes BigInt on chainId, exact observation.network===networkId is enforced, and a missing block cannot produce execution supported. Not exact release-SHA security approval.
+- **Nonclaims:** ordered transaction hash membership is one RPC provider observation; no independent transactionsRoot/trie verification. Generic EVM BEFORE/AFTER never establishes Ethereum settlement or withdrawal finalization.
+- **Final VM source-integrity gate:** clean npm ci, TypeScript strict typecheck, **86 files / 1,504 tests PASS**, offline MCP smoke PASS, reproducible integrability fixture PASS, npm audit 0 vulnerabilities. Read-only Base exact-index and Base/Solana BEFORE source checks PASS; this is NOT a public-release security signoff.
+
+## Solana source-binding audit 2026-10-09 (MCP draft, NOT DEPLOYED)
+
+- SOL-M1 CONFIRMED RED -> FIXED: a source response getTransaction with the wrong first signature previously could create a supported or contradicted execution verdict for the requested subject. Now execution is insufficient for that exact subject and positive effects are withheld; source identity remains dataBinding conflict. A foreign result with differing error status cannot introduce an execution conflict about the original subject.
+- SOL-M2 CONFIRMED RED -> FIXED: transaction.meta.err and getSignatureStatuses.value[0].err can no longer be absent or non-Solana TransactionError values (booleans, numerics, arrays, empty variants). The normalizer rejects malformed inputs with SOLANA_MALFORMED_RESPONSE rather than treating missing/null and false execution interchangeably.
+- SOL-M3 CONFIRMED RED -> FIXED: deprecated signature status.Ok/status.Err is OPTIONAL for provider compatibility, but when present must agree with mandatory err. Conflicting Ok and Err cannot silently create supported execution/finality.
+- SOL-M4 CONFIRMED RED -> FIXED: no positive TransferChecked observed effect from disputed transaction/status execution errors. Required: composed execution supported, dataBinding supported and no failed STATUS_ERROR_MATCHES_TRANSACTION. Native Solana source-reported finality additionally requires the exact first signature, one successful identity check, coherent source observations and a finalized status.
+- Reproduction: 13 of 15 initial new adversarial cases failed before patch; four extra inconsistent-legacy-status/foreign-error tests failed before patch. 23/23 targeted adversarial+positive cases pass after patches. Genuine F3 pinned fixture gives original execution supported, dataBinding supported, source_observation finality supported with economicIrreversibilityEstablished=false, and identical original observed TransferChecked effect id. F1/F2/F3 authority and original Solana source fixture bytes were not rewritten.
+- Independent Claude Opus review: initial BLOCKED was lack of full composite proof and actual test results, not a confirmed exploit; read-only follow-up reviewed full diff and targeted test evidence, CANDIDATE_GATE=PASS for this DRAFT source patch only. It is not an exact final-release SHA signoff. A reviewer observation about arbitrary caller-crafted acquisition inputs remains a limitation, not a claim of source authenticity.
+- REAL mainnet: one bounded read-only Solana mainnet acquisition of a historic public third-party signature through candidate live resolver returned an exact source-/subject-/network-bound native fragment after patch; no signing, submission, funds or keys.
+- UNRESOLVED direct containing-block signature membership: getBlock(slot, transactionDetails:none) provides the block at the source-reported slot but no signature list. Direct tx signature membership inside this block is NOT proven. Finalized remains source-observed through getTransaction and getSignatureStatuses, not cryptographic verification or an L1 settlement claim. A versioned signatures-bearing read and new real replay are necessary for a stronger tx-to-block assertion, preserving immutable historical F3.
+- No new networks, Core schema changes, wallet capabilities, public publication, merge or deployment.
+- FINAL EXACT WORKTREE GATES: fresh npm ci, strict TypeScript, 87 Vitest files / 1,527 tests PASS; demo:integrability -- --verify PASS, original offline MCP smoke PASS, npm audit --audit-level=high 0 vulnerabilities. Solana real public read-only RPC PASS, no transaction submitted. Final candidate SHA must still undergo release-specific approval.
+
+## 2026-10-09 versioned direct Solana signature-in-block observation — SDK ONLY
+
+- Historical limitation addressed **separately** without rewriting frozen F3 bytes or silently altering Core semantics. `getBlock(transactionDetails:none)` has no signature list. The new opt-in `acquireSolanaBlockSignatureMembershipV1` reads `getBlock(transactionDetails:signatures)` *after* an unchanged native acquisition, using the same source identity, exact subject and slot, and matches all containing-block metadata to the previous compact observation. It returns a separate versioned, digest-backed source-only membership assessment; the old Core fragment is unchanged. NOT yet in the public MCP tool.
+- Real public Solana mainnet slot 418897974 gave 1,304 signatures, containing the genuine F3 signature at index 1295; blockhash matches the immutable F3 capture. Recorded in separately versioned fixture `solana-mainnet-f3-block-signatures-v1.json` (SHA256 `3f0c3497d9ec567d09145516e692727d07c9fdf8df8a8b78a5f2ca68cbf50c01`). Exact SDK function also re-ran a fresh read-only source call PASS; capture digest reproduced from source. F3 SHA256 `62b5191f62b61e9514f4be785d480828c496c199ef88ca763db51caf667d720a` remains unchanged.
+- Adversarial case boundaries: wrong signature from an otherwise matching block; wrong blockhash with matching signature; different parent slot; null finalized block; malformed/duplicate/missing/oversized signature array; mismatched source network/identity; forged first signature or slot mismatch in prior normalized acquisition; old 4-read replay must remain byte-identical. 22 new SDK tests including malformed acquisition, missing slot, source JSON-RPC error, independent blockTime/height mismatch and failed transaction membership. `supported` means one source reported direct signature membership; contradicting same-source responses are `ambiguous`, null is `insufficient` and malformed is a controlled error, not a proof of absence.
+- The versioned output includes baseline acquisition capture digests for evidence provenance but cannot independently authenticate the application-configured RPC transport or prove that its sourceId label represents a genuine independent provider. Invalid initial acquisitions give controlled errors; a null initial transaction has no invented slot. 6,000 signatures is a deliberate cap and may reject legitimate busy blocks. The native reader buffers RPC body content before its size test and has no inherent timeout; this is **OPEN FOR PUBLIC INGRESS** and must be fixed/reviewed before exposing this extra RPC read through MCP.
+- Hard boundaries: still a SINGLE RPC source, no independent cryptographic block authentication or fully verified consensus finality, transaction success or program side effects, settlement or real-world consequence. The original 4-read `getBlock(none)` remains the default; SDK v1 is NOT an MCP public parameter, no new Core dimension or network. Provider-specific max signatures and response-size limits can return unavailable; they never justify unsupported verdicts.
+- **Final SDK source-integration gate (2026-10-09):** clean npm ci, strict TypeScript typecheck, 88 files / 1,549 tests PASS; 22 direct-membership adversarial and positive cases green; historical integrability demo SHA256 ee7263927cf3470ecd524f6321287bd056b3f444e5285a5d355a07d8440bc1ef PASS, offline MCP smoke PASS, npm audit zero vulnerabilities. Real read-only SDK on mainnet returned 1,304 block signatures, exact requested index 1295, same blockhash, digest-backed source capture. Independent Opus read-only DRAFT review PASS (minor findings bounded/addressed); NOT a final release security certification. MCP ingress/streaming limits and public exposure remain OPEN.
+
+## Hosted MCP ingress and source stream hardening — 2026-10-09 (SOURCE DRAFT ONLY)
+
+- HTTP-B1 CONFIRMED RED -> GREEN: one hosted HTTP POST carrying a JSON-RPC
+  batch of two valid tools/call messages previously got HTTP 200 and executed
+  multiple tool operations for ONE GlobalAbuseLimiter admission. The handler
+  now consumes its existing Core strict parse result and rejects every JSON
+  array BEFORE SDK dispatch, with HTTP 400/-32600. Single tools and
+  notifications continue to work through modern and legacy MCP clients.
+  JSON syntax/duplicate-key errors remain 400/-32700. No list amplification.
+- HTTP-B2 CONFIRMED RED -> GREEN: the Solana fixed-source RPC wrapper formerly
+  counted the bytes of Response.clone().body and returned the unread original
+  Response. Tee branch buffering was not guaranteed to respect that cap.
+  Its new single-consumer original stream enforces 800,000 delivered bytes,
+  cancels oversized and rejected provider response bodies, uses the existing
+  8-second timeout/caller signal to cancel even a stalled body and returns a
+  bounded fresh in-memory response. No dynamic URL, signing or submission.
+- Negative safety tests: genuine batch bypass; empty, one-element and
+  mixed notification+call batch; ordinary single-message fallback; no-clone
+  bounded provider response; streamed oversized body cancellation; declared
+  content-length oversize; stalled provider abort; SDK-only signature-block
+  read denied by hosted RPC allowlist before egress; cancelled sanitized 503
+  source response. Eight tests PASS. Full hosted/modern/legacy MCP and source
+  suites remain preserved.
+- REAL READ-ONLY Solana mainnet after patch: four fixed RPC methods and
+  authentic Core source/subject/network-bound fragment; largest individual
+  bounded capture 3,558 bytes. No cryptographic verification claim.
+- Independent Claude Opus read-only review: CANDIDATE_GATE=PASS for SOURCE
+  patch, no verified MAJOR/BLOCKER. Minor suggestions about cancelling
+  wrong-URL/non-200 responses and not awaiting uncooperative stream
+  cancellation were implemented and targeted tests rerun.
+- OPEN LIVE DEPLOY BLOCKER: HTTP admission quotas and the shared 8/min,
+  2-concurrent multichain source budget are PROCESS LOCAL. Multiple Cloud Run
+  revisions/instances may multiply provider reads; there is no verified
+  cross-instance admission or per-client authentication and spending controls.
+  A verified max-instances and rollout constraint reduces risk but is not
+  itself proof of a globally coordinated quota. Before any owner-authorized
+  live/public deploy verify actual Cloud Run settings, provider usage, cost,
+  rate budgets or a distributed enforcement service. The three-tool offline
+  Cloud Run preview remains unchanged.
+- The standalone SDK-only Solana signatures-membership probe is NOT exposed
+  in hosted MCP. Its 6,000-signature bound can reject a legitimately busy
+  block as unavailable; do not misstate it as blockchain non-membership.
+  Core full real-action result+Hub/Lens admission and final release review
+  are still OPEN. Neither these source patches nor Core wire validation
+  authenticates the external RPC itself.
+- Final read-only VM safety gate on 2026-10-09: clean npm ci, typecheck, **89 test files / 1,557 tests PASS**, integrability demo PASS, original offline MCP SDK smoke PASS, npm audit 0 vulnerabilities. Live Solana mainnet source PASS (four fixed methods), Opus candidate-only independent review PASS; public live deployment remains blocked by process-local quotas and owner authorization.

@@ -13,6 +13,23 @@ export type NeMcpErrorCode =
   | "MCP_CANDIDATE_NETWORK_MISMATCH"
   | "MCP_ENVIRONMENT_LABEL_CONFLICT"
   | "MCP_CASE_UNKNOWN"
+  | "MCP_LIVE_EVM_CONFIG"
+  | "MCP_LIVE_EVM_INPUT"
+  | "MCP_LIVE_EVM_RPC_FAILED"
+  | "MCP_LIVE_EVM_TOO_LARGE"
+  | "MCP_LIVE_EVM_RATE_LIMIT"
+  | "MCP_MULTICHAIN_INPUT"
+  | "MCP_MULTICHAIN_RATE_LIMIT"
+  | "MCP_MULTICHAIN_TOO_LARGE"
+  | "MCP_MULTICHAIN_SOURCE_FAILED"
+  | "MCP_LIVE_BEFORE_INPUT"
+  | "MCP_LIVE_BEFORE_UNAVAILABLE"
+  | "MCP_LIVE_PREFLIGHT_INPUT"
+  | "MCP_LIVE_PREFLIGHT_UNAVAILABLE"
+  | "MCP_LIVE_PREFLIGHT_CONTEXT_INVALID"
+  | "MCP_LIVE_PREFLIGHT_TOO_LARGE"
+  | "MCP_CLAIM_INVALID"
+  | "MCP_CLAIM_ASSESSMENT_FAILED"
   | "MCP_RESULT_UNVERIFIED"
   | "MCP_INTERNAL_ERROR";
 
@@ -23,6 +40,14 @@ export class NeMcpError extends Error {
     super(message, options);
     this.name = "NeMcpError";
     this.code = code;
+  }
+}
+
+/** Invalid or unsafe server configuration; the server refuses to start. */
+export class NeMcpConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NeMcpConfigError";
   }
 }
 

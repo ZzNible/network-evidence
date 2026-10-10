@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ZzNible/network-evidence",
+  "title": "Network Evidence MCP",
+  "description": "Read-only offline network profiles, caller-supplied Discovery and historical/synthetic cases.",
+  "version": "0.0.2",
+  "repository": {
+    "url": "https://github.com/ZzNible/network-evidence",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/ZzNible/network-evidence",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp"
+    }
+  ]
+}

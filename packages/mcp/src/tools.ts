@@ -1,7 +1,6 @@
 /**
- * The three public tools and the per-request McpServer factory.
- *
- * No generic router: exactly `list_network_profiles`,
+ * The three default offline tools plus an explicitly gated read-only RPC
+ * tool (hosted only). No generic router. By default exactly `list_network_profiles`,
  * `discover_network_candidates` and `get_reviewed_evidence_case`. All three
  * are read-only, non-destructive, idempotent and closed-world (no external
  * system is touched), declared explicitly in their annotations.
@@ -15,12 +14,19 @@ import * as z from "zod";
 import type { ReviewedCaseStore } from "./cases.js";
 import { MAX_DISCOVERY_CANDIDATES, runDiscoverNetworkCandidates } from "./discover.js";
 import { toSafeToolError } from "./errors.js";
-import { networkProfilesInventory } from "./profiles.js";
+import { networkProfilesInventory, activeNetworkProfilesInventory } from "./profiles.js";
+import { LIVE_MULTICHAIN_TOOL, LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
+import { CLAIM_PROTOCOLS, resolveWithOptionalClaim } from "./live-claim.js";
+import { LIVE_BEFORE_TOOL_NAME, LIVE_BEFORE_MAX_CANDIDATES, LIVE_BEFORE_SCHEMA, createLiveBeforeTool } from "./live-before.js";
+import { LIVE_PREFLIGHT_TOOL_NAME, LIVE_PREFLIGHT_SCHEMA, createLivePreflightTool } from "./live-preflight.js";
+import type { MultichainTool } from "./live-multichain.js";
 
 export const SERVER_NAME = "network-evidence-mcp";
 export const SERVER_VERSION = "0.0.1";
 
 export const TOOL_NAMES = ["list_network_profiles", "discover_network_candidates", "get_reviewed_evidence_case"] as const;
+/** Only available behind the explicit hosted live-RPC switch. */
+export const LIVE_TOOL_NAMES = [...TOOL_NAMES, LIVE_MULTICHAIN_TOOL, LIVE_BEFORE_TOOL_NAME, LIVE_PREFLIGHT_TOOL_NAME] as const;
 
 /** Explicit boolean hints for every tool. */
 export const READ_ONLY_ANNOTATIONS: ToolAnnotations = Object.freeze({
@@ -36,6 +42,12 @@ export const SERVER_INSTRUCTIONS = [
   "This server performs no network I/O and never observes a network. list_network_profiles reports declared resolver support only (current support/availability: not_assessed). discover_network_candidates runs Core Discovery over contexts YOU supply; its outcome depends only on those snapshots, and it never chooses a network. get_reviewed_evidence_case returns shipped historical or synthetic fixture cases; none is live evidence.",
   "No wallet, signing, funding, gas, transaction submission, settlement or live finality claims.",
 ].join("\n");
+
+/** The hosted preview is remote, but still reads no live network data. */
+export const HOSTED_SERVER_INSTRUCTIONS = SERVER_INSTRUCTIONS.replace(
+  "Network Evidence MCP v0 — local, read-only, offline.",
+  "Network Evidence MCP v0 — hosted preview, anonymous, read-only, offline; not a production service.",
+);
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -257,26 +269,39 @@ function toolError(error: unknown): CallToolResult {
 
 export interface NeMcpServerDeps {
   readonly cases: ReviewedCaseStore;
+  readonly mode?: "local" | "hosted";
+  readonly liveEvidence?: MultichainTool;
 }
 
-/** Fresh McpServer with exactly the three tools (one per request; stateless). */
+/** Fresh stateless McpServer: three original tools plus one ONLY if opt-in. */
 export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
-  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { instructions: SERVER_INSTRUCTIONS });
+  const instructions = deps.liveEvidence === undefined
+    ? (deps.mode === "hosted" ? HOSTED_SERVER_INSTRUCTIONS : SERVER_INSTRUCTIONS)
+    : [
+      "Network Evidence MCP: opt-in anonymous, read-only, non-production preview; EVM and Solana source evidence from four fixed network profiles.",
+      "The three other tools remain offline; their historical, synthetic and caller-supplied observations do not become live.",
+      "resolve_transaction_evidence obtains ONE source observation using an existing EVM or Solana resolver and returns an authentic Core partial fragment. Solana finalized commitment is source-reported; no cryptographic verification, protocol settlement, L1 withdrawal or economic finality assertion.",
+      "discover_live_network_evidence probes 1-2 exact transactions, produces native Core capability snapshots and a Core-verified Discovery result. It never ranks or chooses networks. Availability applies only to the probed source, action and acquisition time.",
+      "preflight_live_network_evidence accepts a caller-selected exact network, original expected action and digest-bound Core evidence policy plus one separate same-network completed transaction probe; produces contextual Core-verified evidence readiness, NOT transaction simulation or wallet readiness.",
+      "No wallet, signing, transaction submission, ranking, or policy engine.",
+    ].join("\n");
+  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { instructions });
   const caseIds = deps.cases.caseIds as unknown as [string, ...string[]];
 
   server.registerTool(
     "list_network_profiles",
     {
       title: "List fixed Network Evidence profiles",
-      description:
-        "Returns the FIXED public profile inventory (Base mainnet eip155:8453, Base Sepolia eip155:84532, Solana mainnet, Solana devnet, zkSYS Tanenbaum testnet eip155:57057 replay-only) with each resolver manifest's DECLARED capabilities and the truth boundaries. Nothing is observed: every currentSupport/currentAvailability is 'not_assessed'. Profile membership is not live availability. Takes no arguments.",
+      description: deps.liveEvidence === undefined
+        ? "Returns the fixed OFFLINE demo inventory: Base mainnet/Sepolia, Solana mainnet/devnet and zkSYS Tanenbaum historical replay only; no current availability is assessed."
+        : "Returns four live-mode DECLARED profiles: Base mainnet/Sepolia and Solana mainnet/devnet, without zkSYS. Listing is NOT an actual availability probe; use discover_live_network_evidence with exact subjects for source observations.",
       inputSchema: z.object({}).strict(),
       outputSchema: profilesOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: { ...READ_ONLY_ANNOTATIONS, title: "List fixed Network Evidence profiles" },
     },
     async () => {
       try {
-        return ok(networkProfilesInventory());
+        return ok(deps.liveEvidence === undefined ? networkProfilesInventory() : activeNetworkProfilesInventory());
       } catch (error) {
         return toolError(error);
       }
@@ -288,10 +313,10 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
     {
       title: "Core Discovery over explicit candidate contexts",
       description:
-        `Runs the real @nec/discovery discoverNetworks (classification by @nec/core only) over 1..${MAX_DISCOVERY_CANDIDATES} EXPLICIT, complete, already-derived candidate contexts you supply (network + ResolverManifest + CapabilitySnapshot in nec-wire-json-v1 form) and Core DiscoveryRequirements. Returns the Core-built, Core-verified DiscoverNetworksResult with digests and per-candidate eligible/conditional/ineligible copied from Core. The outcome depends ONLY on the supplied snapshots; this server observes nothing and does NOT choose, rank or recommend a network — you choose, then run the resolver-specific evidence preflight. Invalid or incoherent contexts fail closed with a coded error.`,
+        `Runs the real @nec/discovery discoverNetworks (classification by @nec/core only) over 1..${MAX_DISCOVERY_CANDIDATES} EXPLICIT, complete, already-derived candidate contexts you supply (network + ResolverManifest + CapabilitySnapshot in nec-wire-json-v1 form) and Core DiscoveryRequirements. Returns the Core-built, Core-verified DiscoverNetworksResult with digests and per-candidate eligible/conditional/ineligible copied from Core. The outcome depends ONLY on the supplied snapshots; this server observes nothing and does NOT choose, rank or recommend a network. Any resolver-specific evidence preflight is external to this tool. Invalid or incoherent contexts fail closed with a coded error.`,
       inputSchema: discoverInputSchema,
       outputSchema: discoverOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: { ...READ_ONLY_ANNOTATIONS, title: "Core Discovery over explicit candidate contexts" },
     },
     async (args) => {
       try {
@@ -312,7 +337,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
         .object({ caseId: z.enum(caseIds).describe("Exact case id; no paths, no prefixes, no fuzzy matching.") })
         .strict(),
       outputSchema: caseOutputSchema,
-      annotations: READ_ONLY_ANNOTATIONS,
+      annotations: { ...READ_ONLY_ANNOTATIONS, title: "Read one shipped reviewed NE Maps case" },
     },
     async ({ caseId }) => {
       try {
@@ -322,6 +347,182 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       }
     },
   );
+
+  if (deps.liveEvidence !== undefined) {
+    const liveBefore = createLiveBeforeTool(deps.liveEvidence);
+    const livePreflight = createLivePreflightTool(deps.liveEvidence);
+    server.registerTool(
+      LIVE_PREFLIGHT_TOOL_NAME,
+      {
+        title: "Evidence preflight on caller-selected Base or Solana network",
+        description:
+          "Read-only hosted pre-release: caller explicitly chooses one pinned Base/Solana network and supplies COMPLETE original Core PreflightRequest with expected action + valid evidencePolicy digest, and a separate exact completed same-network transaction as a source-capability probe. Validate ALL inputs BEFORE RPC, then derive the unchanged native EVM/Solana BEFORE foundation and context-verify the Core PreflightResult against complete ResolverManifest and CapabilitySnapshot. Readiness is evidence acquisition only, NOT prior network selection, future action execution, wallet/account/gas readiness, x402 agreement, settlement, or cryptographic consensus.",
+        inputSchema: z.object({
+          selectedNetworkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
+          probeSubject: z.object({
+            type: z.literal("transaction"),
+            networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
+            txId: z.string().min(43).max(100),
+          }).strict(),
+          request: jsonObject.describe("Exact complete Core PreflightRequest incl. caller-originated ActionDescriptor and digest-validated EvidencePolicy. No synthetic default."),
+        }).strict(),
+        outputSchema: z.object({
+          schema: z.literal(LIVE_PREFLIGHT_SCHEMA),
+          observationKind: z.literal("live_source_observation"),
+          choiceSource: z.literal("caller"),
+          selectedNetworkId: z.string(),
+          probeSubject: z.object({ type: z.literal("transaction"), networkId: z.string(), txId: z.string() }),
+          probeObservedAt: z.string(),
+          source: z.object({sourceId:z.string(),sourceType:z.string()}),
+          evidenceCaptures: z.array(z.object({rpcMethod:z.string(),contentDigest:z.string()})),
+          verifiedBy: z.literal("@nec/core"),
+          preflight: jsonObject,
+          capabilitySnapshot: jsonObject,
+          resolverManifest: jsonObject,
+          nonClaims: z.array(z.string()),
+        }),
+        annotations: {
+          title: "Evidence preflight on caller-selected Base or Solana network",
+          readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true,
+        },
+      },
+      async (args) => {
+        try { return ok(await livePreflight(args)); }
+        catch (error) { return toolError(error); }
+      },
+    );
+    server.registerTool(
+      LIVE_BEFORE_TOOL_NAME,
+      {
+        title: "Discover networks from exact live Base or Solana evidence",
+        description:
+          "Read-only opt-in PRE-RELEASE: acquire 1-2 source-bound transaction/signature probes on fixed Base/Solana profiles, derive existing Core CapabilitySnapshots and run Core-verified Discovery. A probe supports only those exact read paths at observation time, not global uptime, settlement, cryptographic finality or a network recommendation. No arbitrary RPC, signing or submission.",
+        inputSchema: z.object({
+          requestId: z.string().min(2).max(90),
+          requirements: jsonObject.describe("Exact Core DiscoveryRequirements; no policy is inferred."),
+          subjects: z.array(z.object({
+            type: z.literal("transaction"),
+            networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
+            txId: z.string().min(43).max(100),
+          }).strict()).min(1).max(LIVE_BEFORE_MAX_CANDIDATES),
+        }).strict(),
+        outputSchema: z.object({
+          schema: z.literal(LIVE_BEFORE_SCHEMA),
+          observationKind: z.literal("live_source_observation"),
+          builtAndVerifiedBy: z.literal("@nec/discovery + @nec/core"),
+          generatedAt: z.string(),
+          result: jsonObject,
+          candidates: z.array(z.object({
+            id: z.string(), environment: z.enum(["mainnet", "testnet"]),
+            networkId: z.string(), classification: z.enum(["eligible", "conditional", "ineligible"]),
+            observedAt: z.string(), sourceId: z.string(), sourceType: z.string(),
+            snapshotId: z.string(), snapshotDigest: z.string(),
+            resolver: z.object({id: z.string(), version: z.string(), digest: z.string()}),
+            evidenceCaptures: z.array(z.object({rpcMethod:z.string(), contentDigest:z.string()})),
+            capabilities: jsonObject,
+          })),
+          nonClaims: z.array(z.string()),
+        }),
+        annotations: {
+          title: "Discover networks from exact live Base or Solana evidence",
+          readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true,
+        },
+      },
+      async (args) => {
+        try { return ok(await liveBefore(args)); }
+        catch (error) { return toolError(error); }
+      },
+    );
+    server.registerTool(
+      LIVE_MULTICHAIN_TOOL,
+      {
+        title: "Evaluate EVM or Solana transaction evidence (read only)",
+        description:
+          "Read-only opt-in pre-release: acquire an exact Base or Solana transaction from fixed RPC sources. On Base only, includeL2Finality optionally acquires a separate Core finality-only fragment under a bounded 8-ancestor native OP Stack ruleset; INSUFFICIENT has distinct native causes (unwalked ancestry, source head below the subject or missing facts); inspect the native warning and reason, do not infer a universal finalized or unfinalized state. This is a ONE-source L2 block view, NOT Ethereum settlement or withdrawal finalization. Optionally assess ONE caller-supplied native x402 EVM, ERC-4337 or x402 SVM structured claim, validated and bound to the exact subject BEFORE the read. Return original Core fragment plus adapter-local claim result, if requested; neither is protocol settlement, cryptographic finality, or a full Core NetworkEvidenceResult. Caller-supplied protocol terms are NOT independently authenticated by this intake; no arbitrary RPC URLs, wallet, signing, submission or ranking.",
+        inputSchema: z.object({
+          subject: z.object({
+            type: z.literal("transaction"),
+            networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS),
+            txId: z.string().min(43).max(100).describe("Exact transaction hash or Solana signature; family parser validates it."),
+          }).strict(),
+          includeL2Finality: z.boolean().optional().describe("Base OP Stack L2 block finality only, via native bounded source RPC read; never withdrawal settlement. Unsupported for Solana."),
+          claim: z.object({
+            protocol: z.enum(CLAIM_PROTOCOLS),
+            claim: jsonObject.describe("Full native claim including caller-supplied original protocol terms, never synthesized by NEC."),
+          }).strict().optional(),
+        }).strict(),
+        outputSchema: z.object({
+          schema: z.literal("ne-mcp-observation-envelope/v0.1"),
+          observationKind: z.literal("live_source_observation"),
+          toolStatus: z.literal("observed"),
+          evidenceBasis: z.literal("source_observation"),
+          subject: z.object({type: z.literal("transaction"), networkId: z.enum(LIVE_MULTICHAIN_NETWORK_IDS), txId: z.string()}),
+          acquiredAt: z.string(),
+          source: jsonObject,
+          acquisition: z.object({
+            transactionObserved: z.boolean(),
+            transactionLookupUsable: z.boolean().optional(),
+            solanaProbe: z.object({
+              paths: z.object({
+                genesisidentity: z.enum(["usable","not_established","unusable"]),
+                transaction: z.enum(["usable","not_established","unusable"]),
+                signaturestatus: z.enum(["usable","not_established","unusable"]),
+                finalizedblock: z.enum(["usable","not_established","unusable"]),
+              }),
+              finalizedCommitmentObserved: z.boolean(),
+              lookupsCoherent: z.boolean(),
+            }).optional(),
+            blockObserved: z.boolean(),
+            consistent: z.boolean(),
+            captures: z.array(z.object({
+              rpcMethod: z.string(), httpStatus: z.number(), acquiredAt: z.string(),
+              contentDigest: z.string(), resultBytes: z.number(),
+            })),
+          }),
+          artifactType: z.literal("network-evidence-fragment"),
+          fragment: jsonObject,
+          nonClaims: z.array(z.string()),
+          opStackFinality: z.object({
+            ruleset: z.literal("opstack.rpc-finalized-head-v1"),
+            networkId: z.string(),
+            toolStatus: z.enum(["evaluated", "not_evaluated", "source_unavailable"]),
+            withdrawalFinalization: z.literal("not_evaluated"),
+            ethereumSettlement: z.literal("not_evaluated"),
+            maxAncestryDepth: z.number(),
+            reason: z.enum(["missing_exact_block_anchor","opstack_source_unavailable"]).optional(),
+            observedAt: z.string().optional(),
+            fragment: jsonObject.optional(),
+            captures: z.array(z.object({
+              rpcMethod: z.string(), rpcParams: z.array(z.unknown()),
+              contentDigest: z.string(), acquiredAt: z.string(),
+              httpStatus: z.number(), resultBytes: z.number(),
+            })).optional(),
+            nonClaims: z.array(z.string()),
+          }).optional(),
+          claimAssessment: z.object({
+            protocol: z.enum(CLAIM_PROTOCOLS),
+            assessmentType: z.literal("adapter_local_protocol_assessment"),
+            evaluation: jsonObject,
+            nonClaims: z.array(z.string()),
+          }).optional(),
+        }),
+        annotations: {
+          title: "Evaluate EVM or Solana transaction evidence (read only)",
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: true,
+        },
+      },
+      async (args) => {
+        try {
+          return ok(await resolveWithOptionalClaim(deps.liveEvidence!, args));
+        } catch (error) {
+          return toolError(error);
+        }
+      },
+    );
+  }
 
   return server;
 }

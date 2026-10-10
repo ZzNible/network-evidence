@@ -272,6 +272,29 @@ function validateObservation(value: unknown): EvmCapabilityProbeObservation {
     if (typeof raw[key] !== "boolean") evmFailInvalid(`${key} must be a boolean`);
   }
 
+  // The requested CAIP-2 eip155 identity is authoritative for this EVM
+  // resolver. A claimed observed eth_chainId must match it, not merely
+  // exist alongside a chain-identity EvidenceRef from the provider.
+  const chainRef = /^eip155:([1-9][0-9]*)$/.exec(raw.network as string)?.[1];
+  if (chainRef === undefined) {
+    throw new NecResolverEvmError(
+      "EVM_NETWORK_MISMATCH",
+      `generic EVM BEFORE only accepts positive canonical eip155 identities: ${JSON.stringify(raw.network)}`,
+    );
+  }
+  if (raw.chainId !== undefined && BigInt(raw.chainId as number) !== BigInt(chainRef)) {
+    throw new NecResolverEvmError(
+      "EVM_NETWORK_MISMATCH",
+      `observed chainId ${String(raw.chainId)} differs from declared network ${String(raw.network)}`,
+    );
+  }
+  if (raw.chainIdentityObserved === true && raw.chainId === undefined) {
+    throw new NecResolverEvmError(
+      "EVM_OBSERVATION_INCOMPLETE",
+      "positive chainIdentityObserved requires the numeric observed chainId bound to the requested eip155 identity",
+    );
+  }
+
   const evidence = raw.evidence;
   if (!Array.isArray(evidence)) evmFailInvalid("evidence must be a dense array");
   const seenIds = new Set<string>();
