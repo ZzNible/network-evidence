@@ -3,7 +3,7 @@
 **Status:** PUBLIC READ-ONLY BETA — not MCP COMPLETE v1.  
 **Remote MCP endpoint:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp  
 **Read-only health:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/health  
-**Implementation:** [Public draft PR #3](https://github.com/ZzNible/network-evidence/pull/3), deployed executable SHA f12f2ca484cf81336ff486a9e531b63b7b07db5c.  
+**Public source:** [GitHub main](https://github.com/ZzNible/network-evidence/tree/main) at merge commit df0cfde4387aaed86417c216315acaba32962087; deployed executable SHA f12f2ca484cf81336ff486a9e531b63b7b07db5c (only documentation changed since this executable). Original [source PR #3](https://github.com/ZzNible/network-evidence/pull/3) is closed as superseded, not a live draft.  
 **Live scope:** Base mainnet/Sepolia and Solana mainnet/devnet; no live zkSYS Tanenbaum or unrelated networks.
 
 Canonical question: **What does the underlying network itself independently support about this exact action?**
@@ -30,6 +30,14 @@ Exactly **six MCP tools** are exposed:
 | preflight_live_network_evidence | Source-bound evidence preflight for caller-selected network | Requires complete original Core action/policy and separate probe |
 
 The live source-fetching tools intentionally declare readOnlyHint=true, destructiveHint=false and openWorldHint=true. They cannot sign or submit transactions. Inputs are strictly validated; arbitrary RPC URLs are rejected.
+
+## Add it to ChatGPT or Claude without waiting for directory review
+
+**ChatGPT:** In ChatGPT Plugins (subject to workspace permissions), choose **+ → Add custom MCP server**. Enter the public endpoint above and choose **No authentication**. Review the security warning, create and install the resulting private plugin, then use it in ChatGPT Work (mention the plugin with `@`) and request **list_network_profiles once**. This installs it for your account/workspace as permitted; it is **not** a public directory listing. [Official ChatGPT plugin quickstart](https://developers.openai.com/plugins/quickstart).
+
+**Claude.ai (individual Pro/Max):** **Customize → Connectors → + Add → Add custom connector**, enter the public endpoint, choose **No sign in**, then enable the connector for the chat and ask for the four declared network profiles. Organization administrators add it through organization Connector settings for Team/Enterprise. [Official Claude remote MCP connector guide](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
+
+Use **one** tool call at a time with a long shared quota window. Real chat clients can issue several MCP protocol requests before invoking a tool and encounter HTTP 429 under the deliberately low common anonymous rate cap. Do not treat 429 as an evidence verdict or retry in a rapid loop. Official **ChatGPT/Claude directory review and provider verification are separate**, and this beta has not been approved or listed there.
 
 ## Reproduce a call with the official Node.js client
 
@@ -115,4 +123,4 @@ The Base transaction and Solana signature above are **previously reviewed public
 
 The existing official MCP Registry listing io.github.ZzNible/network-evidence **v0.0.2 remains the offline three-tool server**. This public six-tool beta is intentionally separate, and it has **NOT** been accepted into the public ChatGPT or Claude directories. Source Suite v1.1.0 is a separate tagged source release; its existence does not certify this public beta as MCP COMPLETE.
 
-**Early agent testers wanted:** connect via Claude, ChatGPT, Codex or another MCP client; call one exact public Base/Solana action; report client/protocol version, exact network, timestamp, sanitized output or error code and whether provenance/nonClaims were understandable. No wallets, keys or funds required.
+**Early agent testers wanted:** see [GitHub issue #7](https://github.com/ZzNible/network-evidence/issues/7). Connect via Claude, ChatGPT, Codex or another MCP client; call one exact public Base/Solana action; report client/protocol version, exact network, timestamp, sanitized output or error code and whether provenance/nonClaims were understandable. No wallets, keys or funds required. We also need one real past non-sensitive action with genuine original expected terms and evidence policy fixed before execution to complete the Core→Hub→Lens live case, never reconstructed from a transaction.
