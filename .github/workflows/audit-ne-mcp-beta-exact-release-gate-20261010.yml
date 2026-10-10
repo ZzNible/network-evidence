@@ -1,0 +1,57 @@
+name: One-time source gate for deployed NE MCP public beta
+on:
+  push:
+    branches:
+      - audit/ne-mcp-beta-exact-release-gate-20261010
+    paths:
+      - .github/workflows/audit-ne-mcp-beta-exact-release-gate-20261010.yml
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source-release-check:
+    if: github.repository == 'ZzNible/network-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+    steps:
+      - name: Checkout deployed executable SHA, not audit branch HEAD
+        uses: actions/checkout@v4
+        with:
+          ref: f12f2ca484cf81336ff486a9e531b63b7b07db5c
+          persist-credentials: false
+      - name: Confirm immutable tested source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'f12f2ca484cf81336ff486a9e531b63b7b07db5c'
+          test -z "$(git status --porcelain)"
+          echo 'EXACT_DEPLOYED_EXECUTABLE_SHA=PASS'
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install exact locked dependencies
+        run: npm ci
+      - name: TypeScript typecheck
+        run: npm run -s typecheck
+      - name: Full monorepo test suite
+        run: npm test
+      - name: Offline MCP client SDK smoke
+        run: npm run -s mcp:smoke
+      - name: Core to Hub to Lens integrability fixture
+        run: npm run -s demo:integrability -- --verify
+      - name: Known demo compatibility output verification
+        run: npm run -s demo:historical-compat -- --verify
+      - name: Dependency audit, high severity threshold
+        run: npm audit --audit-level=high
+      - name: Verify no source drift and scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = 'f12f2ca484cf81336ff486a9e531b63b7b07db5c'
+          test -z "$(git status --porcelain)"
+          echo 'EXACT_SHA_SOURCE_AND_TEST_WORKTREE_UNMODIFIED=PASS'
+          echo 'MCP_BETA_SOURCE_GATE=PASS; NO_DEPLOY; NO_MERGE; NO_CLOUD_SECRETS'
