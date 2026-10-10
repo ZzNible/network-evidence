@@ -3,6 +3,7 @@
 **Status:** PUBLIC READ-ONLY BETA — not MCP COMPLETE v1.  
 **Remote MCP endpoint:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp  
 **Read-only health:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/health  
+**Serving beta revision (2026-10-11):** `network-evidence-mcp-beta-00004-pwq` at 100% Cloud Run traffic. The executable image/source and tool contracts are unchanged; only the shared HTTP admission setting was raised from 4 to 24 per minute.  
 **Public source:** [GitHub main](https://github.com/ZzNible/network-evidence/tree/main) at merge commit df0cfde4387aaed86417c216315acaba32962087; deployed executable SHA f12f2ca484cf81336ff486a9e531b63b7b07db5c (only documentation changed since this executable). Original [source PR #3](https://github.com/ZzNible/network-evidence/pull/3) is closed as superseded, not a live draft.  
 **Live scope:** Base mainnet/Sepolia and Solana mainnet/devnet; no live zkSYS Tanenbaum or unrelated networks.
 
@@ -106,7 +107,7 @@ The Base transaction and Solana signature above are **previously reviewed public
 
 ## Essential beta limits
 
-**Shared beta request budget:** Four HTTP /mcp admissions per 60 seconds across ALL anonymous clients on one Node process. Cloud Run is capped at one instance and one concurrent request. Modern MCP connection + tools/list + one tools/call consumes several admissions. Legacy 2025 clients may issue a GET /mcp that returns 405 **but still consumes one** of those admissions. Respect HTTP 429 and Retry-After; do not retry in a tight loop or assume a per-user quota. There is no uptime or throughput SLA.
+**Shared beta request budget (2026-10-11):** 24 HTTP `/mcp` admissions per 60 seconds across ALL anonymous clients on one Node process (not a per-user allowance). The separate live Base/Solana source-acquisition ceiling remains eight acquisitions per minute per process. Cloud Run is capped at one instance and one concurrent request. Modern MCP connection + tools/list + one tools/call consumes several admissions. Legacy 2025 clients may issue a GET /mcp that returns 405 **but still consumes one** of those admissions. Respect HTTP 429 and Retry-After; do not retry in a tight loop or assume a per-user quota. There is no uptime or throughput SLA.
 
 **RPC and evidence:** Fixed server-controlled Base/Solana origins, allowed methods and bounded response sizes/timeouts. AFTER emits a network-evidence-fragment via native Core validation, not an automatically complete NetworkEvidenceResult. Source observation, inclusion, execution, effects, settlement, physical/economic consequences, L2 block finality and cryptographic verification are separate statements. Optional caller-supplied x402, ERC-4337 or x402-SVM terms are not authenticated by the server.
 
