@@ -1,6 +1,6 @@
 # Network Evidence MCP — Privacy Notice
 
-**Last updated:** 10 October 2026  
+**Last updated:** 11 October 2026  
 **Services:** [Network Evidence MCP — offline three-tool preview](https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp) and [Network Evidence MCP — Base + Solana six-tool public beta](https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp)  
 **Publisher:** ZzNible (independent project; [public source repository](https://github.com/ZzNible/network-evidence))  
 **Privacy and support contact:** [GitHub Issues](https://github.com/ZzNible/network-evidence/issues). **Do not post personal or confidential information in public issues.** Request a private contact channel there if needed.
@@ -35,7 +35,7 @@ You can avoid sending personal or confidential data; these services do not requi
 
 ## Security and limitations
 
-All tools are read-only and there is no wallet, private-key handling, transaction signing or submission. The original three-tool service performs **no** outbound RPC or live chain monitoring; the separate six-tool beta includes three tools performing bounded read-only RPC lookups for exact Base/Solana actions. RPC observations are **not** independent cryptographic finality, settlement or payment proof. The beta uses a small shared four HTTP admissions/minute/process quota and does not promise high-volume availability. Both services validate inputs and apply exact Host/Origin and rate/concurrency guards. No online system can promise absolute security or continuous availability.
+All tools are read-only and there is no wallet, private-key handling, transaction signing or submission. The original three-tool service performs **no** outbound RPC or live chain monitoring; the separate six-tool beta includes three tools performing bounded read-only RPC lookups for exact Base/Solana actions. RPC observations are **not** independent cryptographic finality, settlement or payment proof. The beta uses a shared 24 HTTP `/mcp` admissions/60 seconds/process quota (not per user), separately from its unchanged eight live-RPC acquisitions/minute/process cap and does not promise high-volume availability. Both services validate inputs and apply exact Host/Origin and rate/concurrency guards. No online system can promise absolute security or continuous availability.
 
 ## Updates
 
