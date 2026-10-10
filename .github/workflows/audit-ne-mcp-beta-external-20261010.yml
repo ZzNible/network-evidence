@@ -1,0 +1,85 @@
+name: One-time external MCP beta client smoke (GitHub runner)
+on:
+  push:
+    branches:
+      - audit/ne-mcp-beta-external-client-20261010
+
+permissions:
+  contents: read
+
+jobs:
+  external-mcp-client:
+    if: github.repository == 'ZzNible/network-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Setup independent Node.js client
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned official MCP client (no project checkout, no secrets)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ne-beta-external-client"
+          cd "$RUNNER_TEMP/ne-beta-external-client"
+          npm init -y >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund --save-exact @modelcontextprotocol/client@2.3.1
+      - name: Call live beta via official third-party-hosted MCP client
+        shell: bash
+        env:
+          NODE_NO_WARNINGS: '1'
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/ne-beta-external-client"
+          cat > smoke.mjs <<'NODE'
+          import assert from 'node:assert/strict';
+          import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+
+          const URL_STRING='https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp';
+          const url=new URL(URL_STRING);
+          assert.equal(url.protocol, 'https:');
+          assert.equal(url.pathname, '/mcp');
+          const client = new Client(
+            { name: 'github-actions-independent-ne-beta-smoke', version: '1.0.0' },
+            { versionNegotiation: { mode: 'auto' } },
+          );
+          let connected=false;
+          try {
+            await client.connect(new StreamableHTTPClientTransport(url));
+            connected=true;
+            const {tools} = await client.listTools();
+            const actual=tools.map(t=>t.name).sort();
+            const required=[
+              'discover_live_network_evidence',
+              'discover_network_candidates',
+              'get_reviewed_evidence_case',
+              'list_network_profiles',
+              'preflight_live_network_evidence',
+              'resolve_transaction_evidence',
+            ].sort();
+            assert.deepEqual(actual,required);
+            assert(tools.every(t =>
+              t.annotations?.readOnlyHint === true &&
+              t.annotations?.destructiveHint === false &&
+              t.annotations?.openWorldHint === false
+            ), 'read-only tool annotations');
+            const result=await client.callTool({name:'list_network_profiles',arguments:{}});
+            assert.notEqual(result.isError, true);
+            const p=result.structuredContent?.profiles;
+            assert(Array.isArray(p), 'structuredContent.profiles missing');
+            const ids=p.map(x=>x.profileId).sort();
+            assert.deepEqual(ids,['base-mainnet','base-sepolia','solana-devnet','solana-mainnet'].sort());
+            console.log('EXTERNAL_NON_VM_OFFICIAL_SDK_MCP_CONNECT=PASS');
+            console.log('EXTERNAL_MCP_SIX_TOOLS_READONLY=PASS');
+            console.log('EXTERNAL_MCP_LIST_NETWORK_PROFILES=PASS; COUNT='+ids.length);
+            console.log('THIRD_PARTY_HOST=GITHUB_ACTIONS; NO_SECRETS; NO_CHAIN_WRITES');
+          } catch (e) {
+            const message=String(e?.message??e).slice(0,200);
+            console.error('EXTERNAL_MCP_GATE=BLOCK; cause='+message.replace(/https?:\/\/[^ ]+/g,'[endpoint]'));
+            throw e;
+          } finally {
+            if (connected) await client.close();
+          }
+          NODE
+          node smoke.mjs
