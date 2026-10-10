@@ -61,9 +61,15 @@ jobs:
             assert.deepEqual(actual,required);
             assert(tools.every(t =>
               t.annotations?.readOnlyHint === true &&
-              t.annotations?.destructiveHint === false &&
-              t.annotations?.openWorldHint === false
-            ), 'read-only tool annotations');
+              t.annotations?.destructiveHint === false
+            ), 'read-only non-destructive tool annotations');
+            const active=new Set([
+              'discover_live_network_evidence',
+              'preflight_live_network_evidence',
+              'resolve_transaction_evidence',
+            ]);
+            assert(tools.every(t => t.annotations?.openWorldHint === active.has(t.name)),
+              'open-world hint is true only for source-fetching tools');
             const result=await client.callTool({name:'list_network_profiles',arguments:{}});
             assert.notEqual(result.isError, true);
             const p=result.structuredContent?.profiles;
@@ -71,7 +77,7 @@ jobs:
             const ids=p.map(x=>x.profileId).sort();
             assert.deepEqual(ids,['base-mainnet','base-sepolia','solana-devnet','solana-mainnet'].sort());
             console.log('EXTERNAL_NON_VM_OFFICIAL_SDK_MCP_CONNECT=PASS');
-            console.log('EXTERNAL_MCP_SIX_TOOLS_READONLY=PASS');
+            console.log('EXTERNAL_MCP_SIX_TOOLS_READONLY_AND_WORLD_HINTS=PASS');
             console.log('EXTERNAL_MCP_LIST_NETWORK_PROFILES=PASS; COUNT='+ids.length);
             console.log('THIRD_PARTY_HOST=GITHUB_ACTIONS; NO_SECRETS; NO_CHAIN_WRITES');
           } catch (e) {
