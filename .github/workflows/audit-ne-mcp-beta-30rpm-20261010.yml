@@ -1,0 +1,81 @@
+name: Bounded one-time MCP beta 30rpm configuration source gate
+on:
+  push:
+    branches: [audit/ne-mcp-beta-30rpm-20261010]
+    paths: [.github/workflows/audit-ne-mcp-beta-30rpm-20261010.yml]
+permissions:
+  contents: read
+jobs:
+  config-only-capacity-gate:
+    if: github.repository == 'ZzNible/network-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact public main commit
+        uses: actions/checkout@v4
+        with:
+          ref: 561269adf735f41a5a4a7a38a754c72d02491ae8
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Verify 30rpm is supported, 31st rejected, no relaxed live RPC budgets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = '561269adf735f41a5a4a7a38a754c72d02491ae8'
+          cat > .capacity-beta-30rpm.mts <<'TS'
+          import assert from 'node:assert/strict';
+          import {resolveServeConfig} from './packages/mcp/src/hosted.ts';
+          import {resolveLimits, HOSTED_DEFAULT_LIMITS, GlobalAbuseLimiter} from './packages/mcp/src/limits.ts';
+          import {MULTICHAIN_CALLS_PER_MINUTE, MULTICHAIN_MAX_INFLIGHT} from './packages/mcp/src/live-multichain.ts';
+          const config=resolveServeConfig([],{
+            NE_MCP_MODE:'hosted',
+            NE_MCP_PUBLIC_ORIGIN:'https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app',
+            PORT:'8080',
+            NE_MCP_MAX_CONCURRENT:'1',
+            NE_MCP_RATE_LIMIT_PER_MINUTE:'30',
+          },{host:'127.0.0.1',port:4178});
+          assert.equal(config.mode,'hosted');
+          assert.equal(config.limits?.maxRequestsPerMinute,30);
+          assert.equal(config.limits?.maxConcurrent,1);
+          const limits=resolveLimits(config.limits,HOSTED_DEFAULT_LIMITS);
+          let now=0;
+          const guard=new GlobalAbuseLimiter(limits,()=>now);
+          for(let i=0;i<30;i++){
+            const admission=guard.admit();
+            assert.equal(admission.ok,true,'request should be accepted: '+(i+1));
+            if(admission.ok)admission.release();
+          }
+          const thirtyFirst=guard.admit();
+          assert.equal(thirtyFirst.ok,false,'31st MCP request MUST be rejected');
+          if(!thirtyFirst.ok)assert(thirtyFirst.retryAfterSeconds>=1);
+          now=60_001;
+          const first=guard.admit();
+          assert.equal(first.ok,true,'next minute should reset');
+          const concurrent=guard.admit();
+          assert.equal(concurrent.ok,false,'still enforce maxConcurrent=1');
+          if(first.ok)first.release();
+          assert.equal(MULTICHAIN_CALLS_PER_MINUTE,8);
+          assert.equal(MULTICHAIN_MAX_INFLIGHT,2);
+          console.log('MCP_30RPM_SOURCE_CONFIGURATION=PASS');
+          console.log('MCP_31ST_REJECTED_AND_MINUTE_RESET=PASS');
+          console.log('MCP_HTTP_CONCURRENCY_1_UNCHANGED=PASS');
+          console.log('MCP_LIVE_ACQUISITION_8_PER_MIN_2_INFLIGHT_UNCHANGED=PASS');
+          console.log('NO_CLOUD_MUTATION_NO_DEPLOY_NO_REAL_RPC');
+          TS
+          ./node_modules/.bin/tsx .capacity-beta-30rpm.mts
+          rm -f .capacity-beta-30rpm.mts
+      - name: Targeted ingress and quota tests
+        run: ./node_modules/.bin/vitest run packages/mcp/test/hosted-ingress-budget.test.ts
+      - name: Typecheck
+        run: npm run -s typecheck
+      - name: No source edits
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)"
+          echo 'EXACT_REPO_SOURCE_UNMODIFIED=PASS'
