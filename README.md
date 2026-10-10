@@ -28,7 +28,7 @@ not support for another.
 - **MCP endpoint:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp
 - **Current supported live profiles:** Base mainnet / Base Sepolia, Solana mainnet / Solana devnet.
 - **Read-only RPC observations:** exact public transaction/signature, native Core fragment, provenance and explicit non-claims; source-reported block-finality signals are **not** cryptographic settlement proof.
-- **Small public beta:** shared four HTTP MCP requests/minute per running process; 429 and unavailable source observations are possible. No wallet, signing or submission.
+- **Small public beta (2026-10-11):** shared 24 HTTP `/mcp` admissions per 60 seconds per process (not per user), plus a separate eight live-RPC acquisitions/minute/process cap. Cloud Run stays at one maximum instance and one concurrent request; HTTP 429 and unavailable source observations remain possible. No SLA, wallet, signing or submission.
 - **Different product identities:** the source Suite release v1.1.0 and official MCP Registry v0.0.2 **still list the older offline three-tool endpoint**. The beta is neither MCP COMPLETE v1 nor a public ChatGPT/Claude directory listing.
 
 [Connect and reproduce a Base/Solana agent call](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md) · [Privacy and RPC provider disclosure](docs/distribution/MCP_PRIVACY_POLICY.md) · [GitHub Issues](https://github.com/ZzNible/network-evidence/issues).
