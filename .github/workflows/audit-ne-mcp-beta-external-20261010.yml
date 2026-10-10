@@ -88,4 +88,8 @@ jobs:
             if (connected) await client.close();
           }
           NODE
+          # This public beta has a shared 4/min per-process admission limit.
+          # Earlier back-to-back independent runs hit HTTP 429. Pace this one
+          # by >1 minute; never enlarge public quotas or retry in a loop.
+          sleep 75
           node smoke.mjs
