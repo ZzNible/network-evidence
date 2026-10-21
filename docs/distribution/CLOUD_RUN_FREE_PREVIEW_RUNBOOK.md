@@ -1,5 +1,22 @@
 # Cloud Run deployment runbook — Network Evidence MCP v0 (PUBLIC, BOUNDED)
 
+> **Read first, 2026-10-21:** New beta tests should use `https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp` (six tools). The [beta quickstart](MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md) records the latest deployment provenance: revision `network-evidence-mcp-beta-00004-pwq`, executable SHA `f12f2ca484cf81336ff486a9e531b63b7b07db5c`, 24 shared HTTP admissions/minute and a separate eight live acquisitions/minute. The dated records below retain older revisions, limits, PR states and acceptance holds as history; the quickstart supersedes them where explicitly updated. Anonymous `/health` checks on 2026-10-21 confirmed six beta tools and three tools on each older offline endpoint, all reporting runtime `0.0.1`. Cloud Run revisions, IAM, billing, request logs and client configurations were **not** re-read during this documentation check.
+
+## Endpoint retirement review
+
+The official offline service and the legacy preview remain distinct from the beta. The checked-in `server.json` and `.github/workflows/publish-network-evidence-mcp.yml` still reference `network-evidence-mcp`; the original publication record links Registry v0.0.1 to `network-evidence-mcp-preview`. Retiring either service before reviewing those consumers can break pinned clients. Endpoint health is not proof of use or non-use.
+
+Before a retirement decision:
+
+1. Inspect available request logs and current client/plugin/Claude connector settings, including any pending directory submissions. Confirm the current Registry version mappings rather than relying only on historical records.
+2. Identify each consumer's intended scope. Migrating from offline tools to a source-fetching beta changes the external-I/O/privacy boundary and tool surface; it is not just a version-number update.
+3. Record migration results and a tested rollback path. Keep the source, release tags and required images/revisions available. The legacy preview is a candidate for retirement only after its dependencies and fallback role are resolved.
+4. For an approved retirement, prefer a reversible removal of anonymous access first, verify migration and rollback, and delete a service only in a separately confirmed cleanup step.
+
+No service, revision, Registry record, IAM binding or plugin was changed by the 2026-10-21 documentation check. Recent traffic and private consumer mappings were not assessed in this check. This is not evidence that an old endpoint has no consumers.
+
+## Historical deployment records
+
 **CURRENT (2026-10-09):** public endpoint `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp` on service **`network-evidence-mcp`**, region `europe-west1`, revision `network-evidence-mcp-00003-989` (**observed read-only in Cloud Run on 2026-10-09**). Earlier rollout reused the **identical immutable image digest** of the old preview (`sha256:bd1157db86fd6720e0d5e71e282d8590082f4882211578cb1f6628e8b1ed8d22`), without rebuilding or changing Core. New host is in the exact `NE_MCP_PUBLIC_ORIGIN` allowlist. Anonymous GET `/health` HTTP 200; both MCP SDK protocol eras passed three tools, five network profiles, Core Discovery digest `sha256:d85c2fe5ff876acf3413a25986b6a78b2eaac7fc66cc998193e72deb14dee68b`, and negative cases. Foreign Origin was rejected in private test. Concurrency 4, min instances 0, max 1, 1 vCPU/512 MiB, MCP admission limit 60/min **per Node process, not across instances**. Google Billing Cloud Run scoped monthly 2 EUR spend cap is configured but not a guarantee against overage or auxiliary services. Official Registry `io.github.ZzNible/network-evidence` version **0.0.2 ACTIVE** points to this new endpoint ([OIDC publication run](https://github.com/ZzNible/network-evidence/actions/runs/37905012273)). Private ChatGPT workspace plugin `0.1.2`, Codex, and Claude Code migrated; real tool calls checked for the latter two. **Claude directory browser draft must still be updated manually**. This MCP remains an offline, read-only preview, not live monitoring or a production SLA.
 
 **LEGACY ROLLBACK:** Old Cloud Run service `network-evidence-mcp-preview`, revision `00003-v99`, remains publicly active at `https://network-evidence-mcp-preview-jrkc26rjga-ew.a.run.app/mcp`; official Registry `0.0.1` points there. Do not remove this service until the Anthropic submission and other consumers have migrated. Render Free is a secondary rollback. **Commands below referencing `network-evidence-mcp-preview` describe the original preview deployment, not the current target.**

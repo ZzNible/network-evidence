@@ -1,4 +1,6 @@
-# Network Evidence MCP — Public Connector Guide
+# Network Evidence MCP: legacy offline connector guide
+
+> **Routing clarification, 2026-10-21:** For new Base/Solana beta tests, use the [six-tool public beta quickstart](MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md), endpoint `https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp`. The instructions below describe the separate **three-tool offline Registry v0.0.2 server**, not the beta. Both report runtime version `0.0.1`; identify them by URL and tools, not that version string. A successful profile call tests client interoperability, not transaction evidence or full Core/Hub/Lens acceptance.
 
 **Public remote MCP:** `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp`  
 **Read-only health check:** [`/health`](https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/health)  

@@ -11,6 +11,20 @@ Canonical question: **What does the underlying network itself independently supp
 
 This server returns source-observed evidence, not independent cryptographic consensus or settlement proof. Base OP Stack L2 block finality is **not** Ethereum withdrawal finalization, and Solana RPC-reported finalized commitment is **not** an independent cryptographic proof of finality or x402 settlement.
 
+## Identify the endpoint and version (2026-10-21)
+
+Use the beta URL above for new six-tool beta tests. Three separate public endpoints currently answer `/health`:
+
+| Service | MCP URL | Tool count | Purpose |
+| --- | --- | --- | --- |
+| `network-evidence-mcp-beta` | `https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp` | 6 | Base/Solana source-observation beta; four active profile declarations |
+| `network-evidence-mcp` | `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp` | 3 | Offline server referenced by the official Registry v0.0.2 manifest |
+| `network-evidence-mcp-preview` | `https://network-evidence-mcp-preview-jrkc26rjga-ew.a.run.app/mcp` | 3 | Legacy offline preview, historically referenced by Registry v0.0.1 |
+
+Anonymous GET `/health` checks on 2026-10-21 returned HTTP 200 for all three, with the tool counts above. All three report runtime version **0.0.1**. That shared runtime string does **not** identify which endpoint or tool surface a client used. Record the exact URL, negotiated MCP protocol, tool names and runtime/client versions. The Registry listing version **0.0.2**, source Suite release **v1.1.0**, deployed executable SHA and Cloud Run revision are separate identifiers.
+
+The deployment revision and executable SHA at the top are the last recorded deployment provenance, not newly verified Cloud Run control-plane state. These health checks did not call a resolver, inspect traffic logs or establish evidence quality, uptime, or consumer migration. Endpoint retirement requires a separate dependency and traffic review; see the [runbook](CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md#endpoint-retirement-review).
+
 ## Connect an MCP-capable agent
 
 - Name: Network Evidence — Base + Solana beta
@@ -117,10 +131,23 @@ The Base transaction and Solana signature above are **previously reviewed public
 
 ## Independent verification and support
 
+- [External SDK 1.30.0 smoke report, 2026-10-21](https://github.com/ZzNible/network-evidence/issues/7#issuecomment-6307650838): Node.js 22.23.2, initialization, six-tool listing and one successful profile call. This adds client interoperability evidence only; it did not test Base/Solana transaction observations, transaction `nonClaims`, or Core/Hub/Lens integration. Profile discovery is not a verified evidence case. The reported 9.63 seconds includes connection, discovery, call and cleanup, not isolated route latency.
 - [Independent non-VM real MCP client](https://github.com/ZzNible/network-evidence/actions/runs/38073037540): six tools, truthful read-only annotations and profile call PASS.
 - [Exact deployed executable check](https://github.com/ZzNible/network-evidence/actions/runs/38076904284): 89 test files / 1,558 PASS, typecheck, Core/Hub/Lens deterministic integration, npm audit 0 vulnerabilities.
-- [Detailed beta source and rollback runbook](https://github.com/ZzNible/network-evidence/blob/work/ne-mcp-multichain-20261009/docs/distribution/CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md).
+- [Deployment history and endpoint retirement review](CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md).
 - [Public support and issue reporting](https://github.com/ZzNible/network-evidence/issues). Do not post sensitive information in public issues.
+
+### Useful additional synthetic-only client checks
+
+The [historical launch checklist](MCP_LAUNCH_CHECKLIST.md) already specifies N1 (network mismatch), N2 (snapshot digest tampering), and N3 (invalid case ID) for the older three-tool surface. Current tests also cover live input rejection, source failures and rate limits. Additional tests should report new **client behavior**, rather than present those validation rules as uncovered.
+
+| Check | Bounded synthetic setup | Additional information to record |
+| --- | --- | --- |
+| Response fidelity | Read `synthetic-local-core-golden` and profiles only; use a local server for the matrix | SDK 1.30.0 preserves `structuredContent`, parsed JSON text agrees with it, synthetic/non-live labels survive parsing |
+| Rejection and recovery | Local six-tool server with outbound RPC disabled; unsupported network for `resolve_transaction_evidence`, incomplete action/policy for `preflight_live_network_evidence`, then a valid profile call on the same connection | Client-side versus server-side rejection, exact sanitized error code and `isError` where present, zero provider calls, successful connection recovery |
+| Transport error distinction | Local controlled HTTP 429 with `Retry-After`, separately from an MCP tool error | Client exposes each correctly, neither becomes an evidence verdict, retries are bounded and respect the delay |
+
+Record exact client/runtime/protocol, server commit/configuration, reproducible script and expected versus observed sanitized outputs. Do not query real transaction identifiers or live RPC, and do not exhaust the public quota to produce 429. A public endpoint alone cannot demonstrate zero provider calls; instrument and disable outbound access locally. A local synthetic report does not establish the same behavior on the hosted deployment or certify network proofs. The authentic-action integration gate above remains open.
 
 The existing official MCP Registry listing io.github.ZzNible/network-evidence **v0.0.2 remains the offline three-tool server**. This public six-tool beta is intentionally separate, and it has **NOT** been accepted into the public ChatGPT or Claude directories. Source Suite v1.1.0 is a separate tagged source release; its existence does not certify this public beta as MCP COMPLETE.
 

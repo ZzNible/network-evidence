@@ -97,5 +97,7 @@ monitoring. Nothing was signed, funded or submitted."
 - any claim that a network *is currently* available or usable;
 - any zkSYS mainnet reference (zkSYS `eip155:57057` is Tanenbaum testnet /
   replay only, and it is not part of this demo);
-- an MCP endpoint, registry listing or plugin. Those do not exist yet; see
-  [MCP_LAUNCH_CHECKLIST.md](MCP_LAUNCH_CHECKLIST.md).
+- an MCP endpoint, registry listing or plugin in this **offline recording**.
+  Separate hosted services now exist; see the
+  [public beta quickstart](MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md).
+  Their availability does not make this local demo live network evidence.
