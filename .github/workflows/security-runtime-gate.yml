@@ -1,0 +1,63 @@
+name: Network Evidence security and regression gate
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - package.json
+      - package-lock.json
+      - .github/workflows/security-runtime-gate.yml
+      - packages/**
+      - examples/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    name: Suite Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.23.4', '24.22.1']
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Verify patched Node version
+        run: node --version
+      - name: Install locked dependencies
+        run: npm ci --no-fund
+      - name: Dependency security audit
+        run: npm audit --audit-level=high
+      - name: Typecheck all workspaces
+        run: npm run -s typecheck
+      - name: Complete Suite tests (Core, resolvers, adapters, Hub, Lens, MCP, NE Maps)
+        run: npm test
+      - name: NE Maps focused regression
+        run: npm run -s test:maps
+      - name: Offline MCP protocol smoke
+        run: npm run -s mcp:smoke
+      - name: Deterministic integrability and compatibility
+        run: |
+          npm run -s demo:integrability
+          npm run -s demo:historical-compat
+
+  image:
+    name: Pinned hosted image build (no deployment)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Build pinned OCI image
+        run: docker build --pull --tag ne-mcp-security-check:local .
+      - name: Verify actual container runtime
+        run: |
+          actual="$(docker run --rm ne-mcp-security-check:local node --version)"
+          echo "Container Node: $actual"
+          test "$actual" = "v22.23.4"
