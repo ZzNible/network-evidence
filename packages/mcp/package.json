@@ -22,7 +22,7 @@
     "@nec/resolver-opstack": "*",
     "@nec/resolver-solana": "*",
     "@nec/resolver-zksys": "*",
-    "zod": "^4.2.0",
+    "zod": "^4.6.7",
     "@nec/resolver-evm": "*",
     "@nec/adapter-x402": "*",
     "@nec/adapter-x402-svm": "*",
