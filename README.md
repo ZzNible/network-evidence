@@ -21,22 +21,36 @@ It reports explicit verdicts: `supported`, `contradicted`, `insufficient`, or
 effect, settlement, and finality are separate questions; support for one is
 not support for another.
 
-## Public MCP beta for agents — Base + Solana
+## Historical Base + Solana MCP beta (October 2026)
 
-**Try the [six-tool Base + Solana read-only beta](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md)** in any compatible remote Streamable HTTP MCP client:
+**Previously observed six-tool Base + Solana read-only beta:** see its
+[dated client and verification guide](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md).
+**Availability check 2026-11-11 (Europe/Brussels; 2026-11-10 UTC):** anonymous GET and HEAD requests to
+the three historical public `/health` endpoints returned **HTTP 503
+(`Google Frontend`)** from the owner Ubuntu host. This is a dated
+observation, **not** a diagnosis of IAM, revision, billing, or root cause.
+No current hosted beta availability or deployment of NE Suite v1 is
+attested here. **Do not connect an agent based on health status alone:**
+wait for an updated operator-published requalification and privacy notice.
+
+**Historical endpoint, not currently verified as operational:**
 
 - **MCP endpoint:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp
-- **Current supported live profiles:** Base mainnet / Base Sepolia, Solana mainnet / Solana devnet.
+- **Last recorded live profile declarations:** Base mainnet / Base Sepolia, Solana mainnet / Solana devnet. Profile listing is not proof of current RPC availability.
 - **Read-only RPC observations:** exact public transaction/signature, native Core fragment, provenance and explicit non-claims; source-reported block-finality signals are **not** cryptographic settlement proof.
-- **Small public beta (2026-10-11):** shared 24 HTTP `/mcp` admissions per 60 seconds per process (not per user), plus a separate eight live-RPC acquisitions/minute/process cap. Cloud Run stays at one maximum instance and one concurrent request; HTTP 429 and unavailable source observations remain possible. No SLA, wallet, signing or submission.
-- **Different product identities:** source Suite release v1.1.0 is a source release; official MCP Registry v0.0.2 **still lists the older offline three-tool endpoint**. All three public endpoint health responses report runtime `0.0.1`; use the exact URL and tool surface to identify the server. See the [endpoint/version table and client-test boundaries](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md#identify-the-endpoint-and-version-2026-10-21). The beta is neither MCP COMPLETE v1 nor a public ChatGPT/Claude directory listing.
+- **Beta configuration last recorded 2026-10-11, not reverified here:** shared
+24 HTTP `/mcp` admissions per 60 seconds/process (not per user), eight
+live-RPC acquisitions/minute/process, and one maximum Cloud Run instance and
+concurrent request. These historical limits do not establish today's settings.
+No SLA, wallet, signing or submission.
+- **Different product identities:** source Suite release v1.1.0 is a source release; official MCP Registry v0.0.2 **last documented the older offline three-tool endpoint** (not rechecked today). All three public endpoint health responses **reported** runtime `0.0.1` on 2026-10-21; use the exact URL and tool surface to identify the server. See the [endpoint/version table and client-test boundaries](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md#identify-the-endpoint-and-version-2026-10-21). The beta is neither MCP COMPLETE v1 nor a public ChatGPT/Claude directory listing.
 
-[Connect and reproduce a Base/Solana agent call](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md) · [Privacy and RPC provider disclosure](docs/distribution/MCP_PRIVACY_POLICY.md) · [GitHub Issues](https://github.com/ZzNible/network-evidence/issues).
+[Historical Base/Solana agent setup (operator requalification required)](docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md) · [Privacy and RPC provider disclosure](docs/distribution/MCP_PRIVACY_POLICY.md) · [GitHub Issues](https://github.com/ZzNible/network-evidence/issues).
 
 This source capsule contains `@nec/core`, `@nec/resolver-evm`,
 `@nec/adapter-x402`, `@nec/resolver-opstack`, `@nec/adapter-erc4337`,
 `@nec/resolver-solana`, `@nec/adapter-x402-svm`, `@nec/resolver-zksys`,
-`@nec/hub`, `@nec/lens`, and `@nec/discovery`.
+`@nec/hub`, `@nec/lens`, `@nec/discovery`, and `@nec/mcp`.
 The Solana resolver is generic post-fact Solana network evidence; the x402 SVM
 adapter is x402 v2 exact-SVM interpretation above that generic Solana evidence.
 The ERC-4337 package is a narrow evidence-correlation adapter above generic EVM
@@ -127,6 +141,14 @@ Then open `http://127.0.0.1:4177/`. `TARGET_CORE_MUTATIONS = 0`.
 
 ## Release and reproducibility
 
+> **NE Suite v1 source qualification is not a publication (8 November 2026).**
+> The currently published source release remains v1.1.0. A newer six-tool
+> integrated snapshot is being prepared separately; neither the historical
+> Cloud Run beta nor the official three-tool MCP Registry entry is asserted to
+> execute that unpublished snapshot. Validate any deployed executable against
+> its own dated SHA, not against the source checkout.
+
+
 - [RELEASE.md](RELEASE.md) — release status, package/version inventory and
   release artifacts. `v1.1.0` is the latest public source release, published
   on 2026-10-08 from `de3ee11d08d22d2791d8b5acfe17c2e61df23e81`; no
@@ -136,6 +158,6 @@ Then open `http://127.0.0.1:4177/`. `TARGET_CORE_MUTATIONS = 0`.
 - [docs/INTEGRABILITY_V1_1.md](docs/INTEGRABILITY_V1_1.md) — Hub/Lens/Maps
   contracts and the BEFORE + Discovery completion summary.
 - [docs/release/DEPENDENCY_ADVISORIES.md](docs/release/DEPENDENCY_ADVISORIES.md)
-  — release-gate dependency status and remediation record (`npm audit`: 0 vulnerabilities observed on 2026-10-07 and 2026-10-08).
+  — dated, commit-bound `npm audit` observations and locked dependency versions; no `npm audit` result is claimed for the current tree.
 - [SECURITY_BOUNDARIES.md](SECURITY_BOUNDARIES.md) — evidence boundaries and
   the public/private boundary.

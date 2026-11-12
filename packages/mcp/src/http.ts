@@ -7,15 +7,17 @@
  *   GET  /health   -> 200 static JSON (hosted; Cloud Run-safe alias)
  *   POST /mcp      -> MCP (2026-07-28 modern era, and 2025-era
  *                     initialize -> tools/list -> tools/call served statelessly)
- *   *    /mcp      -> delegated to the SDK (GET/DELETE answered 405: stateless)
+ *   *    /mcp      -> direct 405 with Allow: POST (no SDK dispatch or window charge)
  *   anything else  -> 404
  *
  * Guards, in order: Host + Origin validation (DNS-rebinding protection;
  * local: loopback names and the exact same-port loopback Origin; hosted: the
  * exact configured hostname/origin only), the global /mcp abuse limiter
- * (rate + concurrency, 429), JSON Content-Type, a byte-bounded body read, then
+ * (window pre-check + concurrency reservation, 429), POST-only method check,
+ * JSON Content-Type, a byte- and time-bounded body read (413/408), then
  * the @nec/core strict wire parser over the RAW body (duplicate keys, depth,
- * node-count and string bounds fail closed) before anything reaches the SDK.
+ * node-count and string bounds fail closed). The window is charged after parse,
+ * before batch/subscription refusal or SDK dispatch.
  * Every request gets a fresh McpServer instance (no shared session state).
  *
  * Logging is one line per request: method, path, status, duration. Never
@@ -144,20 +146,43 @@ function jsonRpcError(res: ServerResponse, status: number, code: number, message
   sendJson(res, status, JSON.stringify({ jsonrpc: "2.0", error: { code, message }, id: null }));
 }
 
+function tooMany(res: ServerResponse, retryAfterSeconds: number): void {
+  sendJson(
+    res,
+    429,
+    JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: "Too Many Requests: global server limit reached" }, id: null }),
+    { "retry-after": String(retryAfterSeconds) },
+  );
+}
+
+const BODY_READ_TIMEOUT_MS = 5_000;
 class BodyTooLarge extends Error {}
+class BodyTimeout extends Error {}
 
 async function readBody(req: IncomingMessage, maxBytes: number): Promise<Buffer> {
   const declared = req.headers["content-length"];
   if (declared !== undefined && Number(declared) > maxBytes) throw new BodyTooLarge();
-  const chunks: Buffer[] = [];
-  let total = 0;
-  for await (const chunk of req) {
-    const buffer = chunk as Buffer;
-    total += buffer.length;
-    if (total > maxBytes) throw new BodyTooLarge();
-    chunks.push(buffer);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new BodyTimeout()), BODY_READ_TIMEOUT_MS);
+  });
+  const read = (async () => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    for await (const chunk of req) {
+      const buffer = chunk as Buffer;
+      total += buffer.length;
+      if (total > maxBytes) throw new BodyTooLarge();
+      chunks.push(buffer);
+    }
+    return Buffer.concat(chunks, total);
+  })();
+  try {
+    return await Promise.race([read, deadline]);
+  } finally {
+    clearTimeout(timer);
+    read.catch(() => {});
   }
-  return Buffer.concat(chunks, total);
 }
 
 function isJsonContentType(value: string | undefined): boolean {
@@ -202,19 +227,16 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
       sendJson(res, 404, JSON.stringify({ error: "not found" }));
       return;
     }
-    const admission = limiter.admit();
+    const admission = limiter.reserve();
     if (!admission.ok) {
-      sendJson(
-        res,
-        429,
-        JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: "Too Many Requests: global server limit reached" }, id: null }),
-        { "retry-after": String(admission.retryAfterSeconds) },
-      );
+      tooMany(res, admission.retryAfterSeconds);
       return;
     }
     res.once("close", admission.release);
     if (req.method !== "POST") {
-      await mcpNode(req, res);
+      sendJson(res, 405, JSON.stringify({
+        jsonrpc: "2.0", error: { code: -32000, message: "Method Not Allowed" }, id: null,
+      }), { allow: "POST" });
       return;
     }
     if (!isJsonContentType(req.headers["content-type"])) {
@@ -225,7 +247,12 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
     try {
       text = new TextDecoder("utf-8", { fatal: true }).decode(await readBody(req, maxBodyBytes));
     } catch (error) {
-      if (error instanceof BodyTooLarge) {
+      if (error instanceof BodyTimeout) {
+        sendJson(res, 408, JSON.stringify({
+          jsonrpc: "2.0", error: { code: -32000, message: "Request Timeout: request body not received in time" }, id: null,
+        }), { connection: "close" });
+        res.once("finish", () => req.destroy());
+      } else if (error instanceof BodyTooLarge) {
         jsonRpcError(res, 413, -32000, `Payload Too Large: request body exceeds ${maxBodyBytes} bytes`);
       } else {
         jsonRpcError(res, 400, -32700, "Parse error: request body is not valid UTF-8");
@@ -239,6 +266,11 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
       parsed = parseNecWireJson(text);
     } catch {
       jsonRpcError(res, 400, -32700, "Parse error: body is not strict JSON (duplicate keys, malformed JSON or resource bounds exceeded)");
+      return;
+    }
+    const charge = admission.charge();
+    if (!charge.ok) {
+      tooMany(res, charge.retryAfterSeconds);
       return;
     }
     // The hosted limiter accounts ONE HTTP request, while the MCP SDK can
@@ -271,7 +303,7 @@ export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Prom
     await mcpNode(req, res, parsed);
   }
 
-  const server: Server = createServer((req, res) => {
+  const server: Server = createServer({ connectionsCheckingInterval: 5_000 }, (req, res) => {
     const started = process.hrtime.bigint();
     res.on("finish", () => {
       const ms = Number((process.hrtime.bigint() - started) / 1_000_000n);

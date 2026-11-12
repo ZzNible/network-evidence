@@ -9,26 +9,51 @@ import { simulatedHostFetch } from "./helpers.js";
 
 const MAINNET = "https://mainnet.base.org";
 const SEPOLIA = "https://sepolia.base.org";
-const TX = "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696";
+// Real recorded Base mainnet capture of the x402 #1062 USDC transfer (F1
+// authority fixture): subject, chain ID, receipt, block and transaction all
+// come from this one capture; no identifier is paired with foreign bytes.
+const F1 = JSON.parse(readFileSync(new URL(
+  "../../../examples/historical-compat/authority/fixtures/F1-x402-1062-partial/source/network-evidence/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+  import.meta.url), "utf8")) as {
+  source: { networkId: string; chainId: number }; subject: { txHash: string };
+  captures: { rpcMethod: string; rpcParams: unknown[]; resultJson: string }[];
+};
+const TX = F1.subject.txHash;
 const HOST = "mcp.example.org";
 const ORIGIN = "https://mcp.example.org";
 const ERROR_TEXT = "SECRET_INTERNAL_PROVIDER_MESSAGE_NEVER_EXPOSED";
 
-function provider(overrides: { chain?: string; receipt?: unknown; block?: unknown; transaction?: unknown; redirect?: string; oversized?: boolean } = {}) {
+/**
+ * Offline replay: serves the F1 capture's exact resultJson bytes per
+ * rpcMethod for the exact recorded params (no live read). Each option is a
+ * SIMULATED negative, used only by tests titled SIMULATED:
+ * - nullReceipt: receipt and transaction answers replaced by null.
+ * - chain: the eth_chainId answer replaced by this value.
+ * - redirect: the response URL replaced by this value.
+ * - oversized: the body replaced by LIVE_EVM_MAX_RPC_BYTES + 1 bytes.
+ * Any origin other than Base mainnet gets a SIMULATED null result; it only
+ * exercises origin admission and is never Base mainnet evidence.
+ */
+function provider(simulated: { nullReceipt?: boolean; chain?: string; redirect?: string; oversized?: boolean } = {}) {
   const methods: string[] = [];
   const fetchFn: typeof fetch = async (input, init) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    const req = JSON.parse(init?.body as string) as { method: string; id: number };
+    const req = JSON.parse(init?.body as string) as { method: string; id: number; params?: unknown[] };
     methods.push(req.method);
-    const responseBody = overrides.oversized
+    let resultText = "null";
+    if (new URL(url).href === new URL(MAINNET).href) {
+      const found = F1.captures.find(c => c.rpcMethod === req.method);
+      if (!found) throw Error("Unexpected mock Base method");
+      if (JSON.stringify(req.params ?? []) !== JSON.stringify(found.rpcParams)) throw Error("Unexpected mock Base params");
+      resultText = found.resultJson;
+      if (req.method === "eth_chainId" && simulated.chain !== undefined) resultText = JSON.stringify(simulated.chain);
+      if ((req.method === "eth_getTransactionReceipt" || req.method === "eth_getTransactionByHash") && simulated.nullReceipt) resultText = "null";
+    }
+    const responseBody = simulated.oversized
       ? "x".repeat(LIVE_EVM_MAX_RPC_BYTES + 1)
-      : JSON.stringify({ jsonrpc: "2.0", id: req.id, result:
-        req.method === "eth_chainId" ? (overrides.chain ?? "0x2105")
-          : req.method === "eth_getBlockByHash" ? (overrides.block ?? null)
-          : req.method === "eth_getTransactionByHash" ? (overrides.transaction ?? null)
-          : (overrides.receipt ?? null) });
+      : `{"jsonrpc":"2.0","id":${JSON.stringify(req.id)},"result":${resultText}}`;
     const result = new Response(responseBody, { status: 200, headers: { "content-type": "application/json" } });
-    Object.defineProperty(result, "url", { value: overrides.redirect ?? new URL(url).href });
+    Object.defineProperty(result, "url", { value: simulated.redirect ?? new URL(url).href });
     return result;
   };
   return { methods, fetchFn };
@@ -66,8 +91,8 @@ describe("opt-in read-only live EVM source", () => {
     await expect(q(SEPOLIA + "/", { method: "POST", body: read })).resolves.toHaveProperty("status",200);
   });
 
-  it("preserves null receipt as insufficient and makes only chainId + receipt reads", async () => {
-    const p = provider();
+  it("SIMULATED null receipt: preserves it as insufficient and makes only chainId + receipt reads", async () => {
+    const p = provider({ nullReceipt: true });
     const value = await createLiveEvmTool(p.fetchFn)({ network: "base-mainnet", txHash: TX });
     expect(p.methods).toEqual(["eth_chainId","eth_getTransactionReceipt"]);
     expect(value).toMatchObject({
@@ -83,20 +108,10 @@ describe("opt-in read-only live EVM source", () => {
     expect(JSON.stringify(value)).not.toContain(MAINNET);
   });
 
-  it("returns a validated supported fragment for coherent mined receipt+block through the modern MCP SDK", async () => {
-    const fixture = JSON.parse(readFileSync(
-      new URL("../../resolver-evm/test/fixtures/sepolia-success.json", import.meta.url), "utf8",
-    )) as { captures: { resultJson: string }[] };
-    const oldTx = "0x" + "1".repeat(64);
-    const receipt = JSON.parse(fixture.captures[1]!.resultJson.replaceAll(oldTx, TX));
-    const block = JSON.parse(fixture.captures[2]!.resultJson.replaceAll(oldTx, TX));
-    const transaction = {
-      hash: TX, nonce: "0x0", blockHash: receipt.blockHash,
-      blockNumber: receipt.blockNumber, transactionIndex: receipt.transactionIndex,
-      from: receipt.from, to: receipt.to, value: "0x0",
-      gas: "0x5208", input: "0x",
-    };
-    const p = provider({ receipt, block, transaction });
+  it("returns a validated supported fragment for the recorded real F1 Base mainnet capture (offline replay) through the modern MCP SDK", async () => {
+    expect(TX).toBe("0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696");
+    expect(F1.source).toMatchObject({ networkId: "eip155:8453", chainId: 8453 });
+    const p = provider();
     const server = await startNeMcpHttpServer({
       host: "127.0.0.1", port: 0, hosted: {publicOrigin: ORIGIN},
       liveEvidence: createMultichainTool(p.fetchFn),
@@ -121,19 +136,20 @@ describe("opt-in read-only live EVM source", () => {
     } finally { await server.close(); }
   });
 
-  it("fails closed on a mismatched chain ID without asking for a receipt", async () => {
+  it("SIMULATED wrong chain ID: fails closed without asking for a receipt", async () => {
     const p = provider({ chain: "0x1" });
     await expect(createLiveEvmTool(p.fetchFn)({ network: "base-mainnet", txHash: TX }))
       .rejects.toMatchObject({ code: "MCP_LIVE_EVM_RPC_FAILED" });
     expect(p.methods).toEqual(["eth_chainId"]);
   });
 
-  it("rejects provider redirect, oversized bodies, invalid tx hash without leaking upstream content", async () => {
+  it("SIMULATED redirect/oversized/throwing provider: rejects them and invalid tx hash without leaking upstream content", async () => {
     const p = provider({ redirect: "https://evil.example/mcp" });
     await expect(createLiveEvmTool(p.fetchFn)({network:"base-mainnet",txHash:TX})).rejects.toMatchObject({code:"MCP_LIVE_EVM_RPC_FAILED"});
     expect(p.methods).toEqual(["eth_chainId"]);
     const giant = provider({ oversized: true });
-    await expect(createLiveEvmTool(giant.fetchFn)({network:"base-mainnet",txHash:TX})).rejects.toMatchObject({code:"MCP_LIVE_EVM_RPC_FAILED"});
+    // NE-L014 (H-10a fixed): the guard's oversize code is retained out of band.
+    await expect(createLiveEvmTool(giant.fetchFn)({network:"base-mainnet",txHash:TX})).rejects.toMatchObject({code:"MCP_LIVE_EVM_TOO_LARGE"});
     expect(giant.methods).toHaveLength(1);
     const malicious: typeof fetch = async () => { throw new Error(ERROR_TEXT); };
     let err: any;
@@ -143,8 +159,8 @@ describe("opt-in read-only live EVM source", () => {
     await expect(createLiveEvmTool(provider().fetchFn)({network:"base-mainnet",txHash:"0xAB" })).rejects.toMatchObject({code:"MCP_LIVE_EVM_INPUT"});
   });
 
-  it("bounds live RPC acquisitions independently of the general MCP request budget", async () => {
-    const p = provider();
+  it("SIMULATED null receipts: bounds live RPC acquisitions independently of the general MCP request budget", async () => {
+    const p = provider({ nullReceipt: true });
     const query = createLiveEvmTool(p.fetchFn);
     for (let i=0; i<8; i++) {
       const x=await query({ network:"base-mainnet", txHash:TX });
@@ -155,8 +171,8 @@ describe("opt-in read-only live EVM source", () => {
     expect(p.methods).toHaveLength(16);
   });
 
-  it("exposes exactly one extra truthful open-world tool in explicit hosted opt-in mode", async () => {
-    const p = provider();
+  it("SIMULATED null receipt: exposes exactly one extra truthful open-world tool in explicit hosted opt-in mode", async () => {
+    const p = provider({ nullReceipt: true });
     const server: NeMcpHttpServer = await startNeMcpHttpServer({
       host: "127.0.0.1", port: 0, hosted: { publicOrigin: ORIGIN },
       liveEvidence: createMultichainTool(p.fetchFn),

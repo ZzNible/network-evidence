@@ -14,9 +14,13 @@ import { simulatedHostFetch } from "./helpers.js";
 
 const ORIGIN = "https://mcp.example.org", HOST = "mcp.example.org";
 const BASE = "eip155:8453" as const, SOL = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" as const;
-const TX = "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696";
-const evm=JSON.parse(readFileSync(new URL("../../resolver-evm/test/fixtures/sepolia-success.json",import.meta.url),"utf8")) as
-  {captures:{rpcMethod:string;resultJson:string}[]};
+// Real recorded Base mainnet capture of the x402 #1062 USDC transfer (F1
+// authority fixture): the Base probe subject and every Base answer come from it.
+const evm=JSON.parse(readFileSync(new URL(
+  "../../../examples/historical-compat/authority/fixtures/F1-x402-1062-partial/source/network-evidence/fixtures/base-mainnet-x402-1062-usdc-transfer.fixture.json",
+  import.meta.url),"utf8")) as
+  {source:{networkId:string;chainId:number};subject:{txHash:string};captures:{rpcMethod:string;rpcParams:unknown[];resultJson:string}[]};
+const TX = evm.subject.txHash;
 const sol=JSON.parse(readFileSync(new URL("../../resolver-solana/test/fixtures/solana-mainnet-x402-real.json",import.meta.url),"utf8")) as
   {subject:{signature:string};captures:{rpcMethod:string;resultJson:string}[]};
 const baseSubject={type:"transaction" as const,networkId:BASE,txId:TX};
@@ -37,43 +41,46 @@ function request(networkId:string, required:PolicyDimension[], desired:PolicyDim
     evidencePolicy:policy(required,desired),
   };
 }
+/**
+ * Offline replay (no live read). Base: the F1 capture's exact resultJson
+ * bytes per rpcMethod for the exact recorded params. Each option is a
+ * SIMULATED negative, used only by tests titled SIMULATED:
+ * - nullBaseReceipt: Base receipt and transaction answers replaced by null.
+ * - wrongBaseChain: the Base eth_chainId answer replaced by 0x1.
+ * - confirmedSolana / nullSolanaStatus / nullSolanaBlock: real Solana
+ *   status/block answers with confirmationStatus "confirmed", value [null],
+ *   or a null block.
+ */
 function fakeProvider(options: {
   nullBaseReceipt?:boolean; wrongBaseChain?:boolean;
   confirmedSolana?:boolean; nullSolanaStatus?:boolean; nullSolanaBlock?:boolean;
 }={}) {
   const methods:string[]=[];
-  const receipt=JSON.parse(evm.captures[1]!.resultJson.replaceAll("0x"+"1".repeat(64),TX)) as
-    {blockHash:string;blockNumber:string;transactionIndex:string;from:string;to:string};
-  const block=JSON.parse(evm.captures[2]!.resultJson.replaceAll("0x"+"1".repeat(64),TX));
-  const tx={
-    hash:TX,nonce:"0x0",blockHash:receipt.blockHash,blockNumber:receipt.blockNumber,
-    transactionIndex:receipt.transactionIndex,from:receipt.from,to:receipt.to,
-    value:"0x0",gas:"0x5208",input:"0x",
-  };
   const fetchFn:typeof fetch=async(input,init)=>{
     const url=typeof input==="string"?input:input instanceof URL?input.href:input.url;
-    const query=JSON.parse(init?.body as string) as {id:number;method:string;params:unknown[]};
+    const query=JSON.parse(init?.body as string) as {id:number;method:string;params?:unknown[]};
     methods.push(query.method);
-    let result:unknown;
+    let resultText:string;
     if(url.includes("mainnet.base.org")){
-      const byMethod:Record<string,unknown>={
-        eth_chainId:options.wrongBaseChain?"0x1":"0x2105",
-        eth_getTransactionReceipt:options.nullBaseReceipt?null:receipt,
-        eth_getBlockByHash:block,
-        eth_getTransactionByHash:options.nullBaseReceipt?null:tx,
-      };
-      result=byMethod[query.method];
+      const found=evm.captures.find(c=>c.rpcMethod===query.method);
+      if(!found)throw Error("unapproved method");
+      if(JSON.stringify(query.params??[])!==JSON.stringify(found.rpcParams))throw Error("unexpected Base params");
+      resultText=found.resultJson;
+      if(query.method==="eth_chainId" && options.wrongBaseChain)resultText=JSON.stringify("0x1");
+      if((query.method==="eth_getTransactionReceipt"||query.method==="eth_getTransactionByHash") && options.nullBaseReceipt)
+        resultText="null";
     } else if (url.includes("api.mainnet-beta.solana.com")) {
       const found=sol.captures.find(c=>c.rpcMethod===query.method);
       if(!found)throw Error("unapproved method");
-      result=JSON.parse(found.resultJson);
+      let result:unknown=JSON.parse(found.resultJson);
       if(query.method==="getSignatureStatuses" && options.nullSolanaStatus)
         (result as {value:unknown[]}).value=[null];
       if(query.method==="getSignatureStatuses" && options.confirmedSolana)
         (result as {value:{confirmationStatus:string}[]}).value[0]!.confirmationStatus="confirmed";
       if(query.method==="getBlock" && options.nullSolanaBlock)result=null;
+      resultText=JSON.stringify(result);
     } else throw Error("unapproved destination");
-    const r=new Response(JSON.stringify({jsonrpc:"2.0",id:query.id,result}),
+    const r=new Response(`{"jsonrpc":"2.0","id":${JSON.stringify(query.id)},"result":${resultText}}`,
       {status:200,headers:{"content-type":"application/json"}});
     Object.defineProperty(r,"url",{value:new URL(url).href});
     return r;
@@ -91,6 +98,8 @@ const solInput={
 
 describe("explicit caller-selected live evidence preflight (native Core contextual verification)",()=>{
   it("produces ready on Base with a valid caller policy, but never confuses desired finality with L1 settlement",async()=>{
+    expect(TX).toBe("0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696");
+    expect(evm.source).toMatchObject({networkId:BASE,chainId:8453});
     const m=fakeProvider();
     const out=await createLivePreflightTool(createMultichainTool(m.fetchFn))(baseInput);
     expect(out).toMatchObject({
@@ -148,7 +157,7 @@ describe("explicit caller-selected live evidence preflight (native Core contextu
     expect(m.methods).toHaveLength(4);
   });
 
-  it("rejects confirmed/null/unavailable Solana probe, NOT a false network BLOCKED/ready verdict",async()=>{
+  it("SIMULATED confirmed/null/unavailable Solana probe: rejected, NOT a false network BLOCKED/ready verdict",async()=>{
     for(const options of [{confirmedSolana:true},{nullSolanaStatus:true},{nullSolanaBlock:true}]) {
       const m=fakeProvider(options);
       await expect(createLivePreflightTool(createMultichainTool(m.fetchFn))(solInput))
@@ -157,7 +166,7 @@ describe("explicit caller-selected live evidence preflight (native Core contextu
     }
   });
 
-  it("rejects null EVM receipt as a failed probe, not a statement about network readiness",async()=>{
+  it("SIMULATED null EVM receipt / wrong chain: rejected as a failed probe, not a statement about network readiness",async()=>{
     const m=fakeProvider({nullBaseReceipt:true});
     await expect(createLivePreflightTool(createMultichainTool(m.fetchFn))(baseInput))
       .rejects.toMatchObject({code:"MCP_LIVE_PREFLIGHT_UNAVAILABLE"});

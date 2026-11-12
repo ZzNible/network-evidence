@@ -1,8 +1,10 @@
 # Release status
 
-This file records the release/packaging state of this repository. It is
-documentation only: it does not perform, and does not claim, any tag, GitHub
-Release, npm publication or deployment beyond what is stated below.
+This file describes the **historical public v1.1.0 source release**,
+the separate **unpublished NE Suite v1 source candidate** and earlier
+independent MCP Cloud Run services. It is documentation only; it neither
+performs nor authorizes any tag, GitHub Release, npm publication or deployment.
+The historical inventory below does not describe a deployed NE Suite v1.
 
 ```text
 LATEST_PUBLIC_RELEASE     = v1.1.0  (annotated tag; peeled commit de3ee11d08d22d2791d8b5acfe17c2e61df23e81; published 2026-10-08)
@@ -10,7 +12,7 @@ HISTORICAL_PUBLIC_RELEASE = v1.0.0  (annotated tag; peeled commit d3827f9b42084b
 RUNTIME_AUTHORITY         = ed5273b2e28cf7438dcdade0a2d48a08ffa7f9ef  (runtime/product authority; BEFORE + Discovery complete)
 V1_1_0_TAG_OBJECT         = 62044f78851260d6af8bc5e8dffd6d8bace46d15
 NPM_PUBLICATION           = NO  (every package manifest is "private": true)
-DEPLOYMENT                = NO
+V1_1_0_RELEASE_DEPLOYMENT = NONE  (source-only release, not later beta services)
 TARGET_CORE_MUTATIONS     = 0
 ```
 
@@ -26,11 +28,44 @@ are byte-identical to `ed5273b`.
 `v0.4.0`) are also historical; `FREEZE_MANIFEST.md` records the `v0.1.0`
 release and the provenance of the imported frozen package trees.
 
-The v1.1 integrability target is now published as `v1.1.0`. No npm package was
-published and no hosted deployment was created; those remain separate future
-human decisions if ever desired.
+The v1.1 integrability target was published as `v1.1.0`. That **source-only
+release** shipped neither an npm package nor a hosted executable. Separately
+operated Cloud Run preview/beta services have historical observations in
+`docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md`; their current
+revisions and availability are not established by the historical source tag.
+
+## NE Suite v1 — historical private documentation checkpoint (11 November 2026, Europe/Brussels)
+
+At the 2026-11-11 Europe/Brussels private documentation checkpoint, a locally sanitized
+six-tool integrated source candidate existed and had not been publicly released.
+For any **subsequent** publication, consult
+[GitHub Releases](https://github.com/ZzNible/network-evidence/releases);
+this dated record is not a live release-status announcement. The separate
+historical Cloud Run beta, MCP Registry entry and source tag are different
+products/versions and are not upgraded by this candidate. Every final release
+requires independently reproduced and authenticated exact-source evidence,
+the owner's privacy/IP/disclosure approval, and a separate owner publication
+GO for the exact final commit. The internal approval draft was
+intentionally withheld from candidate history. **Never fast-forward private
+development history to public Git.** See `docs/release/REPRODUCTION.md` for
+qualification steps, not permission to publish.
+
+## NE Suite v1 — real-action qualification (12 November 2026)
+
+A real Base Sepolia EIP-3009 testnet action has now been assessed through
+the existing local Core -> Hub -> Lens -> generic NE Maps pipeline.
+The exact transaction, scope and limitations are recorded in
+[the source behavior contract](docs/distribution/MCP_PUBLIC_CONTRACT.md).
+Older offline BEFORE fixtures remain **simulated**. No current hosted MCP
+or independent economic settlement/finality is demonstrated.
+
+**This is an unpublished source-only candidate**, not an approved release.
+Any source commit change requires fresh integrity identifiers and
+qualification. Publication, owner signing, tag, deployment and Registry
+registration remain unapproved and are not performed by this document.
 
 ## Release documentation
+
 
 - [docs/release/REPRODUCTION.md](docs/release/REPRODUCTION.md) — clean-machine
   reproduction steps and expected deterministic outputs.
@@ -118,7 +153,8 @@ Expected digests used for reproduction are listed in
 
 ## Open items
 
-The `v1.1.0` source release is published and no semantic implementation work is
-pending for this release. Any future npm publication or hosted deployment is a
-separate human decision; none is prepared and all manifests remain
-`"private": true`.
+The historical `v1.1.0` source release is published. The separate
+NE Suite v1 candidate is **not** published, tagged, registered or deployed
+as a new public product. All workspace manifests remain `"private": true`.
+Future source publication, npm packaging, cloud deployment and registry update
+each require explicit, separately scoped owner authorization.

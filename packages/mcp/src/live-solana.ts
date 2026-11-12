@@ -69,7 +69,7 @@ function validSignature(value: string): boolean {
 }
 
 /** Restrict the exact JSON-RPC methods/arguments emitted by our Solana resolver. */
-export function restrictedSolanaRpcFetch(inner: typeof fetch, network: SolanaNetwork): typeof fetch {
+export function restrictedSolanaRpcFetch(inner: typeof fetch, network: SolanaNetwork, callSignal?: AbortSignal): typeof fetch {
   const source = SOLANA_NETWORKS[network];
   if (!source) fail("MCP_MULTICHAIN_INPUT");
   const exactUrl = new URL(source.url).href;
@@ -86,12 +86,14 @@ export function restrictedSolanaRpcFetch(inner: typeof fetch, network: SolanaNet
     if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)
       || parsed.jsonrpc !== "2.0" || !Number.isSafeInteger(parsed.id) || (parsed.id as number) < 1
       || typeof parsed.method !== "string" || !properParams(parsed.method, parsed.params)) fail("MCP_MULTICHAIN_SOURCE_FAILED");
+    // No provider read starts after the whole-call deadline or a caller abort.
+    if (callSignal?.aborted) fail("MCP_MULTICHAIN_SOURCE_FAILED");
 
     const deadline = AbortSignal.timeout(SOLANA_READ_TIMEOUT_MS);
     const stop = new AbortController();
-    const signal = init.signal
-      ? AbortSignal.any([deadline, stop.signal, init.signal])
-      : AbortSignal.any([deadline, stop.signal]);
+    const signal = AbortSignal.any([
+      deadline, stop.signal, ...(init.signal ? [init.signal] : []), ...(callSignal ? [callSignal] : []),
+    ]);
     let completed = false;
     try {
       const res = await inner(url, { method: "POST", body: init.body, headers: { "content-type": "application/json" },
@@ -157,7 +159,7 @@ export function restrictedSolanaRpcFetch(inner: typeof fetch, network: SolanaNet
   };
 }
 
-export async function acquireLiveSolana(nativeFetch: typeof fetch, network: SolanaNetwork, signature: string): Promise<SolanaLiveEvidence> {
+export async function acquireLiveSolana(nativeFetch: typeof fetch, network: SolanaNetwork, signature: string, signal?: AbortSignal): Promise<SolanaLiveEvidence> {
   const spec = SOLANA_NETWORKS[network];
   if (spec === undefined || !validSignature(signature)) fail("MCP_MULTICHAIN_INPUT");
   const source: SolanaRpcSourceDescriptor = {
@@ -169,7 +171,7 @@ export async function acquireLiveSolana(nativeFetch: typeof fetch, network: Sola
   };
   try {
     const acquired = await acquireSolanaTransaction({
-      source, signature, now: new Date().toISOString(), fetchFn: restrictedSolanaRpcFetch(nativeFetch, network),
+      source, signature, now: new Date().toISOString(), fetchFn: restrictedSolanaRpcFetch(nativeFetch, network, signal),
     });
     const evaluated = evaluateSolanaTransaction(acquired);
     const beforeProbe = solanaProbeObservationFromAcquisition(acquired);

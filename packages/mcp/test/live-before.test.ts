@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { decodeNecWireJson } from "@nec/core";
 import { startNeMcpHttpServer } from "../src/http.js";
@@ -11,9 +11,13 @@ const ORIGIN = "https://mcp.example.org";
 const HOST = "mcp.example.org";
 const BASE_ID = "eip155:8453";
 const SOLANA_ID = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
-const TX = "0x8e01aace01ced4155b30d636b547727becdbb8a700f9b7f54ed02c4d629ae696";
-const evm = JSON.parse(readFileSync(new URL("../../resolver-evm/test/fixtures/sepolia-success.json", import.meta.url), "utf8")) as
-  { captures: { rpcMethod: string; resultJson: string }[] };
+// Real pinned Base mainnet capture: subject, receipt, block and transaction
+// all come from this one fixture; no identifier is paired with foreign bytes.
+const evm = JSON.parse(readFileSync(new URL("./fixtures/base-mainnet-l2-finalized-positive-evm.json", import.meta.url), "utf8")) as
+  { source: { networkId: string; chainId: number }; subject: { txHash: string };
+    captures: { rpcMethod: string; rpcParams: unknown[]; resultJson: string }[] };
+const TX = evm.subject.txHash;
+const SYNTHETIC_OTHER_TX = "0x" + "f".repeat(64);
 const sol = JSON.parse(readFileSync(new URL("../../resolver-solana/test/fixtures/solana-mainnet-x402-real.json", import.meta.url), "utf8")) as
   { subject: { signature: string }; captures: { rpcMethod: string; resultJson: string }[] };
 const EVM_SUBJECT = { type: "transaction", networkId: BASE_ID, txId: TX } as const;
@@ -24,6 +28,17 @@ const REQUIREMENTS = { requirements: [
 ] };
 const INPUT = { requestId: "ne_mcp_live_before_fixture_1", requirements: REQUIREMENTS, subjects: [EVM_SUBJECT, SOL_SUBJECT] };
 
+/**
+ * Serves the real pinned captures verbatim (exact resultJson bytes) for the
+ * exact recorded params. Each option is a SYNTHETIC, documented mutation of
+ * that real capture, used only by tests titled SYNTHETIC:
+ * - missingEvmReceipt: receipt and transaction responses replaced by null.
+ * - wrongEvmTx: the real transaction response with only `hash` replaced by
+ *   a non-real all-f hash (no real identifier is introduced).
+ * - wrongEvmChain: the eth_chainId response replaced by 0x14a34 (84532).
+ * - solanaStatus / missingSolanaBlock: real Solana status/block responses
+ *   with confirmationStatus "confirmed", value [null], or a null block.
+ */
 function mockedSources(missingEvmReceipt = false, options: {
   wrongEvmTx?: boolean;
   wrongEvmChain?: boolean;
@@ -31,31 +46,26 @@ function mockedSources(missingEvmReceipt = false, options: {
   missingSolanaBlock?: boolean;
 } = {}) {
   const methods: string[] = [];
-  const receipt = JSON.parse(evm.captures[1]!.resultJson.replaceAll("0x" + "1".repeat(64), TX)) as
-    { blockHash: string; blockNumber: string; transactionIndex: string; from: string; to: string };
-  const block = JSON.parse(evm.captures[2]!.resultJson.replaceAll("0x" + "1".repeat(64), TX));
-  const tx = {
-    hash: options.wrongEvmTx ? "0x" + "f".repeat(64) : TX,
-    nonce: "0x0", blockHash: receipt.blockHash, blockNumber: receipt.blockNumber,
-    transactionIndex: receipt.transactionIndex, from: receipt.from, to: receipt.to,
-    value: "0x0", gas: "0x5208", input: "0x",
-  };
   const fetchFn: typeof fetch = async (input, init) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    const query = JSON.parse(init?.body as string) as {id:number; method:string; params:unknown[]};
+    const query = JSON.parse(init?.body as string) as {id:number; method:string; params?:unknown[]};
     methods.push(query.method);
-    let result: unknown;
+    let resultText: string;
     if (url.includes("mainnet.base.org")) {
-      const byMethod: Record<string,unknown> = {
-        eth_chainId:options.wrongEvmChain ? "0x14a34" : "0x2105",
-        eth_getTransactionReceipt:missingEvmReceipt ? null : receipt,
-        eth_getBlockByHash:block, eth_getTransactionByHash:missingEvmReceipt ? null : tx,
-      };
-      result = byMethod[query.method];
+      const found = evm.captures.find(c => c.rpcMethod === query.method);
+      if (!found) throw Error("Unexpected mock Base method");
+      if (JSON.stringify(query.params ?? []) !== JSON.stringify(found.rpcParams)) throw Error("Unexpected mock Base params");
+      resultText = found.resultJson;
+      if (query.method === "eth_chainId" && options.wrongEvmChain) resultText = JSON.stringify("0x14a34");
+      if (query.method === "eth_getTransactionReceipt" && missingEvmReceipt) resultText = "null";
+      if (query.method === "eth_getTransactionByHash" && missingEvmReceipt) resultText = "null";
+      if (query.method === "eth_getTransactionByHash" && options.wrongEvmTx) {
+        resultText = JSON.stringify({...JSON.parse(found.resultJson) as Record<string,unknown>, hash:SYNTHETIC_OTHER_TX});
+      }
     } else if (url.includes("api.mainnet-beta.solana.com")) {
       const found = sol.captures.find(c => c.rpcMethod === query.method);
       if (!found) throw Error("Unexpected mock Solana method");
-      result = JSON.parse(found.resultJson);
+      let result: unknown = JSON.parse(found.resultJson);
       if (query.method === "getSignatureStatuses" && options.solanaStatus === "confirmed") {
         (result as {value:{confirmationStatus:string}[]}).value[0]!.confirmationStatus = "confirmed";
       }
@@ -63,8 +73,9 @@ function mockedSources(missingEvmReceipt = false, options: {
         (result as {value:unknown[]}).value = [null];
       }
       if (query.method === "getBlock" && options.missingSolanaBlock) result = null;
+      resultText = JSON.stringify(result);
     } else throw Error("Unapproved fake endpoint");
-    const response = new Response(JSON.stringify({jsonrpc:"2.0",id:query.id,result}), {
+    const response = new Response(`{"jsonrpc":"2.0","id":${JSON.stringify(query.id)},"result":${resultText}}`, {
       status:200, headers:{"content-type":"application/json"},
     });
     Object.defineProperty(response,"url",{value:new URL(url).href});
@@ -73,8 +84,20 @@ function mockedSources(missingEvmReceipt = false, options: {
   return {fetchFn,methods};
 }
 
+const realFetch = globalThis.fetch;
+beforeAll(() => {
+  globalThis.fetch = (async () => {
+    throw new Error("network I/O is forbidden in live-before tests");
+  }) as typeof fetch;
+});
+afterAll(() => {
+  globalThis.fetch = realFetch;
+});
+
 describe("opt-in live BEFORE/Discovery over exact multichain source acquisitions", () => {
   it("builds two Core-verified candidate snapshots and classifies through the existing Discovery engine", async () => {
+    expect(TX).toBe("0x71c9e27a7195bdecf1c63e73d5f959c96ddb35a27f6f1308835494c3156d625c");
+    expect(evm.source).toMatchObject({networkId:BASE_ID,chainId:8453});
     const m=mockedSources();
     const out=await createLiveBeforeTool(createMultichainTool(m.fetchFn))(INPUT);
     expect(out).toMatchObject({
@@ -82,6 +105,9 @@ describe("opt-in live BEFORE/Discovery over exact multichain source acquisitions
       builtAndVerifiedBy:"@nec/discovery + @nec/core",
     });
     const [base,solana]=out.candidates;
+    // Same classifications as the previous synthetic-bytes mock: the real Base
+    // capture yields execution/dataBinding available, generic EVM finality
+    // unsupported, hence conditional with finality only desired.
     expect(out.candidates.map(c=>[c.id,c.classification])).toEqual([
       ["base-mainnet","conditional"],["solana-mainnet","eligible"],
     ]);
@@ -108,7 +134,7 @@ describe("opt-in live BEFORE/Discovery over exact multichain source acquisitions
     expect(JSON.stringify(out)).not.toContain("api.mainnet-beta.solana.com");
   });
 
-  it("absent Base receipt is not converted into supported execution or finality", async () => {
+  it("SYNTHETIC (real capture, receipt+transaction nulled): absent Base receipt is not converted into supported execution or finality", async () => {
     const m=mockedSources(true);
     const out=await createLiveBeforeTool(createMultichainTool(m.fetchFn))({
       requestId:"ne_before_absent_receipt_1",requirements:REQUIREMENTS,subjects:[EVM_SUBJECT],
@@ -133,7 +159,7 @@ describe("opt-in live BEFORE/Discovery over exact multichain source acquisitions
     expect(m.methods).toHaveLength(0);
   });
 
-  it("rejects mismatched EVM tx identity instead of promoting a source capability", async () => {
+  it("SYNTHETIC (real capture, transaction hash set to all-f): rejects mismatched EVM tx identity instead of promoting a source capability", async () => {
     const m=mockedSources(false,{wrongEvmTx:true});
     await expect(createLiveBeforeTool(createMultichainTool(m.fetchFn))({
       requestId:"ne_before_wrong_tx_1",requirements:REQUIREMENTS,subjects:[EVM_SUBJECT],
@@ -141,7 +167,7 @@ describe("opt-in live BEFORE/Discovery over exact multichain source acquisitions
     expect(m.methods).toContain("eth_getTransactionByHash");
   });
 
-  it("rejects wrong Base chain identity before promoting capability availability", async () => {
+  it("SYNTHETIC (real capture, eth_chainId set to 0x14a34): rejects wrong Base chain identity before promoting capability availability", async () => {
     const m=mockedSources(false,{wrongEvmChain:true});
     await expect(createLiveBeforeTool(createMultichainTool(m.fetchFn))({
       requestId:"ne_before_wrong_chain_1",requirements:REQUIREMENTS,subjects:[EVM_SUBJECT],
@@ -149,7 +175,7 @@ describe("opt-in live BEFORE/Discovery over exact multichain source acquisitions
     expect(m.methods).toEqual(["eth_chainId"]);
   });
 
-  it("uses the native Solana probe projection for confirmed, missing status and missing block", async () => {
+  it("SYNTHETIC (real Solana capture, status/block mutated): uses the native Solana probe projection for confirmed, missing status and missing block", async () => {
     for (const options of [
       {solanaStatus:"confirmed" as const},
       {solanaStatus:"null" as const},

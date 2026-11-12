@@ -1,7 +1,7 @@
 # Network Evidence MCP — Base/Solana AFTER, Discovery and caller-selected evidence preflight (NOT DEPLOYED)
 
 **2026-10-09 | branch:** `work/ne-mcp-multichain-20261009`
-**Scope decision:** [MCP thin native-I/O mapping](https://github.com/ZzNible/syscoin-zksys-nec-knowledge-base/blob/main/product/NETWORK_EVIDENCE_MCP_AGENT_IO_MAPPING_V0_1.md).
+**Scope decision:** thin native-I/O mapping. The implementation and tests in this repository define the candidate's observable MCP behavior.
 **Status:** source-only candidate includes AFTER exact action with optional native claims and optional source-reported Base L2 block finality, native BEFORE/Core Discovery and caller-selected live evidence preflight; no public release authorization.
 
 ## Exact available operations in this branch

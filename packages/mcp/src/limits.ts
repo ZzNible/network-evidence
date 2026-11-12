@@ -38,6 +38,10 @@ export function resolveLimits(
 }
 
 export type Admission = { readonly ok: true; readonly release: () => void } | { readonly ok: false; readonly retryAfterSeconds: number };
+export type Charge = { readonly ok: true } | { readonly ok: false; readonly retryAfterSeconds: number };
+export type Reservation =
+  | { readonly ok: true; readonly release: () => void; readonly charge: () => Charge }
+  | { readonly ok: false; readonly retryAfterSeconds: number };
 
 export class GlobalAbuseLimiter {
   private inFlight = 0;
@@ -71,6 +75,49 @@ export class GlobalAbuseLimiter {
         this.inFlight -= 1;
       },
     };
+  }
+
+  /** Reserve concurrency before reading a body; charge the window only after parsing it. */
+  reserve(): Reservation {
+    const now = this.now();
+    this.roll(now);
+    if (this.windowCount >= this.limits.maxRequestsPerMinute) {
+      return { ok: false, retryAfterSeconds: this.remaining(now) };
+    }
+    if (this.inFlight >= this.limits.maxConcurrent) return { ok: false, retryAfterSeconds: 1 };
+    this.inFlight += 1;
+    let released = false;
+    let charged = false;
+    return {
+      ok: true,
+      release: () => {
+        if (released) return;
+        released = true;
+        this.inFlight -= 1;
+      },
+      charge: () => {
+        if (charged) return { ok: true };
+        const now = this.now();
+        this.roll(now);
+        if (this.windowCount >= this.limits.maxRequestsPerMinute) {
+          return { ok: false, retryAfterSeconds: this.remaining(now) };
+        }
+        charged = true;
+        this.windowCount += 1;
+        return { ok: true };
+      },
+    };
+  }
+
+  private roll(now: number): void {
+    if (now - this.windowStart >= WINDOW_MS) {
+      this.windowStart = now;
+      this.windowCount = 0;
+    }
+  }
+
+  private remaining(now: number): number {
+    return Math.max(1, Math.ceil((this.windowStart + WINDOW_MS - now) / 1000));
   }
 
   get current(): { readonly inFlight: number; readonly windowCount: number } {

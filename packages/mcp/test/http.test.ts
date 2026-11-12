@@ -1,4 +1,6 @@
 import { request as httpRequest } from "node:http";
+import { connect } from "node:net";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -278,6 +280,62 @@ describe("official MCP SDK client (@modelcontextprotocol/client 2.3.1)", () => {
         expect(unknownCase.isError).toBe(true);
       } finally {
         await client.close();
+      }
+    });
+  }
+});
+
+
+describe("SEC-01 local ingress deadlines", () => {
+  for (const method of ["POST", "DELETE"] as const) {
+    it(method === "POST"
+      ? "T5: the body deadline applies in local mode and leaves complete requests untouched"
+      : "T6: a non-POST request with an incomplete body cannot hold the slot past the deadline", { timeout: 20_000 }, async () => {
+      const lines: string[] = [];
+      const solo = await startNeMcpHttpServer({ host: "127.0.0.1", port: 0, limits: { maxConcurrent: 1 }, log: (line) => lines.push(line) });
+      const socket = connect({ host: "127.0.0.1", port: solo.port });
+      let bytes = "";
+      let closedAt: number | undefined;
+      socket.on("data", (chunk) => { bytes += chunk.toString(); });
+      socket.on("error", () => {});
+      socket.once("close", () => { closedAt = performance.now(); });
+      function listStatus(): Promise<number> {
+        return new Promise((resolve, reject) => {
+          const req = httpRequest({ host: "127.0.0.1", port: solo.port, path: "/mcp", method: "POST", agent: false,
+            headers: { "content-type": "application/json", accept: "application/json, text/event-stream", ...LEGACY },
+            signal: AbortSignal.timeout(1_000) }, (res) => {
+            res.resume();
+            res.on("end", () => resolve(res.statusCode ?? 0));
+            res.on("error", reject);
+          });
+          req.on("error", reject);
+          req.end(JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }));
+        });
+      }
+      try {
+        await new Promise<void>((resolve, reject) => { socket.once("connect", resolve); socket.once("error", reject); });
+        const started = performance.now();
+        // Connection: close lets an immediate 405 close without waiting for the missing body.
+        socket.write(`${method} /mcp HTTP/1.1\r\nHost: 127.0.0.1:${solo.port}\r\nContent-Type: application/json\r\nContent-Length: 100\r\nConnection: close\r\n\r\n` + "x".repeat(16));
+        await delay(100);
+        if (method === "POST") expect(await listStatus()).toBe(429);
+        await expect.poll(listStatus, { timeout: 6_000, interval: 50 }).toBe(200);
+        expect(performance.now() - started).toBeLessThanOrEqual(6_000);
+        await expect.poll(() => closedAt, { timeout: 500, interval: 10 }).toBeDefined();
+        expect(closedAt! - started).toBeLessThanOrEqual(6_000);
+        expect(bytes).toMatch(method === "POST" ? /^HTTP\/1\.1 408/ : /^HTTP\/1\.1 405/);
+        if (method === "DELETE") {
+          expect(bytes).toMatch(/\r\nallow: POST\r\n/i);
+          expect(bytes).toContain(JSON.stringify({
+            jsonrpc: "2.0", error: { code: -32000, message: "Method Not Allowed" }, id: null,
+          }));
+        }
+        expect(await listStatus()).toBe(200);
+        expect(lines.length).toBeGreaterThan(0);
+        for (const line of lines) expect(line).toMatch(/^(POST|GET|DELETE) \/mcp \d{3} \d+ms$/);
+      } finally {
+        socket.destroy();
+        await solo.close();
       }
     });
   }

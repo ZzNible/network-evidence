@@ -1,7 +1,10 @@
 import { request as httpRequest } from "node:http";
+import { connect } from "node:net";
+import { setTimeout as delay } from "node:timers/promises";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startNeMcpHttpServer } from "../src/http.js";
 import type { NeMcpHttpServer } from "../src/http.js";
+import { GlobalAbuseLimiter, HOSTED_DEFAULT_LIMITS, resolveLimits } from "../src/limits.js";
 import { SOLANA_NETWORKS, SOLANA_RESPONSE_MAX_BYTES, restrictedSolanaRpcFetch } from "../src/live-solana.js";
 
 const HOST = "mcp.example.org";
@@ -81,6 +84,181 @@ describe("hosted HTTP JSON-RPC ingress admission — each request must mean ONE 
    expect(over.status).toBe(429);
   }finally{await solo.close();}
  });
+});
+
+const LIST = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" });
+
+function ingressRequest(port: number, body: string | Buffer = LIST, method = "POST", headers: Record<string, string> = {}, headersOnly = false) {
+  return new Promise<{ status: number; body: string; retryAfter: string | undefined }>((resolve, reject) => {
+    const req = httpRequest({ host: "127.0.0.1", port, path: "/mcp", method, agent: false,
+      headers: { ...OPENAI_SAFE_HEADERS, connection: "close", ...headers } }, (res) => {
+      const parts: Buffer[] = [];
+      res.on("data", (chunk: Buffer) => parts.push(chunk));
+      res.on("end", () => {
+        resolve({ status: res.statusCode ?? 0, body: Buffer.concat(parts).toString(), retryAfter: res.headers["retry-after"] });
+        req.destroy();
+      });
+      res.on("error", reject);
+    });
+    req.on("error", reject);
+    req.setTimeout(7_000, () => req.destroy(new Error("ingress response not received")));
+    if (headersOnly) req.flushHeaders();
+    else req.end(body);
+  });
+}
+
+async function incompletePost(port: number) {
+  const socket = connect({ host: "127.0.0.1", port });
+  let bytes = "";
+  let closedAt: number | undefined;
+  socket.on("data", (chunk) => { bytes += chunk.toString(); });
+  // A reset can accompany the server's close when unread body bytes remain.
+  socket.on("error", () => {});
+  socket.once("close", () => { closedAt = performance.now(); });
+  await new Promise<void>((resolve, reject) => {
+    socket.once("connect", resolve);
+    socket.once("error", reject);
+  });
+  const started = performance.now();
+  socket.write(`POST /mcp HTTP/1.1\r\nHost: ${HOST}\r\nContent-Type: application/json\r\nContent-Length: 100\r\nConnection: close\r\n\r\n` + "x".repeat(16));
+  return { socket, started, get bytes() { return bytes; }, get closedAt() { return closedAt; } };
+}
+
+function hostedIngress(maxConcurrent: number, maxRequestsPerMinute: number) {
+  return startNeMcpHttpServer({ host: "127.0.0.1", port: 0, hosted: { publicOrigin: "https://" + HOST },
+    limits: { maxConcurrent, maxRequestsPerMinute } });
+}
+
+describe("SEC-01 reservation and body deadlines", () => {
+  for (const trickle of [false, true]) {
+    it(trickle
+      ? "T2: a trickled POST body is cut by an absolute deadline, not an idle timeout"
+      : "T1: an incomplete POST body answers 408 and frees the sole /mcp slot within 6 s", { timeout: 20_000 }, async () => {
+      const solo = await hostedIngress(1, 24);
+      let pending: Awaited<ReturnType<typeof incompletePost>> | undefined;
+      let interval: ReturnType<typeof setInterval> | undefined;
+      try {
+        pending = await incompletePost(solo.port);
+        const held = pending;
+        if (trickle) interval = setInterval(() => { if (!held.socket.destroyed) held.socket.write("x"); }, 1_000);
+        await delay(100);
+        expect((await ingressRequest(solo.port)).status).toBe(429);
+        await expect.poll(() => held.closedAt, { timeout: 6_000, interval: 20 }).toBeDefined();
+        expect(held.closedAt! - held.started).toBeLessThanOrEqual(6_000);
+        if (!trickle || held.bytes.length > 0) expect(held.bytes).toMatch(/^HTTP\/1\.1 408/);
+        if (!trickle) {
+          expect(held.bytes.toLowerCase()).toContain("connection: close");
+          expect(held.bytes).toContain('"code":-32000');
+          expect(held.bytes).toContain("Request Timeout: request body not received in time");
+        }
+        // All 24 charges remain available after the timeout and concurrent 429.
+        for (let i = 0; i < 24; i++) expect((await ingressRequest(solo.port)).status).toBe(200);
+        expect((await ingressRequest(solo.port)).status).toBe(429);
+      } finally {
+        clearInterval(interval);
+        pending?.socket.destroy();
+        await solo.close();
+      }
+    });
+  }
+
+  it("T3: non-POST, 415, 413 and 400 refusals do not consume the window; batch and subscription refusals still do", { timeout: 20_000 }, async () => {
+    const solo = await hostedIngress(2, 3);
+    try {
+      for (let i = 0; i < 3; i++) expect((await ingressRequest(solo.port, "", "GET")).status).toBe(405);
+      expect((await ingressRequest(solo.port, "{}", "POST", { "content-type": "text/plain" })).status).toBe(415);
+      for (const bad of ["not json", '{"id":1,"id":2}', Buffer.from([0xff])]) {
+        expect((await ingressRequest(solo.port, bad)).status).toBe(400);
+      }
+      expect((await ingressRequest(solo.port, "", "POST", { "content-length": "1048577" }, true)).status).toBe(413);
+      for (let i = 0; i < 3; i++) expect((await ingressRequest(solo.port)).status).toBe(200);
+      const refused = await ingressRequest(solo.port);
+      expect(refused.status).toBe(429);
+      expect(refused.retryAfter).toMatch(/^\d+$/);
+      expect(Number(refused.retryAfter)).toBeGreaterThanOrEqual(1);
+      expect(Number(refused.retryAfter)).toBeLessThanOrEqual(60);
+    } finally { await solo.close(); }
+    const charged = await hostedIngress(2, 2);
+    try {
+      expect((await ingressRequest(charged.port, `[${LIST}]`)).status).toBe(400);
+      expect((await ingressRequest(charged.port, JSON.stringify({ jsonrpc: "2.0", id: 2, method: "subscriptions/listen" }))).status).toBe(200);
+      expect((await ingressRequest(charged.port)).status).toBe(429);
+    } finally { await charged.close(); }
+  });
+
+  it("T4: reserve holds a slot without charging; charge is idempotent, re-rolls and refuses a spent window", () => {
+    let now = 1_000;
+    const limiter = new GlobalAbuseLimiter(resolveLimits({ maxConcurrent: 2, maxRequestsPerMinute: 1 }, HOSTED_DEFAULT_LIMITS), () => now);
+    const a = limiter.reserve();
+    const b = limiter.reserve();
+    if (!a.ok || !b.ok) throw new Error("expected two reservations");
+    expect(limiter.current).toEqual({ inFlight: 2, windowCount: 0 });
+    expect(limiter.reserve()).toEqual({ ok: false, retryAfterSeconds: 1 });
+    expect(a.charge()).toEqual({ ok: true });
+    expect(a.charge()).toEqual({ ok: true });
+    now += 15_000;
+    expect(b.charge()).toEqual({ ok: false, retryAfterSeconds: 45 });
+    expect(b.charge()).toEqual({ ok: false, retryAfterSeconds: 45 });
+    b.release(); b.release();
+    expect(limiter.reserve()).toEqual({ ok: false, retryAfterSeconds: 45 });
+    expect(limiter.current).toEqual({ inFlight: 1, windowCount: 1 });
+    a.release(); a.release();
+    now += 45_000;
+    const c = limiter.reserve();
+    if (!c.ok) throw new Error("expected reservation in new window");
+    expect(limiter.current).toEqual({ inFlight: 1, windowCount: 0 });
+    expect(c.charge()).toEqual({ ok: true });
+    c.release();
+    now += 60_000;
+    const d = limiter.reserve();
+    const e = limiter.reserve();
+    if (!d.ok || !e.ok) throw new Error("expected reservations before rollover");
+    expect(e.charge()).toEqual({ ok: true });
+    e.release();
+    expect(d.charge()).toEqual({ ok: false, retryAfterSeconds: 60 });
+    now += 60_000;
+    // A reservation held across rollover must charge the new, empty window.
+    expect(d.charge()).toEqual({ ok: true });
+    expect(limiter.current).toEqual({ inFlight: 1, windowCount: 1 });
+    // Repeating a successful charge across a window boundary never charges again.
+    now += 60_000;
+    const f = limiter.reserve();
+    if (!f.ok) throw new Error("expected reservation after rollover");
+    expect(d.charge()).toEqual({ ok: true });
+    expect(limiter.current).toEqual({ inFlight: 2, windowCount: 0 });
+    expect(f.charge()).toEqual({ ok: true });
+    d.release(); f.release();
+    expect(limiter.current).toEqual({ inFlight: 0, windowCount: 1 });
+    expect(Object.keys(limiter).sort()).toEqual(["inFlight", "limits", "now", "windowCount", "windowStart"]);
+  });
+
+  it("G1: a full window refuses an unread body before reading it", { timeout: 20_000 }, async () => {
+    const solo = await hostedIngress(1, 1);
+    try {
+      expect((await ingressRequest(solo.port)).status).toBe(200);
+      const started = performance.now();
+      const refused = await ingressRequest(solo.port, "", "POST", { "content-length": "1048576" }, true);
+      expect(refused.status).toBe(429);
+      expect(performance.now() - started).toBeLessThan(1_000);
+    } finally { await solo.close(); }
+  });
+
+  it("G2: client abort releases the sole slot within one second", { timeout: 20_000 }, async () => {
+    const solo = await hostedIngress(1, 24);
+    let pending: Awaited<ReturnType<typeof incompletePost>> | undefined;
+    try {
+      pending = await incompletePost(solo.port);
+      await delay(200);
+      expect((await ingressRequest(solo.port)).status).toBe(429);
+      const started = performance.now();
+      pending.socket.destroy();
+      await expect.poll(async () => (await ingressRequest(solo.port)).status, { timeout: 900, interval: 20 }).toBe(200);
+      expect(performance.now() - started).toBeLessThan(1_000);
+    } finally {
+      pending?.socket.destroy();
+      await solo.close();
+    }
+  });
 });
 
 describe("bounded fixed-source Solana provider fetch cannot clone/tee response bodies",()=>{

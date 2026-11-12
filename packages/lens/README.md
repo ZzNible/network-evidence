@@ -20,6 +20,23 @@ observed effects. There is no global case verdict, confidence/trust score,
 policy decision, wallet/signing/submission authority, settlement inference, or
 finality inference.
 
+Data-binding statement (presentation only; schema unchanged). Lens never copies
+dimension `metadata`. The `network.dataBinding` statement is the verbatim source
+proposition `The acquired receipt binds to the requested subject transaction id.`
+only when the Core-validated result has `resolver.id = resolver-evm-generic`,
+`resolver.version = 0.1.0`, an `eip155:` transaction subject, an applicable
+`supported`/`contradicted`/`insufficient` dataBinding verdict, and dimension
+metadata exactly `{ proposition: <that text> }` (compared to a Lens constant,
+never forwarded). That row carries a narrow-subject caveat (not the full action,
+transfer amount, accounts, calldata, authorization, policy, settlement or
+finality) and either a one-source caveat (every cited EvidenceRef is `evm_rpc`
+with one identical `sourceId` and one explicit identical `independenceGroup`) or
+a statement that independent corroboration is not established. Every other
+dataBinding row with a verdict (other resolvers, other or extra metadata,
+`ambiguous`) keeps the prior generic statement plus an explicit caveat that
+source proposition metadata is withheld. Rows without a verdict are unchanged.
+Core verdict, basis, evidence and digests are copied unchanged.
+
 The generic runtime stores Core result identity in `coreResultPreservation`.
 Its subject is a wire-safe projection: Core `blockNumber: bigint`, when present,
 is represented as canonical decimal text so Lens-owned JSON is serializable.

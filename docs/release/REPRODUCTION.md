@@ -1,12 +1,156 @@
 # Clean-machine reproduction
 
-These steps reproduce the current signoff candidate from a clean checkout.
-They need no secrets, credentials, RPC endpoints, wallets or signing keys.
-No step performs live network evidence I/O, signing, funding or transaction
-submission; network access is used only by `npm ci`/`npm audit` (npm
-registry) and the optional read-only release-state check.
+This document distinguishes the **historical public v1.1.0 source release**
+from the **newer, local NE Suite v1 publication candidate**. A successful
+reproduction does not sign, fund, submit transactions, acquire live RPC, or
+establish an independently cryptographically anchored BEFORE, settlement or
+finality. At the 2026-11-11 private documentation checkpoint, owner
+records identified no new public NE Suite v1 source release or promoted
+service for this candidate. The Cloud Run control plane was not inspected;
+anonymous health checks of the older public endpoints on 2026-11-10 UTC
+returned HTTP 503 from the owner Ubuntu host. Registry listing state was not
+re-verified; check
+[GitHub Releases](https://github.com/ZzNible/network-evidence/releases)
+for subsequent publication state. An archived checkpoint is not a live
+release-status authority.
 
-## What is being reproduced
+## NE Suite v1 — documentation checkpoint (11 November 2026, Europe/Brussels)
+
+At this checkpoint the latest public source tag was `v1.1.0`. This
+newer candidate had no new public tag or hosted release identified in the
+owner's checkpoint records; live cloud control-plane state was not inspected
+(anonymous checks of the older endpoints returned 503) and Registry listing
+state was not re-verified. When a newer release is published, obtain its exact manifest
+and source archive from the [GitHub Releases page](https://github.com/ZzNible/network-evidence/releases).
+**Co-location does not authenticate:** a manifest attached to the same
+release is not independent proof of its publisher or integrity. Authenticate
+the exact publisher identity, source commit and source archive through
+an owner-authenticated channel outside this repository, GitHub Releases
+and the manifest itself. Obtain the owner signing-key fingerprint out of
+band, then verify the release statement signature locally against that key.
+That authenticated statement must explicitly bind the final source commit,
+Git tree, archive SHA-256 and lock SHA-256. If the independent owner-key
+authentication or signed statement is unavailable, or the statement omits
+any required digest, STOP: treat the release as unauthenticated.
+Only values bound by the authenticated statement are authenticated.
+Other manifest fields (including CI or hosting results) are not authenticated
+unless the statement also binds the full manifest SHA-256. A signed tag
+without archive/lock digests does not authenticate those files. A new source
+tag does not attest an old beta's executable or availability.
+No SHA in this document self-certifies the eventual release: verify the
+**exact final source commit, Git tree, archive SHA-256 and lock SHA-256**
+against the independently authenticated owner-signed release statement
+specified above. A co-located release manifest is not an authentication root.
+
+A local development preview was qualified on 2026-11-08, but its observations do
+**not** automatically qualify later documentation edits, other architectures
+or an external service revision.
+
+Prerequisites: Node.js 22, npm with lockfile-v3 support, Python 3, Git, Bash, `tar`,
+`sha256sum` and a disposable environment. Only npm-registry access is
+needed for installation/audit. Before publication, obtain the archive
+privately from the authorized owner. After publication, use the archive
+and exact-SHA manifest from that specific GitHub Release, **only after**
+validating the expected digest and publisher via an independently authenticated
+source. A release attachment alone is not such authentication.
+Do not assume that a platform-generated ZIP has the same bytes as the
+authenticated flat source tar. Neither the example values below nor
+an unauthenticated archive validate themselves.
+Use a clean checkout/work directory without wallet keys, RPC credentials
+or personal data. Execute the following code block **as one Bash script**
+in a disposable process (not by individually pasting commands). It stops on
+the first failure, before extraction or npm lifecycle scripts proceed.
+
+```sh
+# Run this entire block as ONE disposable Bash script; never line-by-line.
+# Abort on the first failed integrity or extraction check.
+set -Eeuo pipefail
+# Refuse ambient tar/working-tree overrides when extracting an approved archive.
+unset TAR_OPTIONS CDPATH GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_COMMON_DIR
+# Obtain the FOUR values below from an independently authenticated manifest.
+# Neither the archive itself nor this illustrative runbook is a trust anchor.
+SOURCE_ARCHIVE=/absolute/path/to/approved-source.tar
+EXPECTED_ARCHIVE_SHA256=/digest/from/authenticated/manifest
+EXPECTED_GIT_TREE=/git-tree-hex/from/authenticated/manifest
+EXPECTED_LOCK_SHA256=/lock-sha256/from/authenticated/manifest
+case "$SOURCE_ARCHIVE" in /*) : ;; *) echo "absolute archive path required" >&2; exit 64 ;; esac
+umask 077
+mkdir ne-v1-verify
+cd ./ne-v1-verify
+printf '%s  %s\n' "$EXPECTED_ARCHIVE_SHA256" "$SOURCE_ARCHIVE" | sha256sum -c -
+# Refuse dangerous tar members BEFORE extraction, including .git, links,
+# duplicates, oversized entries, alternate spellings and absolute/parent paths.
+python3 -I - "$SOURCE_ARCHIVE" <<'PYTAR'
+import pathlib,sys,tarfile
+with tarfile.open(sys.argv[1],"r:") as source:
+    entries=source.getmembers()
+    if not entries or len(entries)>20000:
+        raise SystemExit("INVALID_ARCHIVE_COUNT")
+    names=set()
+    total=0
+    for entry in entries:
+        name=entry.name
+        path=pathlib.PurePosixPath(name)
+        total+=entry.size
+        if (not name or name in names or name.startswith("/")
+            or name!=str(path) or ".." in path.parts or ".git" in path.parts
+            or not (entry.isfile() or entry.isdir())
+            or entry.size>33554432 or total>268435456):
+            raise SystemExit("UNSAFE_ARCHIVE_MEMBER")
+        names.add(name)
+PYTAR
+tar -xf "$SOURCE_ARCHIVE"  # flat Git archive, only after member validation
+test -f package.json
+test -f package-lock.json
+test ! -e .git
+# Exclude ambient Git global/system ignores; track ALL extracted files.
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+git init -q
+git -c core.autocrlf=false -c core.excludesFile=/dev/null add -A -f
+test "$(git write-tree)" = "$EXPECTED_GIT_TREE"
+printf '%s  %s\n' "$EXPECTED_LOCK_SHA256" package-lock.json | sha256sum -c -
+# Historical 2026-11-08 lock, not a replacement for the approved manifest:
+# 78c497461fcfaa43e07bec8669571c783a4168dbf7a0c64cdfa739cbefa5ba49
+npm ci --include=dev --no-audit --no-fund
+npm audit --audit-level=high
+npm run -s typecheck
+npm test
+npm run -s maps:collection
+npm run -s mcp:smoke
+npm run -s demo:historical-compat
+npm run -s demo:core-hub-lens
+npm run -s demo:integrability
+```
+
+At local pre-release commit `b265008d685ca45ddfa48d2eb41528ef2fbdb160`
+(tree `cada08b937a0baae343c02bf882ddbf7351c1eda`), on 2026-11-08,
+123 Vitest suites passed: 1,836 tests plus one intentional expected failure. TypeScript,
+MCP loopback and the offline historical/integrability demos also passed.
+Those are **dated local observations, not acceptance results for a future
+Git release SHA**, and no independent human/third-party review is claimed.
+Native ARM64 and AMD64 runtime checks from the separate protected source
+also cannot be transferred automatically to a changed public candidate.
+
+A compliant runtime image must use the exact approved source archive and
+immutable `Dockerfile` base, run non-root with read-only filesystem,
+no capabilities, no-new-privileges, no external runtime network or host
+ports during QA, include these five intended distribution files: `LICENSE`,
+`README.md`, `SECURITY_BOUNDARIES.md`, `docs/release/REPRODUCTION.md`,
+and `docs/distribution/MCP_PRIVACY_POLICY.md`; exclude
+operator/deployment/approval runbooks. Both MCP eras (`2025-11-25`,
+`2026-07-28`) must be checked on the **final** source and native target
+architectures. A passing container test does not establish provider
+availability, trust in source RPC results, on-chain finality or release
+authorization.
+
+## Historical v1.1.0 source release reproduction (archived)
+
+The following original procedure and expected hashes describe the historical
+runtime authority `ed5273b2` and public v1.1.0 source release, **not** the
+separate unpublished NE Suite v1 candidate. They are retained for historical
+falsifiability.
+
+### What is being reproduced
 
 ```text
 RUNTIME_AUTHORITY  = ed5273b2e28cf7438dcdade0a2d48a08ffa7f9ef
@@ -27,14 +171,14 @@ git rev-parse HEAD:packages/core
 # b8ed923c9f43d17365f224e3f03f3df3135c5e87  (unchanged since v1.0.0; see FREEZE_MANIFEST.md)
 ```
 
-## Prerequisites
+### Prerequisites
 
 - Node.js 20.12 or newer (root `engines.node` is `>=20.12`).
 - npm with lockfile version 3 support (bundled with Node.js 20).
 - Git and a SHA-256 tool (`sha256sum` or `shasum -a 256`).
 - Network access to the npm registry for `npm ci` and `npm audit` only.
 
-## Install, audit, typecheck and tests
+### Install, audit, typecheck and tests
 
 ```sh
 git clone https://github.com/ZzNible/network-evidence.git
@@ -61,7 +205,7 @@ Expected results at the runtime authority:
 `npm test` runs every `packages/*/test/**/*.test.ts` and
 `examples/*/test/**/*.test.ts` file with Vitest (see `vitest.config.ts`).
 
-### Targeted suites
+#### Targeted suites
 
 These are included in `npm test`; run them alone to check the BEFORE and
 Discovery gates directly.
@@ -74,7 +218,7 @@ Discovery gates directly.
 | `npx vitest run examples/discovery` | Discovery demo | 1 file, 10 tests passed |
 | `npm run -s test:maps` | NE Maps (`examples/ne-maps/test`) | 3 files, 29 tests passed |
 
-## Deterministic outputs
+### Deterministic outputs
 
 Each command below reads only local files and writes deterministic stdout.
 The `-s` flag keeps npm's own banner out of stdout. Run each twice and
@@ -98,7 +242,7 @@ npm run -s demo:discovery | sha256sum   # must match the first run
 The root scripts `demo:historical-compat`, `demo:integrability` and
 `maps:collection` already pass `--verify`; do not add it again.
 
-### Core -> Hub -> Lens demo
+#### Core -> Hub -> Lens demo
 
 The output SHA-256 is also pinned in
 `examples/core-hub-lens/EXPECTED_OUTPUT.sha256` and asserted by
@@ -118,7 +262,7 @@ suite; check it explicitly:
 (cd examples/core-hub-lens && sha256sum -c EXPORT_SHA256SUMS.txt)
 ```
 
-### Historical compatibility (F1/F2/F3)
+#### Historical compatibility (F1/F2/F3)
 
 Expected stdout (one line):
 
@@ -135,7 +279,7 @@ files can be checked separately:
 (cd examples/historical-compat/authority && sha256sum -c ../AUTHORITY_SHA256SUMS)
 ```
 
-### Synthetic/local integrability fixture
+#### Synthetic/local integrability fixture
 
 Expected stdout (one line):
 
@@ -150,7 +294,7 @@ command verifies `examples/integrability-fixture/data/SHA256SUMS`:
 (cd examples/integrability-fixture/data && sha256sum -c SHA256SUMS)
 ```
 
-### NE Maps collection
+#### NE Maps collection
 
 Expected stdout (one line):
 
@@ -177,7 +321,7 @@ npm run maps:serve   # binds 127.0.0.1:4177 (override with PORT)
 The server listens on the loopback interface only and serves static files
 from `examples/ne-maps/`. Maps performs no external network lookup.
 
-### Discovery demo
+#### Discovery demo
 
 The stdout SHA-256 is also pinned in `examples/discovery/EXPECTED_STDOUT.sha256`
 and asserted by `npx vitest run examples/discovery`. The final stdout line is:
@@ -195,7 +339,7 @@ scope filtering is covered by the `@nec/discovery` and `examples/discovery`
 tests, not by a demo CLI switch. See
 [examples/discovery/README.md](../../examples/discovery/README.md).
 
-## Release-state check (read-only)
+### Release-state check (read-only)
 
 ```sh
 git ls-remote --tags origin 'v1.*'
@@ -212,7 +356,7 @@ git rev-parse 'v1.1.0^{}'
 historical release state. No `@nec/*` package is published to npm and no hosted
 deployment is part of `v1.1.0`.
 
-## What reproduction does not establish
+### What reproduction does not establish
 
 Passing these steps reproduces the documented results and deterministic
 outputs of the `v1.1.0` source tree. Reproduction does not itself create,

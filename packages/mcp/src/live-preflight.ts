@@ -16,7 +16,7 @@ import type { PreflightRequest, PreflightResult } from "@nec/core";
 import { deriveEvmBeforePreflightResult, parseTransactionHashInput } from "@nec/resolver-evm";
 import { deriveSolanaBeforePreflightResult, parseSignature } from "@nec/resolver-solana";
 import { foundationFromObservation } from "./live-before.js";
-import { LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
+import { LIVE_MULTICHAIN_NETWORK_IDS, startLiveCall } from "./live-multichain.js";
 import type { MultichainTool, TransactionSubject } from "./live-multichain.js";
 import { NeMcpError } from "./errors.js";
 
@@ -69,14 +69,16 @@ function preserveOrUnavailable(error: unknown): never {
   if (error instanceof NeMcpError && [
     "MCP_MULTICHAIN_RATE_LIMIT", "MCP_MULTICHAIN_TOO_LARGE",
     "MCP_LIVE_EVM_RATE_LIMIT", "MCP_LIVE_EVM_TOO_LARGE",
+    // A deadline or caller cancel is never a readiness/blocked verdict nor source unavailability.
+    "MCP_LIVE_DEADLINE_EXCEEDED", "MCP_LIVE_CALL_CANCELLED",
   ].includes(error.code)) throw error;
   return unavailable();
 }
 
 /** One fixed read-only acquisition through the very same shared AFTER/BEFORE RPC budget. */
 export function createLivePreflightTool(resolve: MultichainTool):
-  (input: LivePreflightInput) => Promise<LivePreflightOutput> {
-  return async (input) => {
+  (input: LivePreflightInput, signal?: AbortSignal) => Promise<LivePreflightOutput> {
+  return async (input, signal) => {
     let request: PreflightRequest;
     const selected = input?.selectedNetworkId;
     const probe = input?.probeSubject;
@@ -100,7 +102,7 @@ export function createLivePreflightTool(resolve: MultichainTool):
 
     let observation;
     try {
-      observation = await resolve({subject:probe});
+      observation = await resolve({subject:probe, call: startLiveCall(resolve, signal)});
       if (observation.subject.networkId !== selected || observation.subject.txId !== probe.txId) unavailable();
       // A null/pruned/pending probe does NOT mean the network lacks the
       // ability to acquire evidence. Unlike Discovery's explicit unknown

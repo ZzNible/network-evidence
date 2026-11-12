@@ -17,6 +17,8 @@ export const LIVE_MULTICHAIN_SCHEMA = "ne-mcp-observation-envelope/v0.1";
 export const MULTICHAIN_CALLS_PER_MINUTE = 8;
 export const MULTICHAIN_MAX_INFLIGHT = 2;
 export const MULTICHAIN_RESULT_MAX_BYTES = 450_000;
+/** ONE whole-call deadline per live tool call, shared by every resolve in it. */
+export const LIVE_TOOL_DEADLINE_MS = 35_000;
 export const LIVE_MULTICHAIN_NETWORK_IDS = [
   "eip155:8453", "eip155:84532",
   SOLANA_NETWORKS["solana-mainnet"].networkId, SOLANA_NETWORKS["solana-devnet"].networkId,
@@ -66,10 +68,57 @@ export interface MultichainObservation {
   readonly nonClaims: readonly string[];
 }
 
-export type MultichainTool = (input: {
-  readonly subject: TransactionSubject;
-  readonly includeL2Finality?: boolean;
-}) => Promise<MultichainObservation>;
+/** One live tool call: its whole-call deadline plus the caller's (MCP request) abort. */
+export interface LiveCall {
+  /** Aborts on the deadline OR the caller's abort; reaches every provider read. */
+  readonly signal: AbortSignal;
+  /** Aborts only when the whole-call deadline elapsed. */
+  readonly deadline: AbortSignal;
+}
+
+export function createLiveCall(deadlineMs: number = LIVE_TOOL_DEADLINE_MS, callerSignal?: AbortSignal): LiveCall {
+  const deadline = AbortSignal.timeout(deadlineMs);
+  return { deadline, signal: callerSignal === undefined ? deadline : AbortSignal.any([deadline, callerSignal]) };
+}
+
+export interface MultichainTool {
+  (input: {
+    readonly subject: TransactionSubject;
+    readonly includeL2Finality?: boolean;
+    /** The live tool call this resolve belongs to; a fresh one is started if absent. */
+    readonly call?: LiveCall;
+  }): Promise<MultichainObservation>;
+  /** Starts a LiveCall with this tool's deadline; share it across resolves of one tool call. */
+  readonly startCall?: (callerSignal?: AbortSignal) => LiveCall;
+}
+
+/** Start ONE LiveCall for a whole tool call (Discovery shares it across both subjects). */
+export function startLiveCall(resolve: MultichainTool, callerSignal?: AbortSignal): LiveCall {
+  return resolve.startCall?.(callerSignal) ?? createLiveCall(LIVE_TOOL_DEADLINE_MS, callerSignal);
+}
+
+/** A deadline or caller abort is never a source outage, an ineligible network or a finality verdict. */
+function stopped(call: LiveCall): never {
+  if (call.deadline.aborted) {
+    throw new NeMcpError("MCP_LIVE_DEADLINE_EXCEEDED",
+      "the live tool call exceeded its whole-call deadline; no observation or availability claim was produced");
+  }
+  if (call.signal.aborted) {
+    throw new NeMcpError("MCP_LIVE_CALL_CANCELLED",
+      "the live tool call was cancelled by the caller before its deadline; no observation or availability claim was produced");
+  }
+  deny("MCP_MULTICHAIN_SOURCE_FAILED");
+}
+
+/** Settles no later than the call's abort, even if a provider ignores its signal. */
+function untilStopped<T>(work: Promise<T>, call: LiveCall): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(new Error("live call stopped"));
+    call.signal.addEventListener("abort", onAbort, { once: true });
+    if (call.signal.aborted) onAbort();
+    void work.then(resolve, reject).finally(() => call.signal.removeEventListener("abort", onAbort));
+  });
+}
 
 function deny(code: "MCP_MULTICHAIN_INPUT" | "MCP_MULTICHAIN_RATE_LIMIT" | "MCP_MULTICHAIN_TOO_LARGE" | "MCP_MULTICHAIN_SOURCE_FAILED"): never {
   const message = {
@@ -81,8 +130,15 @@ function deny(code: "MCP_MULTICHAIN_INPUT" | "MCP_MULTICHAIN_RATE_LIMIT" | "MCP_
   throw new NeMcpError(code, message);
 }
 
-export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool {
+export function createMultichainTool(
+  nativeFetch: typeof fetch,
+  /** Test-only: a SHORTER whole-call deadline; never longer than LIVE_TOOL_DEADLINE_MS. */
+  options: { readonly deadlineMs?: number } = {},
+): MultichainTool {
   if (typeof nativeFetch !== "function") deny("MCP_MULTICHAIN_INPUT");
+  const deadlineMs = options.deadlineMs ?? LIVE_TOOL_DEADLINE_MS;
+  if (!Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > LIVE_TOOL_DEADLINE_MS) deny("MCP_MULTICHAIN_INPUT");
+  const startCall = (callerSignal?: AbortSignal) => createLiveCall(deadlineMs, callerSignal);
   // Shared process-local budget across EVM and Solana. Max 1 instance in a
   // proposed public deployment; multi-instance rollout needs a global quota.
   const evm = createLiveEvmTool(nativeFetch, { includeTransaction: true });
@@ -90,7 +146,7 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
   let count = 0;
   let inflight = 0;
 
-  return async (input) => {
+  const tool: MultichainTool = async (input) => {
     const subject = input?.subject;
     if (!subject || subject.type !== "transaction" || typeof subject.txId !== "string") deny("MCP_MULTICHAIN_INPUT");
     const id = subject.networkId;
@@ -108,18 +164,22 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
       else parseSignature(subject.txId);
     } catch { deny("MCP_MULTICHAIN_INPUT"); }
 
+    const call = input.call ?? startCall();
+    // Nothing is admitted or read for a call that already ended.
+    if (call.signal.aborted) stopped(call);
     const now = Date.now();
     if (now - windowStart >= 60_000) { windowStart = now; count = 0; }
     if (count >= MULTICHAIN_CALLS_PER_MINUTE || inflight >= MULTICHAIN_MAX_INFLIGHT) deny("MCP_MULTICHAIN_RATE_LIMIT");
+    // The per-minute count is never refunded; only the in-flight slot is released.
     count += 1;
     inflight += 1;
     try {
       let response: MultichainObservation;
       if (evmNetwork !== null) {
-        const result = await evm({
-          network: evmNetwork, txHash: subject.txId,
+        const result = await untilStopped(evm({
+          network: evmNetwork, txHash: subject.txId, signal: call.signal,
           ...(input.includeL2Finality === undefined ? {} : {includeL2Finality: input.includeL2Finality}),
-        });
+        }), call);
         response = {
           schema: LIVE_MULTICHAIN_SCHEMA,
           observationKind: "live_source_observation",
@@ -149,7 +209,7 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
         };
       } else {
         const solanaNetwork = id === SOLANA_NETWORKS["solana-mainnet"].networkId ? "solana-mainnet" : "solana-devnet";
-        const result = await acquireLiveSolana(nativeFetch, solanaNetwork, subject.txId);
+        const result = await untilStopped(acquireLiveSolana(nativeFetch, solanaNetwork, subject.txId, call.signal), call);
         response = {
           schema: LIVE_MULTICHAIN_SCHEMA,
           observationKind: "live_source_observation",
@@ -216,9 +276,17 @@ export function createMultichainTool(nativeFetch: typeof fetch): MultichainTool 
         }
       }
       if (Buffer.byteLength(JSON.stringify(response)) > MULTICHAIN_RESULT_MAX_BYTES) deny("MCP_MULTICHAIN_TOO_LARGE");
+      // No observation (or OP Stack verdict) is returned once the call ended.
+      if (call.signal.aborted) stopped(call);
       return response;
+    } catch (error) {
+      // A deadline or caller abort is classified as such, never as a source,
+      // OP Stack or size outcome of the partial reads it interrupted.
+      if (call.signal.aborted) stopped(call);
+      throw error;
     } finally {
       inflight -= 1;
     }
   };
+  return Object.assign(tool, { startCall });
 }

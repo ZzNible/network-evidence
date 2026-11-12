@@ -29,6 +29,11 @@ globalThis.fetch = (() => {
   throw new Error("Network Evidence MCP v0 performs no outbound network I/O");
 }) as typeof fetch;
 
+// Operator banner scope when NE_MCP_MULTICHAIN_ENABLED=1 (HEALTH_SCOPE.hosted
+// says "offline", which is false once fixed-endpoint RPC reads are enabled).
+const HOSTED_LIVE_BANNER_SCOPE =
+  "hosted preview v0: anonymous, read-only, live reads from fixed Base and Solana RPC endpoints; not a reviewed production service";
+
 try {
   const config = resolveServeConfig(process.argv.slice(2), process.env, { host: DEFAULT_HOST, port: DEFAULT_PORT });
   if (process.env.NE_MCP_LIVE_EVM_ENABLED !== undefined) {
@@ -50,8 +55,9 @@ try {
     log: (line) => process.stderr.write(`${line}\n`),
   });
   if (server.mode === "hosted") {
+    const scope = enableLiveRpc ? HOSTED_LIVE_BANNER_SCOPE : HEALTH_SCOPE.hosted;
     process.stdout.write(
-      `Network Evidence MCP v0 [${HEALTH_SCOPE.hosted}] listening on ${server.host}:${server.port}; ` +
+      `Network Evidence MCP v0 [${scope}] listening on ${server.host}:${server.port}; ` +
         `accepted public origin(s): ${[config.hosted!.publicOrigin, config.hosted!.customOrigin].filter(Boolean).join(", ")}; endpoint /mcp, health /health\n`,
     );
   } else {

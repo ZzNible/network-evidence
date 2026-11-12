@@ -35,7 +35,11 @@ export type LiveEvmNetwork = keyof typeof SOURCES;
 export const LIVE_EVM_NETWORKS = Object.freeze(Object.keys(SOURCES) as LiveEvmNetwork[]);
 const ALLOWED_METHODS = new Set(["eth_chainId", "eth_getTransactionReceipt", "eth_getBlockByHash", "eth_getTransactionByHash"]);
 
-export type LiveEvmTool = (input: { network: LiveEvmNetwork; txHash: string; includeL2Finality?: boolean }) => Promise<LiveEvmOutput>;
+export type LiveEvmTool = (input: {
+  network: LiveEvmNetwork; txHash: string; includeL2Finality?: boolean;
+  /** Whole-call deadline and/or caller abort; no read starts once it aborted. */
+  signal?: AbortSignal | undefined;
+}) => Promise<LiveEvmOutput>;
 
 export interface LiveOpStackFinality {
   readonly ruleset: "opstack.rpc-finalized-head-v1";
@@ -95,7 +99,7 @@ function liveFail(code: "MCP_LIVE_EVM_CONFIG" | "MCP_LIVE_EVM_INPUT" | "MCP_LIVE
 export function restrictedBaseRpcFetch(
   inner: typeof fetch,
   network: LiveEvmNetwork,
-  opts: {readonly opStackSubjectBlockNumber?: bigint} = {},
+  opts: {readonly opStackSubjectBlockNumber?: bigint; readonly signal?: AbortSignal | undefined} = {},
 ): typeof fetch {
   const source = SOURCES[network];
   if (!source) liveFail("MCP_LIVE_EVM_CONFIG");
@@ -131,6 +135,8 @@ export function restrictedBaseRpcFetch(
     if (!ALLOWED_METHODS.has(method) &&
       !(opts.opStackSubjectBlockNumber !== undefined && method === "eth_getBlockByNumber"))
       liveFail("MCP_LIVE_EVM_RPC_FAILED");
+    // No provider read starts after the whole-call deadline or a caller abort.
+    if (opts.signal?.aborted) liveFail("MCP_LIVE_EVM_RPC_FAILED");
     // Count each actual OP Stack request, not just the outer MCP invocation.
     // Max: chainID + 3 heads + <=8 parent hashes + exact height + stability reread.
     if (opts.opStackSubjectBlockNumber !== undefined) {
@@ -141,9 +147,9 @@ export function restrictedBaseRpcFetch(
     const externalSignal = init.signal;
     const budget = AbortSignal.timeout(LIVE_EVM_RPC_TIMEOUT_MS);
     const stop = new AbortController();
-    const signal = externalSignal
-      ? AbortSignal.any([externalSignal, budget, stop.signal])
-      : AbortSignal.any([budget, stop.signal]);
+    const signal = AbortSignal.any([
+      ...(externalSignal ? [externalSignal] : []), budget, stop.signal, ...(opts.signal ? [opts.signal] : []),
+    ]);
     let response: Response;
     try {
       response = await inner(url, { ...init, method: "POST", redirect: "error", signal, credentials: "omit" });
@@ -190,7 +196,7 @@ export function createLiveEvmTool(
   let windowStart = Date.now();
   let used = 0;
   let inFlight = 0;
-  return async ({ network, txHash, includeL2Finality }) => {
+  return async ({ network, txHash, includeL2Finality, signal }) => {
     if (includeL2Finality !== undefined && typeof includeL2Finality !== "boolean")
       liveFail("MCP_LIVE_EVM_INPUT");
     const source = SOURCES[network];
@@ -214,14 +220,33 @@ export function createLiveEvmTool(
       transport: { kind: "http", url: source.url },
     };
     try {
-      const acquired = await acquireTransactionObservation({
-        source: config,
-        txHash,
-        now: new Date().toISOString(),
-        // Only the multichain candidate opts in to the additional read.
-        includeTransaction: options.includeTransaction === true,
-        fetchFn: restrictedBaseRpcFetch(nativeFetch, network),
-      });
+      const scopedFetch = restrictedBaseRpcFetch(nativeFetch, network, { signal });
+      let oversizedRead = false;
+      const trackedScopedFetch: typeof fetch = async (input, init) => {
+        try { return await scopedFetch(input, init); }
+        catch (error) {
+          if (error instanceof NeMcpError && error.code === "MCP_LIVE_EVM_TOO_LARGE") oversizedRead = true;
+          throw error;
+        }
+      };
+      let acquired: Awaited<ReturnType<typeof acquireTransactionObservation>>;
+      try {
+        acquired = await acquireTransactionObservation({
+          source: config,
+          txHash,
+          now: new Date().toISOString(),
+          // Only the multichain candidate opts in to the additional read.
+          includeTransaction: options.includeTransaction === true,
+          fetchFn: trackedScopedFetch,
+        });
+      } catch (error) {
+        // The resolver wraps the guard's own code; retain the oversize signal
+        // out of band so it is not reported as a generic RPC failure.
+        if (oversizedRead) liveFail("MCP_LIVE_EVM_TOO_LARGE");
+        throw error;
+      }
+      // Never evaluate an acquisition that had a refused oversized read.
+      if (oversizedRead) liveFail("MCP_LIVE_EVM_TOO_LARGE");
       const evaluated = evaluateTransactionAcquisition(acquired);
       let opStackFinality: LiveOpStackFinality | undefined;
       if (includeL2Finality === true) {
@@ -252,7 +277,7 @@ export function createLiveEvmTool(
               profile.config.chainId !== source.chainId) liveFail("MCP_LIVE_EVM_CONFIG");
           try {
             const boundedFetch = restrictedBaseRpcFetch(nativeFetch, network, {
-              opStackSubjectBlockNumber: block.number,
+              opStackSubjectBlockNumber: block.number, signal,
             });
             let unexpectedExtraRead = false;
             const trackedFetch: typeof fetch = async (input, init) => {
@@ -318,6 +343,9 @@ export function createLiveEvmTool(
             // Native evaluator/source-binding invariants are internal contract
             // bugs, not provider outages. Fail closed as coded configuration.
             if (error instanceof NeMcpError && error.code === "MCP_LIVE_EVM_CONFIG") throw error;
+            // A whole-call deadline or caller abort is not a source outage:
+            // the caller classifies it and the whole call fails.
+            if (signal?.aborted) throw error;
             // A supplemental RPC/source failure never erases a valid
             // generic transaction observation or invents finality.
             opStackFinality = {

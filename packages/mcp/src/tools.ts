@@ -280,8 +280,8 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
     : [
       "Network Evidence MCP: opt-in anonymous, read-only, non-production preview; EVM and Solana source evidence from four fixed network profiles.",
       "The three other tools remain offline; their historical, synthetic and caller-supplied observations do not become live.",
-      "resolve_transaction_evidence obtains ONE source observation using an existing EVM or Solana resolver and returns an authentic Core partial fragment. Solana finalized commitment is source-reported; no cryptographic verification, protocol settlement, L1 withdrawal or economic finality assertion.",
-      "discover_live_network_evidence probes 1-2 exact transactions, produces native Core capability snapshots and a Core-verified Discovery result. It never ranks or chooses networks. Availability applies only to the probed source, action and acquisition time.",
+      "resolve_transaction_evidence obtains ONE source observation using an existing EVM or Solana resolver and returns an authentic Core partial fragment; only with an optional caller-returned evidenceContext does Core also build a NetworkEvidenceResult (preflight continuity, not precedence or policy satisfaction). Solana finalized commitment is source-reported; no cryptographic verification, protocol settlement, L1 withdrawal or economic finality assertion.",
+      "discover_live_network_evidence probes 1-3 exact transactions (at most one per fixed profile), produces native Core capability snapshots and a Core-verified Discovery result. It never ranks or chooses networks. Availability applies only to the probed source, action and acquisition time.",
       "preflight_live_network_evidence accepts a caller-selected exact network, original expected action and digest-bound Core evidence policy plus one separate same-network completed transaction probe; produces contextual Core-verified evidence readiness, NOT transaction simulation or wallet readiness.",
       "No wallet, signing, transaction submission, ranking, or policy engine.",
     ].join("\n");
@@ -386,8 +386,9 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
           readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true,
         },
       },
-      async (args) => {
-        try { return ok(await livePreflight(args)); }
+      async (args, ctx) => {
+        // The SDK request signal; aborts propagate to every provider read.
+        try { return ok(await livePreflight(args, ctx?.mcpReq?.signal)); }
         catch (error) { return toolError(error); }
       },
     );
@@ -396,7 +397,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       {
         title: "Discover networks from exact live Base or Solana evidence",
         description:
-          "Read-only opt-in PRE-RELEASE: acquire 1-2 source-bound transaction/signature probes on fixed Base/Solana profiles, derive existing Core CapabilitySnapshots and run Core-verified Discovery. A probe supports only those exact read paths at observation time, not global uptime, settlement, cryptographic finality or a network recommendation. No arbitrary RPC, signing or submission.",
+          "Read-only opt-in PRE-RELEASE: acquire 1-3 source-bound transaction/signature probes (at most one per fixed profile) on fixed Base/Solana profiles, derive existing Core CapabilitySnapshots and run Core-verified Discovery. A probe supports only those exact read paths at observation time, not global uptime, settlement, cryptographic finality or a network recommendation. No arbitrary RPC, signing or submission.",
         inputSchema: z.object({
           requestId: z.string().min(2).max(90),
           requirements: jsonObject.describe("Exact Core DiscoveryRequirements; no policy is inferred."),
@@ -428,8 +429,8 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
           readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true,
         },
       },
-      async (args) => {
-        try { return ok(await liveBefore(args)); }
+      async (args, ctx) => {
+        try { return ok(await liveBefore(args, ctx?.mcpReq?.signal)); }
         catch (error) { return toolError(error); }
       },
     );
@@ -438,7 +439,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
       {
         title: "Evaluate EVM or Solana transaction evidence (read only)",
         description:
-          "Read-only opt-in pre-release: acquire an exact Base or Solana transaction from fixed RPC sources. On Base only, includeL2Finality optionally acquires a separate Core finality-only fragment under a bounded 8-ancestor native OP Stack ruleset; INSUFFICIENT has distinct native causes (unwalked ancestry, source head below the subject or missing facts); inspect the native warning and reason, do not infer a universal finalized or unfinalized state. This is a ONE-source L2 block view, NOT Ethereum settlement or withdrawal finalization. Optionally assess ONE caller-supplied native x402 EVM, ERC-4337 or x402 SVM structured claim, validated and bound to the exact subject BEFORE the read. Return original Core fragment plus adapter-local claim result, if requested; neither is protocol settlement, cryptographic finality, or a full Core NetworkEvidenceResult. Caller-supplied protocol terms are NOT independently authenticated by this intake; no arbitrary RPC URLs, wallet, signing, submission or ranking.",
+          "Read-only opt-in pre-release: acquire an exact Base or Solana transaction from fixed RPC sources. On Base only, includeL2Finality optionally acquires a separate Core finality-only fragment under a bounded 8-ancestor native OP Stack ruleset; INSUFFICIENT has distinct native causes (unwalked ancestry, source head below the subject or missing facts); inspect the native warning and reason, do not infer a universal finalized or unfinalized state. This is a ONE-source L2 block view, NOT Ethereum settlement or withdrawal finalization. Optionally assess ONE caller-supplied native x402 EVM, ERC-4337 or x402 SVM structured claim, validated and bound to the exact subject BEFORE the read. Return original Core fragment plus adapter-local claim result, if requested; neither is protocol settlement, cryptographic finality, or a full Core NetworkEvidenceResult. Optional evidenceContext (caller-returned Core EvidenceRequest + PreflightResult + CapabilitySnapshot, validated BEFORE the read against the server-pinned family resolver manifest) adds evidenceResult: a Core-built, Core-verified NetworkEvidenceResult or an explicit not_composed reason. Preflight continuity is NOT precedence or proof the action and policy existed before execution, the result is NOT policy satisfaction, dimensions the resolver did not evaluate stay unknown, and OP Stack finality is never merged into it. Caller-supplied protocol terms are NOT independently authenticated by this intake; no arbitrary RPC URLs, wallet, signing, submission or ranking.",
         inputSchema: z.object({
           subject: z.object({
             type: z.literal("transaction"),
@@ -450,6 +451,8 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
             protocol: z.enum(CLAIM_PROTOCOLS),
             claim: jsonObject.describe("Full native claim including caller-supplied original protocol terms, never synthesized by NEC."),
           }).strict().optional(),
+          evidenceContext: jsonObject.optional()
+            .describe("Exactly {request, preflight, capabilitySnapshot} in nec-wire-json-v1: the later Core EvidenceRequest for this subject whose request.preflight references the supplied Core PreflightResult (e.g. from preflight_live_network_evidence) and its CapabilitySnapshot. Strictly validated before any read; no caller manifest; continuity is not precedence."),
         }).strict(),
         outputSchema: z.object({
           schema: z.literal("ne-mcp-observation-envelope/v0.1"),
@@ -505,18 +508,16 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
             evaluation: jsonObject,
             nonClaims: z.array(z.string()),
           }).optional(),
+          evidenceResult: evidenceResultOutputSchema.optional(),
         }),
         annotations: {
           title: "Evaluate EVM or Solana transaction evidence (read only)",
-          readOnlyHint: true,
-          destructiveHint: false,
-          idempotentHint: false,
-          openWorldHint: true,
+          readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true,
         },
       },
-      async (args) => {
+      async (args, ctx) => {
         try {
-          return ok(await resolveWithOptionalClaim(deps.liveEvidence!, args));
+          return ok(await resolveWithOptionalClaim(deps.liveEvidence!, args, ctx?.mcpReq?.signal));
         } catch (error) {
           return toolError(error);
         }
@@ -526,3 +527,27 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
 
   return server;
 }
+
+/**
+ * resolve_transaction_evidence `evidenceResult` (live-result.ts outcome). Kept
+ * below createNeMcpServer so the handler line numbers cited by the runbook do
+ * not move; module evaluation completes before any server is created.
+ */
+const evidenceResultOutputSchema = z.union([
+  z.object({
+    status: z.literal("composed"),
+    artifactType: z.literal("network-evidence-result"),
+    preExecutionBinding: z.literal("core_preflight_continuity"),
+    result: jsonObject.describe("THE Core NetworkEvidenceResult (nec-wire-json-v1), built and re-verified by @nec/core."),
+    evidenceSnapshot: jsonObject,
+    resolverManifest: jsonObject.describe("The server-pinned family resolver manifest; never caller-supplied."),
+    nonClaims: z.array(z.string()),
+  }),
+  z.object({
+    status: z.literal("not_composed"),
+    reason: z.enum([
+      "transaction_not_observed", "block_not_observed", "acquisition_inconsistent",
+      "block_timestamp_absent", "preflight_not_before_block", "output_budget",
+    ]),
+  }),
+]);

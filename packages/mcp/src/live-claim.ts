@@ -2,14 +2,18 @@
  * Optional strict claim intake for ONE existing read-only AFTER MCP tool.
  * This is a thin adapter dispatch, not a new Core verdict or settlement rule.
  * Parsing and subject/chain binding happen BEFORE any provider reads.
+ * The optional evidenceContext is validated by the pure live-result.ts
+ * composer at the same point (before any read); only Core builds the result.
  */
 import { decodeNecWireJson } from "@nec/core";
 import { parseX402PaymentClaim, buildX402PaymentCorrelation, assessX402ExactPayment } from "@nec/adapter-x402";
 import { parseErc4337Claim, buildErc4337Correlation, assessErc4337UserOperation } from "@nec/adapter-erc4337";
 import { parseX402SvmPaymentClaim, buildX402SvmCorrelation, assessX402SvmExactPayment } from "@nec/adapter-x402-svm";
 import { NeMcpError } from "./errors.js";
-import { MULTICHAIN_RESULT_MAX_BYTES } from "./live-multichain.js";
+import { MULTICHAIN_RESULT_MAX_BYTES, startLiveCall } from "./live-multichain.js";
 import type { TransactionSubject, MultichainTool, MultichainObservation } from "./live-multichain.js";
+import { composeNetworkEvidenceResult, prepareEvidenceContext } from "./live-result.js";
+import type { EvidenceResultOutcome } from "./live-result.js";
 
 export const CLAIM_PROTOCOLS = ["x402-evm", "erc4337", "x402-svm"] as const;
 export type ClaimProtocol = typeof CLAIM_PROTOCOLS[number];
@@ -24,6 +28,12 @@ export interface ClaimBoundInput {
   readonly claim?: OptionalClaim;
   /** OP Stack L2 block finality is a separate optional source-observed fragment. */
   readonly includeL2Finality?: boolean;
+  /**
+   * Optional caller-returned Core EvidenceRequest + PreflightResult +
+   * CapabilitySnapshot (live-result.ts prepareEvidenceContext); rejected
+   * before any provider read. Absent: the envelope is byte-identical to before.
+   */
+  readonly evidenceContext?: unknown;
 }
 export interface ClaimAssessmentEnvelope {
   readonly protocol: ClaimProtocol;
@@ -32,7 +42,11 @@ export interface ClaimAssessmentEnvelope {
   readonly evaluation: Record<string, unknown>;
   readonly nonClaims: readonly string[];
 }
-export type ClaimBoundObservation = MultichainObservation & {readonly claimAssessment?: ClaimAssessmentEnvelope};
+export type ClaimBoundObservation = MultichainObservation & {
+  readonly claimAssessment?: ClaimAssessmentEnvelope;
+  /** Present only with evidenceContext: Core-built result or an explicit not_composed reason. */
+  readonly evidenceResult?: EvidenceResultOutcome;
+};
 
 type X402Claim = ReturnType<typeof parseX402PaymentClaim>;
 type ErcClaim = ReturnType<typeof parseErc4337Claim>;
@@ -141,18 +155,33 @@ function assessPrepared(observation: MultichainObservation, prepared: Prepared):
   };
 }
 
-/** Exactly ONE outbound acquisition, reused by all three native claim adapters. */
-export async function resolveWithOptionalClaim(resolve: MultichainTool, input: ClaimBoundInput): Promise<ClaimBoundObservation> {
+/**
+ * Exactly ONE outbound acquisition, reused by all three native claim adapters
+ * and by the optional evidenceContext composer. Claim and context are both
+ * validated BEFORE it (an invalid one makes no provider read and takes no
+ * budget). The final assembled envelope is measured once and refused whole
+ * above the shared cap; nothing is ever truncated.
+ */
+export async function resolveWithOptionalClaim(resolve: MultichainTool, input: ClaimBoundInput, signal?: AbortSignal): Promise<ClaimBoundObservation> {
   const prepared = input.claim === undefined ? undefined : prepareLiveClaim(input.subject, input.claim);
+  const context = input.evidenceContext === undefined ? undefined : prepareEvidenceContext(input.subject, input.evidenceContext);
   const observation = await resolve({
     subject: input.subject,
     ...(input.includeL2Finality === undefined ? {} : {includeL2Finality: input.includeL2Finality}),
+    call: startLiveCall(resolve, signal),
   });
-  if (prepared === undefined) return observation;
-  const assessment = assessPrepared(observation, prepared);
-  const response: ClaimBoundObservation = {...observation, claimAssessment:assessment};
+  if (prepared === undefined && context === undefined) return observation;
+  const assessment = prepared === undefined ? undefined : assessPrepared(observation, prepared);
+  const evidenceResult = context === undefined ? undefined : composeNetworkEvidenceResult(observation, context);
+  const response: ClaimBoundObservation = {
+    ...observation,
+    ...(assessment === undefined ? {} : {claimAssessment: assessment}),
+    ...(evidenceResult === undefined ? {} : {evidenceResult}),
+  };
   if (Buffer.byteLength(JSON.stringify(response)) > MULTICHAIN_RESULT_MAX_BYTES) {
-    throw new NeMcpError("MCP_MULTICHAIN_TOO_LARGE", "bounded source evidence plus native assessment exceeds MCP tool output budget");
+    throw new NeMcpError("MCP_MULTICHAIN_TOO_LARGE", evidenceResult === undefined
+      ? "bounded source evidence plus native assessment exceeds MCP tool output budget"
+      : "bounded source evidence plus the optional assessment and evidence result exceeds MCP tool output budget; nothing is truncated");
   }
   return response;
 }

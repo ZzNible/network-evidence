@@ -1,18 +1,30 @@
 # Network Evidence MCP — Privacy Notice
 
-**Last updated:** 11 October 2026  
-**Services:** [Network Evidence MCP — offline three-tool preview](https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp) and [Network Evidence MCP — Base + Solana six-tool public beta](https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp)  
+**Last updated (documentation only):** 11 November 2026 (Europe/Brussels)
+
+**Availability observation (11 November 2026 Europe/Brussels; 10 November UTC):** Anonymous GET/HEAD
+`/health` checks from the owner Ubuntu host returned **HTTP 503
+(`Google Frontend`)** for the two services described below and
+the separate legacy preview. This is neither a Cloud Run control-plane
+inspection nor proof that a service was deleted or permanently offline.
+The hosting identity, current logging, retention, IAM and effective
+revision remain **unverified**. This notice preserves the historically
+documented processing model; it does **not** attest a currently healthy
+endpoint or authorize relaunch.
+
+**Endpoints covered by the last documented notice (not a complete verified current-service inventory):** [Network Evidence MCP — offline three-tool service](https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp) and [Network Evidence MCP — Base + Solana six-tool beta](https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp). The separate legacy `network-evidence-mcp-preview` endpoint last returned a recorded HTTP 200 on 2026-10-21 and returned HTTP 503 in the later check on 2026-11-10 UTC (11 November Europe/Brussels). Its current availability, IAM and coverage by this notice require operator verification before any relaunch. Whether this notice covered historical requests to that separate legacy endpoint is not established, and its log retention was not verified.
+
 **Publisher:** ZzNible (independent project; [public source repository](https://github.com/ZzNible/network-evidence))  
 **Privacy and support contact:** [GitHub Issues](https://github.com/ZzNible/network-evidence/issues). **Do not post personal or confidential information in public issues.** Request a private contact channel there if needed.
 
-This notice describes both public, anonymous Network Evidence MCP endpoints. The beta's extra three hosted-only tools fetch live public-chain observations; the original three-tool endpoint remains offline. It does not describe what Claude, ChatGPT, Codex or any other connecting application may separately collect, retain or share; consult that application's privacy notice.
+This notice describes the last documented request-processing model for two anonymous Network Evidence MCP endpoints. In the previously observed hosted beta, three additional read-only tools could fetch public-chain observations when invoked; the original three-tool endpoint operated in offline mode. Current executable revisions and host logging have not been independently rechecked for this update. It does not describe what Claude, ChatGPT, Codex or any other connecting application may separately collect, retain or share; consult that application's privacy notice.
 
 ## Information processed
 
 The MCP server receives standard protocol messages and the tool arguments you choose to send. Arguments may contain network/deployment identifiers, caller-provided capability snapshots, resolver manifests and requirements. **Only send information you are comfortable sending to a public third-party endpoint.** Do not send credentials, private keys, confidential evidence or personal data.
 
 - **Offline tool processing:** requests are validated and processed in memory to return fixed declared network profiles, deterministic Discovery classifications over caller-provided data, or pinned historical/synthetic cases. This application does not maintain user accounts, a database of tool inputs or an archive of submitted evidence.
-- **Additional Base + Solana public beta processing:** three extra read-only tools can acquire public source observations of an exact Base/Solana transaction/signature and derive evidence-backed Discovery or preflight. A call may include a public action identifier, a caller-originated complete Core request and policy, or optional structured original x402/ERC-4337/x402-SVM terms. The beta makes bounded EVM/Solana read requests to fixed public RPC endpoints controlled by third parties. These providers may record the queried public identifiers, RPC method and the server network address under their own terms. This server does not persist tool inputs to its own database or sign/submit transactions. Do not send confidential or personal data.
+- **Additional Base + Solana public beta processing:** three extra read-only tools can acquire public source observations of an exact Base/Solana transaction/signature and derive evidence-backed Discovery or preflight. A call may include a public action identifier, a caller-originated complete Core request and policy, or optional structured original x402/ERC-4337/x402-SVM terms. The beta makes bounded EVM/Solana read requests to exactly four fixed public HTTPS RPC hosts controlled by third parties: `mainnet.base.org` (Base mainnet), `sepolia.base.org` (Base Sepolia), `api.mainnet-beta.solana.com` (Solana mainnet) and `api.devnet.solana.com` (Solana devnet). The only value from your call that is sent to them is the exact transaction hash or signature. Every other part of each request is a fixed read method with fixed parameters, plus values taken from that provider's own earlier replies (such as a block hash or slot). Requests are sent from the server's egress network address; your IP address and HTTP headers are not forwarded. Your preflight request, Core request and policy, Discovery requirements and claim terms are processed only by this server and are not sent to these providers. These providers may record the queried public identifiers, RPC method and the server network address under their own terms; their logging and retention practices were **not verified**. This server does not persist tool inputs to its own database or sign/submit transactions. Do not send confidential or personal data.
 - **Application logs:** the server code logs HTTP method, a normalized route (`/mcp`, `/health` or `(other)`), response status and request duration. Error handling can log error class names. It is designed **not** to log request bodies, tool arguments, client addresses, credentials or headers.
 - **Hosting and infrastructure logs:** Google Cloud Run and Cloud Logging can separately record request and technical metadata such as request time, URL, IP address, user agent, response status and latency. These logs are controlled by the hosting infrastructure, not by the MCP tool code. As checked on **9 October 2026**, the Google Cloud Logging `_Default` bucket for this project has a **30-day retention setting**. Other platform/security or audit logs can be subject to different retention policies, and settings can change.
 - Both endpoints have no sign-in, do not request user API keys, and do not deliberately set tracking cookies or build advertising profiles.
@@ -27,7 +39,7 @@ The operator uses **Google Cloud Run** and **Google Cloud Logging** as infrastru
 
 ## Retention
 
-Tool inputs are handled in process memory and are not intentionally persisted in an application database. Hosting logs use the applicable Google Cloud logging settings; the project's `_Default` retention was 30 days at the date above. Other audit/security records and external client-side copies may have different retention periods. The operator cannot delete records retained independently by connecting applications.
+Tool inputs are handled in process memory and are not intentionally persisted in an application database. Hosting logs use the applicable Google Cloud logging settings; the project's `_Default` bucket was observed configured for **30 days on 9 October 2026**, **not rechecked for this notice updated 11 November 2026**. Settings may have changed; other audit/security records and external client-side copies may have different retention periods. The operator cannot delete records retained independently by connecting applications.
 
 ## Your choices and rights
 
@@ -40,3 +52,13 @@ All tools are read-only and there is no wallet, private-key handling, transactio
 ## Updates
 
 This notice may be updated as the hosted implementation or operational settings change. Changes will appear in this public repository with version history. For security or privacy inquiries use [GitHub Issues](https://github.com/ZzNible/network-evidence/issues) without sharing secrets or sensitive personal data.
+
+## Source-version boundary (documentation update 8 November 2026)
+
+This notice is about the **last documented public MCP endpoints** above, not
+an independently confirmed runtime of the newer unpublished NE Suite v1 source.
+The earlier observed Cloud Logging retention setting and beta configuration
+must be rechecked with the actual hosting administrator before any six-tool
+release or replacement. Source-only privacy behavior does not establish what
+an unobserved deployed revision, connecting client or infrastructure currently
+logs. No hosting setting or service was changed by this documentation update.

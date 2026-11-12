@@ -1,5 +1,11 @@
 # Render deploy runbook — Network Evidence MCP hosted preview (PREPARED, NOT DEPLOYED)
 
+> **2026-11-08 scope note:** The following is an unexecuted, historical
+> alternative to the documented Google Cloud Run beta. No Render state was
+> queried for this review; no service is asserted deployed, and no action
+> below is authorized. A future decision would require fresh provider
+> documentation, exact SHA qualification and explicit owner permission.
+>
 > **Status: prepared only.** No Render service, workspace, plan, domain, DNS
 > record or public URL exists or was created for this. Nothing here was run
 > against Render. Every `<…>` value is a placeholder chosen by a human at
@@ -115,9 +121,9 @@ Environment variables:
   devDependency `^4.23.0`, with esbuild 0.28.2). The build must install
   devDependencies, hence `npm ci --include=dev`. Without them the start fails
   with `tsx: not found`.
-- MCP SDK runtime: `@modelcontextprotocol/server` 2.3.1 (with
-  `@modelcontextprotocol/core` 2.3.1), `@modelcontextprotocol/node` 2.1.1 (with
-  `@hono/node-server` 1.19.17 and `hono`), `zod` 4.6.5. Plus workspace packages
+- MCP SDK runtime: `@modelcontextprotocol/server` 2.4.0 (with
+  a nested `@modelcontextprotocol/core` 2.4.0), `@modelcontextprotocol/node` 2.1.2 (with
+  `@hono/node-server` 2.1.6 and `hono`), `zod` 4.6.7. Plus workspace packages
   `@nec/core`, `@nec/discovery`, `@nec/lens`, `@nec/resolver-*`.
 - `@modelcontextprotocol/client` 2.3.1 is dev-only (smoke/tests).
 - The one data file read at startup is `examples/ne-maps/data/collection.json`,

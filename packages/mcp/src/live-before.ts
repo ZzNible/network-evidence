@@ -16,13 +16,13 @@ import { deriveEvmBeforeFoundation } from "@nec/resolver-evm";
 import type { EvmBeforeFoundation } from "@nec/resolver-evm";
 import { deriveSolanaBeforeFoundation, SOLANA_MAINNET_BEFORE_PROFILE, SOLANA_DEVNET_BEFORE_PROFILE } from "@nec/resolver-solana";
 import type { SolanaBeforeFoundation } from "@nec/resolver-solana";
-import { LIVE_MULTICHAIN_NETWORK_IDS } from "./live-multichain.js";
+import { LIVE_MULTICHAIN_NETWORK_IDS, startLiveCall } from "./live-multichain.js";
 import type { MultichainTool, MultichainObservation, TransactionSubject } from "./live-multichain.js";
 import { NeMcpError } from "./errors.js";
 
 export const LIVE_BEFORE_TOOL_NAME = "discover_live_network_evidence";
 export const LIVE_BEFORE_SCHEMA = "ne-mcp-live-discovery/v0.1";
-export const LIVE_BEFORE_MAX_CANDIDATES = 2;
+export const LIVE_BEFORE_MAX_CANDIDATES = 3;
 export const LIVE_BEFORE_MAX_AGE_MS = 180_000;
 export const LIVE_BEFORE_MAX_OUTPUT_BYTES = 180_000;
 
@@ -65,7 +65,7 @@ const NETWORK_PROFILES = {
 } as const;
 
 function invalid(): never {
-  throw new NeMcpError("MCP_LIVE_BEFORE_INPUT", "expected 1 or 2 distinct, fully identified Base or Solana transaction probes and valid Core DiscoveryRequirements");
+  throw new NeMcpError("MCP_LIVE_BEFORE_INPUT", "expected 1 to 3 distinct, fully identified Base or Solana transaction probes and valid Core DiscoveryRequirements");
 }
 
 function unavailable(): never {
@@ -130,8 +130,9 @@ export function foundationFromObservation(obs: MultichainObservation): LiveSourc
   }) };
 }
 
-export function createLiveBeforeTool(resolve: MultichainTool): (input: LiveBeforeInput) => Promise<LiveBeforeOutput> {
-  return async (input) => {
+export function createLiveBeforeTool(resolve: MultichainTool):
+  (input: LiveBeforeInput, signal?: AbortSignal) => Promise<LiveBeforeOutput> {
+  return async (input, signal) => {
     if (!input || typeof input.requestId !== "string" || !isNecIdentifier(input.requestId) || !Array.isArray(input.subjects)
         || input.subjects.length < 1 || input.subjects.length > LIVE_BEFORE_MAX_CANDIDATES) invalid();
     let requirements: DiscoveryRequirements;
@@ -154,10 +155,12 @@ export function createLiveBeforeTool(resolve: MultichainTool): (input: LiveBefor
     }
     const candidates: DiscoveryCandidateContext[] = [];
     const observations: MultichainObservation[] = [];
+    // ONE whole-call deadline shared by every subject of this tool call.
+    const call = startLiveCall(resolve, signal);
     for (const subject of subjects) {
       const profile = NETWORK_PROFILES[subject.networkId];
       try {
-        const observation = await resolve({ subject });
+        const observation = await resolve({ subject, call });
         if (observation.subject.networkId !== subject.networkId || observation.subject.txId !== subject.txId)
           unavailable();
         // source boundary already validated by resolve_transaction_evidence.
@@ -169,6 +172,7 @@ export function createLiveBeforeTool(resolve: MultichainTool): (input: LiveBefor
         if (error instanceof NeMcpError && [
           "MCP_MULTICHAIN_RATE_LIMIT", "MCP_MULTICHAIN_TOO_LARGE",
           "MCP_LIVE_EVM_RATE_LIMIT", "MCP_LIVE_EVM_TOO_LARGE",
+          "MCP_LIVE_DEADLINE_EXCEEDED", "MCP_LIVE_CALL_CANCELLED",
         ].includes(error.code)) throw error;
         return unavailable();
       }
@@ -203,6 +207,7 @@ export function createLiveBeforeTool(resolve: MultichainTool): (input: LiveBefor
           "Generic EVM finality and settlement are not evaluated; Solana settlement is unsupported here and finalized commitment is source-reported only.",
           "A Core Discovery classification is not a recommendation, ranking or network choice; the caller must choose and preflight separately.",
           "The returned source refs/digests and Core result must not be interpreted as a complete Core NetworkEvidenceResult or Hub/Lens case.",
+          "Candidates in one result are independent probes: no BEFORE/AFTER continuity, economic finality or NE Maps integration is asserted between or for them.",
         ],
       };
       if (Buffer.byteLength(JSON.stringify(response)) > LIVE_BEFORE_MAX_OUTPUT_BYTES) unavailable();

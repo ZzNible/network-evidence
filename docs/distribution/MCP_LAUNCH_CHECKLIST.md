@@ -1,16 +1,24 @@
 # MCP launch checklist: historical three-tool offline server
 
+> **Status boundary (2026-11-08):** This checklist records the older offline
+> three-tool service and historical deployment/Registry steps; it does not
+> authorize a six-tool release, update any deployed revision or establish a
+> production SLA. Angle-bracket and [HUMAN] placeholders below are historical
+> examples, not publishable configuration or populated legal identities.
+>
+> **Scope, 2026-10-29:** The public-source behavior contract (not a release approval) for the six-tool MCP source is [MCP_PUBLIC_CONTRACT.md](MCP_PUBLIC_CONTRACT.md). It is not MCP COMPLETE v1 and authorizes no publication.
+
 > **Scope clarification, 2026-10-21:** This checklist and its P1–P5 / N1–N3 cases describe the **three-tool offline** release. For the separate six-tool Base/Solana beta, use the [current quickstart, endpoint identities and additional client checks](MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md). N1–N3 remain existing coverage, not a new contribution request. The beta has four active profile declarations rather than the five in P1. Live-source tools have `openWorldHint: true`; the closed-world annotations below apply only to the offline tools. Historical launch checkboxes and deployment statements below are not fresh operational verification. MCP COMPLETE v1 still requires the authentic original-action/request/policy integration case.
 
-> **Updated 2026-10-09:** Cloud Run service `network-evidence-mcp` is PUBLIC at `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp`, verified via anonymous health and SDK tools for both protocol eras. Official MCP Registry version `0.0.2` is ACTIVE (see GitHub [publication run 37905012273](https://github.com/ZzNible/network-evidence/actions/runs/37905012273)). The existing private ChatGPT plugin `0.1.2`, Codex, and Claude Code point to the new URL; Codex and Claude executed genuine tool calls. The former `network-evidence-mcp-preview` server remains online for rollback. **Claude/Anthropic directory, ChatGPT public catalog, and Smithery are NOT submitted**, and the Anthropic draft in the user's browser still needs its URL edited. Sections below retain historical prelaunch checkboxes: read this status first, not their old state. This is still an offline read-only preview, not a production monitoring service.
+> **Observed 2026-10-09 (not independently rechecked on 2026-11-08):** Cloud Run service `network-evidence-mcp` was PUBLIC at `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp`, verified via anonymous health and SDK tools for both protocol eras. Official MCP Registry version `0.0.2` was recorded ACTIVE on that date (see GitHub [publication run 37905012273](https://github.com/ZzNible/network-evidence/actions/runs/37905012273)). At that observation, the existing private ChatGPT plugin `0.1.2`, Codex, and Claude Code pointed to the new URL; Codex and Claude executed genuine tool calls. The former `network-evidence-mcp-preview` server was reported online for rollback; its current availability is unverified. **At the observation date:** Claude/Anthropic directory, ChatGPT public catalog, and Smithery had not been submitted, and an Anthropic draft needed its URL edited. Their current states require fresh checks. Sections below retain historical prelaunch checkboxes: read this status first, not their old state. This is still an offline read-only preview, not a production monitoring service.
 
-The local `@nec/mcp` v0 remains loopback-only by default. Its opt-in hosted version runs as a bounded, anonymous, read-only Cloud Run preview. Use `/health` on Cloud Run; `/healthz` is reserved upstream. Three MCP tools retain the exact offline and non-live evidence boundaries. Render Free remains a tertiary fallback; the old Cloud Run preview remains immediate rollback. The PRIVATE ChatGPT plugin configuration was migrated and re-read, but end-to-end invocation from a ChatGPT conversation is not yet verified.
+The local `@nec/mcp` v0 remains loopback-only by default. Its opt-in hosted version runs as a bounded, anonymous, read-only Cloud Run preview. Use `/health` on Cloud Run; `/healthz` is reserved upstream. Three MCP tools retain the exact offline and non-live evidence boundaries. Render Free remains a tertiary fallback; the old Cloud Run preview remains immediate rollback. At the recorded date, the private ChatGPT plugin configuration had been migrated and re-read; an end-to-end invocation from ChatGPT had not yet been verified. Current status has not been rechecked.
 
 Legend:
 - **[verified-local]** — checked in this repository during lot NE-MCP-V0.0.1
   (or NE-MCP-RENDER-PREP where marked **[prepared]**).
 - **[prepared]** — code/docs exist and were tested locally; **not deployed**.
-- **[deployed]** — current Cloud Run preview is live; some unchecked list items below remain historical.
+- **[deployed]** — recorded as deployed on the cited historical date; current service availability, traffic and revision were not rechecked for this release candidate.
 - **[external — verify at launch]** — an external platform requirement. It was
   NOT verified in this lot (no external accounts or network calls were used).
   Re-check it against that platform's current official documentation before acting.

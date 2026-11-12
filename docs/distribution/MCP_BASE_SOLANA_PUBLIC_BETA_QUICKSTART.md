@@ -1,11 +1,28 @@
-# Network Evidence MCP — public Base + Solana beta for agents
+# Network Evidence MCP — historical public Base + Solana beta (October 2026)
 
-**Status:** PUBLIC READ-ONLY BETA — not MCP COMPLETE v1.  
-**Remote MCP endpoint:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp  
-**Read-only health:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/health  
-**Serving beta revision (2026-10-11):** `network-evidence-mcp-beta-00004-pwq` at 100% Cloud Run traffic. The executable image/source and tool contracts are unchanged; only the shared HTTP admission setting was raised from 4 to 24 per minute.  
-**Public source:** [GitHub main](https://github.com/ZzNible/network-evidence/tree/main) at merge commit df0cfde4387aaed86417c216315acaba32962087; deployed executable SHA f12f2ca484cf81336ff486a9e531b63b7b07db5c (only documentation changed since this executable). Original [source PR #3](https://github.com/ZzNible/network-evidence/pull/3) is closed as superseded, not a live draft.  
-**Live scope:** Base mainnet/Sepolia and Solana mainnet/devnet; no live zkSYS Tanenbaum or unrelated networks.
+**Status:** HISTORICAL read-only public beta (October 2026), **not
+NE Suite/MCP COMPLETE v1**. On **2026-11-11 (Europe/Brussels; 2026-11-10 UTC)**, anonymous GET and HEAD
+requests to all three listed public health endpoints returned **HTTP 503
+from Google Frontend** from the owner Ubuntu host. Their current
+availability, revision, IAM and log retention are **not verified**;
+do not add these endpoints to an agent until an operator requalifies
+the service and publishes an updated notice.
+**Provenance note (2026-11-11 Europe/Brussels documentation review):** The Cloud Run revision,
+traffic and admission limits below are *last recorded* on 2026-10-11
+(last recorded HTTP 200 health checks 2026-10-21). New anonymous GET/HEAD health checks of all three legacy endpoints on
+2026-11-10 at 23:37 UTC (11 November Europe/Brussels) returned HTTP 503,
+but no authenticated Cloud Run
+configuration/retention review was possible. The NE Suite v1 source is **not**
+asserted deployed; source-level test success does not upgrade the older public
+beta's evidence, security posture, settlement or finality claims.
+
+**Historical remote MCP endpoint:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp
+
+**Historical health URL:** https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/health
+
+**Serving beta revision recorded 2026-10-11:** `network-evidence-mcp-beta-00004-pwq` had 100% Cloud Run traffic at that check. Operator notes recorded unchanged executable image/tool contracts and an HTTP admission-limit change from 4 to 24 per minute; today's revision and traffic are not verified.
+**Public source at historical 2026-10-11 beta check:** [GitHub main](https://github.com/ZzNible/network-evidence/tree/main) was recorded at merge commit df0cfde4387aaed86417c216315acaba32962087; executable SHA f12f2ca484cf81336ff486a9e531b63b7b07db5c was operator-recorded, not attested by the MCP client. Neither value establishes the public head or deployed runtime today. Original [source PR #3](https://github.com/ZzNible/network-evidence/pull/3) is closed as superseded, not a live draft.
+**Last declared live scope, not current availability:** Base mainnet/Sepolia and Solana mainnet/devnet; no live zkSYS Tanenbaum or unrelated networks.
 
 Canonical question: **What does the underlying network itself independently support about this exact action?**
 
@@ -13,7 +30,7 @@ This server returns source-observed evidence, not independent cryptographic cons
 
 ## Identify the endpoint and version (2026-10-21)
 
-Use the beta URL above for new six-tool beta tests. Three separate public endpoints currently answer `/health`:
+Use the beta URL above only after an updated operator-approved requalification of service health, the declared tool contract and the privacy notice. Three public endpoints **answered `/health` on 2026-10-21** (all three returned HTTP 503 on 2026-11-10 at 23:37 UTC; current control-plane state unverified):
 
 | Service | MCP URL | Tool count | Purpose |
 | --- | --- | --- | --- |
@@ -21,19 +38,19 @@ Use the beta URL above for new six-tool beta tests. Three separate public endpoi
 | `network-evidence-mcp` | `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp` | 3 | Offline server referenced by the official Registry v0.0.2 manifest |
 | `network-evidence-mcp-preview` | `https://network-evidence-mcp-preview-jrkc26rjga-ew.a.run.app/mcp` | 3 | Legacy offline preview, historically referenced by Registry v0.0.1 |
 
-Anonymous GET `/health` checks on 2026-10-21 returned HTTP 200 for all three, with the tool counts above. All three report runtime version **0.0.1**. That shared runtime string does **not** identify which endpoint or tool surface a client used. Record the exact URL, negotiated MCP protocol, tool names and runtime/client versions. The Registry listing version **0.0.2**, source Suite release **v1.1.0**, deployed executable SHA and Cloud Run revision are separate identifiers.
+Anonymous GET `/health` checks on 2026-10-21 returned HTTP 200 for all three, with the tool counts above. All three historically reported runtime version **0.0.1**. That shared runtime string does **not** identify which endpoint or tool surface a client used. Record the exact URL, negotiated MCP protocol, tool names and runtime/client versions. The Registry listing version **0.0.2**, source Suite release **v1.1.0**, deployed executable SHA and Cloud Run revision are separate identifiers.
 
 The deployment revision and executable SHA at the top are the last recorded deployment provenance, not newly verified Cloud Run control-plane state. These health checks did not call a resolver, inspect traffic logs or establish evidence quality, uptime, or consumer migration. Endpoint retirement requires a separate dependency and traffic review; see the [runbook](CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md#endpoint-retirement-review).
 
-## Connect an MCP-capable agent
+## Historical MCP client configuration (ONLY after an updated operator requalification notice)
 
 - Name: Network Evidence — Base + Solana beta
 - Transport: remote Streamable HTTP
 - URL: https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp
-- Authentication: none; anonymous public read-only access
+- Historical authentication setting (October 2026): none, anonymous read-only access; current IAM unverified
 - Preferred: modern MCP protocol client, Node.js 22+, official MCP SDK v2
 
-Exactly **six MCP tools** are exposed:
+The recorded October 2026 beta tool contract listed **six MCP tools**; the 2026-10-21 health check also reported a count of six. The following list is historical:
 
 | Tool | Function | Evidence boundary |
 | --- | --- | --- |
@@ -44,9 +61,9 @@ Exactly **six MCP tools** are exposed:
 | discover_live_network_evidence | Bounded source-bound BEFORE probes + Core-verified Discovery | Does not rank or choose a network |
 | preflight_live_network_evidence | Source-bound evidence preflight for caller-selected network | Requires complete original Core action/policy and separate probe |
 
-The live source-fetching tools intentionally declare readOnlyHint=true, destructiveHint=false and openWorldHint=true. They cannot sign or submit transactions. Inputs are strictly validated; arbitrary RPC URLs are rejected.
+The source-fetching tools in the historically checked beta declared readOnlyHint=true, destructiveHint=false and openWorldHint=true. Its recorded implementation contained no signing or submission functionality; its input contract rejected arbitrary RPC URLs. This historical statement does not attest a currently running service.
 
-## Add it to ChatGPT or Claude without waiting for directory review
+## Historical ChatGPT/Claude setup examples (ONLY after operator requalification)
 
 **ChatGPT:** In ChatGPT Plugins (subject to workspace permissions), choose **+ → Add custom MCP server**. Enter the public endpoint above and choose **No authentication**. Review the security warning, create and install the resulting private plugin, then use it in ChatGPT Work (mention the plugin with `@`) and request **list_network_profiles once**. This installs it for your account/workspace as permitted; it is **not** a public directory listing. [Official ChatGPT plugin quickstart](https://developers.openai.com/plugins/quickstart).
 
@@ -121,7 +138,7 @@ The Base transaction and Solana signature above are **previously reviewed public
 
 ## Essential beta limits
 
-**Shared beta request budget (2026-10-11):** 24 HTTP `/mcp` admissions per 60 seconds across ALL anonymous clients on one Node process (not a per-user allowance). The separate live Base/Solana source-acquisition ceiling remains eight acquisitions per minute per process. Cloud Run is capped at one instance and one concurrent request. Modern MCP connection + tools/list + one tools/call consumes several admissions. Legacy 2025 clients may issue a GET /mcp that returns 405 **but still consumes one** of those admissions. Respect HTTP 429 and Retry-After; do not retry in a tight loop or assume a per-user quota. There is no uptime or throughput SLA.
+**Shared beta request budget (2026-10-11):** 24 HTTP `/mcp` admissions per 60 seconds across ALL anonymous clients on one Node process (not a per-user allowance). The separate live Base/Solana source-acquisition ceiling remains eight acquisitions per minute per process. Cloud Run is capped at one instance and one concurrent request. Modern MCP connection + tools/list + one tools/call consumes several admissions. Legacy 2025 clients may issue a GET /mcp that returns 405; on the deployed pre-SEC-01 executable above that 405 was observed to take one admission, whereas source commit 218489b (SEC-01, **not deployed**) answers it without consuming the window. At 218489b concurrency is reserved before the body is read, the body has a 5 s absolute deadline (HTTP 408), and the window is charged only after strict JSON parsing, so 405/415/413/400/408 refusals do not count while batch and subscriptions/listen refusals still do. That source still gives no per-client fairness: one slow sender can repeatedly hold the single concurrency slot for up to 5 s per attempt. Respect HTTP 429 and Retry-After; do not retry in a tight loop or assume a per-user quota. There is no uptime or throughput SLA.
 
 **RPC and evidence:** Fixed server-controlled Base/Solana origins, allowed methods and bounded response sizes/timeouts. AFTER emits a network-evidence-fragment via native Core validation, not an automatically complete NetworkEvidenceResult. Source observation, inclusion, execution, effects, settlement, physical/economic consequences, L2 block finality and cryptographic verification are separate statements. Optional caller-supplied x402, ERC-4337 or x402-SVM terms are not authenticated by the server.
 
@@ -149,6 +166,6 @@ The [historical launch checklist](MCP_LAUNCH_CHECKLIST.md) already specifies N1 
 
 Record exact client/runtime/protocol, server commit/configuration, reproducible script and expected versus observed sanitized outputs. Do not query real transaction identifiers or live RPC, and do not exhaust the public quota to produce 429. A public endpoint alone cannot demonstrate zero provider calls; instrument and disable outbound access locally. A local synthetic report does not establish the same behavior on the hosted deployment or certify network proofs. The authentic-action integration gate above remains open.
 
-The existing official MCP Registry listing io.github.ZzNible/network-evidence **v0.0.2 remains the offline three-tool server**. This public six-tool beta is intentionally separate, and it has **NOT** been accepted into the public ChatGPT or Claude directories. Source Suite v1.1.0 is a separate tagged source release; its existence does not certify this public beta as MCP COMPLETE.
+As last recorded (not re-verified at the 2026-11-11 checkpoint), the official MCP Registry listing io.github.ZzNible/network-evidence **v0.0.2 referenced the offline three-tool server**. The historical six-tool beta was separate and, as last recorded, had not been accepted into the public ChatGPT or Claude directories. Source Suite v1.1.0 is a separate tagged source release; its existence does not certify this public beta as MCP COMPLETE.
 
-**Early agent testers wanted:** see [GitHub issue #7](https://github.com/ZzNible/network-evidence/issues/7). Connect via Claude, ChatGPT, Codex or another MCP client; call one exact public Base/Solana action; report client/protocol version, exact network, timestamp, sanitized output or error code and whether provenance/nonClaims were understandable. No wallets, keys or funds required. We also need one real past non-sensitive action with genuine original expected terms and evidence policy fixed before execution to complete the Core→Hub→Lens live case, never reconstructed from a transaction.
+**Archived October 2026 agent-tester invitation, not current onboarding:** [GitHub issue #7](https://github.com/ZzNible/network-evidence/issues/7) originally invited testers to connect an MCP client, evaluate a public Base/Solana action, and report client/runtime information with sanitized evidence and error codes. At that time a separate genuine pre-execution policy case was still sought. This is a dated historical request, not permission or advice to connect to the historically observed beta (whose health endpoint returned HTTP 503 on 2026-11-10 at 23:37 UTC; current service state unverified) or to reconstruct a BEFORE from an existing transaction. Any future hosted-client trial requires an updated operator-published requalification and privacy notice.

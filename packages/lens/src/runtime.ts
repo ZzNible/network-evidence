@@ -240,6 +240,60 @@ function evidenceArtifact(ref: EvidenceRef): LensArtifactRefV01 {
   };
 }
 
+// Narrow, closed presentation admission (lens-browser/v0.1 schema unchanged):
+// the ONLY source proposition text Lens may display verbatim is the exact
+// generic EVM v0.1.0 data-binding proposition. It is compared against a Lens
+// constant and never copied from metadata, so no metadata value can reach a
+// browser through this path.
+const EVM_GENERIC_RESOLVER_ID = "resolver-evm-generic";
+const EVM_GENERIC_RESOLVER_VERSION = "0.1.0";
+const EVM_GENERIC_DATA_BINDING_PROPOSITION = "The acquired receipt binds to the requested subject transaction id.";
+const ADMITTED_DATA_BINDING_VERDICTS = new Set<string>(["supported", "contradicted", "insufficient"]);
+const SUPPORTED_DATA_BINDING_CAVEAT =
+  "Lens display caveat: this data-binding verdict covers only the source resolver's specific evaluated proposition, not the full requested action, its terms or authorization.";
+const WITHHELD_SOURCE_PROPOSITION_CAVEAT =
+  "Lens display caveat: source resolver proposition metadata is not admitted for browser display and is withheld; this generic statement does not restate the evaluated proposition.";
+const ADMITTED_EVM_DATA_BINDING_CAVEAT =
+  "Lens display caveat: this verdict covers only the exact proposition evaluated by resolver-evm-generic v0.1.0 for the requested subject transaction id; it is not the full requested action and does not establish transfer amount, accounts, calldata, authorization, policy satisfaction, settlement or finality.";
+const ONE_SOURCE_EVM_RPC_CAVEAT =
+  "Lens display caveat: every cited evidence reference is an evm_rpc observation from one source in one declared independence group; this is a single-source observation, not independent corroboration or consensus.";
+const CORROBORATION_NOT_ESTABLISHED_CAVEAT =
+  "Lens display caveat: independent corroboration across sources is not established for this assessment.";
+
+/** Exactly `{ proposition: <the EVM generic data-binding proposition> }` as an own data property; nothing else. */
+function hasExactEvmDataBindingMetadata(metadata: unknown): boolean {
+  if (!isRecord(metadata)) return false;
+  const keys = Reflect.ownKeys(metadata);
+  if (keys.length !== 1 || keys[0] !== "proposition") return false;
+  const descriptor = Object.getOwnPropertyDescriptor(metadata, "proposition");
+  return descriptor !== undefined && "value" in descriptor && descriptor.value === EVM_GENERIC_DATA_BINDING_PROPOSITION;
+}
+
+/** `result` is already Core-validated (validateHubRecord) before this is reached. */
+function admitsEvmDataBindingProposition(result: NetworkEvidenceResult, dimension: EvidenceDimension): boolean {
+  return result.resolver.id === EVM_GENERIC_RESOLVER_ID &&
+    result.resolver.version === EVM_GENERIC_RESOLVER_VERSION &&
+    result.subject.type === "transaction" &&
+    result.subject.networkId.startsWith("eip155:") &&
+    dimension.applicability === "applicable" &&
+    dimension.verdict !== undefined &&
+    ADMITTED_DATA_BINDING_VERDICTS.has(dimension.verdict) &&
+    hasExactEvmDataBindingMetadata(dimension.metadata);
+}
+
+/** True only when every cited EvidenceRef is evm_rpc with one identical sourceId and one explicit identical independenceGroup. */
+function citesOneEvmRpcSource(result: NetworkEvidenceResult, dimension: EvidenceDimension): boolean {
+  if (dimension.evidence.length === 0) return false;
+  const refs = dimension.evidence.map((id) => result.evidence.find((ref) => ref.id === id));
+  const first = refs[0];
+  if (first === undefined || first.independenceGroup === undefined) return false;
+  return refs.every((ref) => ref !== undefined &&
+    ref.sourceType === "evm_rpc" &&
+    ref.sourceId === first.sourceId &&
+    ref.independenceGroup !== undefined &&
+    ref.independenceGroup === first.independenceGroup);
+}
+
 function dimensionProposition(
   result: NetworkEvidenceResult,
   key: "execution" | "dataBinding" | "settlement" | "finality",
@@ -247,6 +301,24 @@ function dimensionProposition(
   dimension: EvidenceDimension,
 ): LensPropositionV01 {
   const propositionId = `network.${key}`;
+  // Pure Lens/browser presentation caveat: never rewrite the Core verdict or
+  // export arbitrary source metadata (which may contain private caller data).
+  // One supported data-binding proposition is NOT proof of every action term.
+  const admittedEvmBinding = key === "dataBinding" && admitsEvmDataBindingProposition(result, dimension);
+  const limitations = [
+    ...(dimension.reason ? [dimension.reason] : []),
+    ...(admittedEvmBinding
+      ? [
+          ADMITTED_EVM_DATA_BINDING_CAVEAT,
+          citesOneEvmRpcSource(result, dimension) ? ONE_SOURCE_EVM_RPC_CAVEAT : CORROBORATION_NOT_ESTABLISHED_CAVEAT,
+        ]
+      : key === "dataBinding" && dimension.verdict !== undefined
+        ? [
+            ...(dimension.verdict === "supported" ? [SUPPORTED_DATA_BINDING_CAVEAT] : []),
+            WITHHELD_SOURCE_PROPOSITION_CAVEAT,
+          ]
+        : []),
+  ];
   const assessments: LensAssessmentV01[] = [];
   if (dimension.verdict !== undefined) {
     assessments.push({
@@ -264,7 +336,7 @@ function dimensionProposition(
       basis: [...dimension.basis],
       evidenceRefs: dimension.evidence.map(evidenceArtifactId),
       evaluatedAt: result.generatedAt,
-      limitations: dimension.reason ? [dimension.reason] : [],
+      limitations: [...limitations],
     });
   }
 
@@ -278,11 +350,15 @@ function dimensionProposition(
     propositionId,
     domain: "network",
     kind: `network_evidence.${key}`,
-    statement: `Network Evidence ${label} assessment for the exact action.`,
+    statement: admittedEvmBinding
+      ? EVM_GENERIC_DATA_BINDING_PROPOSITION
+      : key === "dataBinding" && dimension.verdict === "supported"
+        ? "Network Evidence data-binding assessment of the source resolver's specific evaluated proposition."
+        : `Network Evidence ${label} assessment for the exact action.`,
     subjectRefs: ["network-evidence-result"],
     assessments,
     availability,
-    limitations: dimension.reason ? [dimension.reason] : [],
+    limitations: [...limitations],
   };
 }
 

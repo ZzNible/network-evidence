@@ -29,6 +29,7 @@ describe("@nec/mcp source boundaries", () => {
       "live-evm.ts",
       "live-multichain.ts",
       "live-preflight.ts",
+      "live-result.ts",
       "live-solana.ts",
       "profiles.ts",
       "tools.ts",
