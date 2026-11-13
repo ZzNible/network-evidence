@@ -1,10 +1,14 @@
 # Release status
 
-## Published source release — v1.2.0 (13 November 2026)
+## Current signed source release — v1.2.1 (13 November 2026)
+
+[v1.2.1](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.1) is the current **source-only** release. Exact commit `7d8a9730a26ebd89a1ba2c4e2222a78bc76f5d9a`; Git tree `56cf0559ccb9c8e2fcfac2361285f0c80d68d27d`. Hono is locked at `4.13.18`, and the update includes the [first-evidence quickstart](docs/START_HERE.md). The release includes a deterministic source archive and an owner-signed SSH source statement. **No npm, hosted MCP service or registry update** is part of v1.2.1. Earlier snapshots below are historical.
+
+## Prior signed source release — v1.2.0 (13 November 2026)
 
 As verified on 13 November 2026, the public **source-only** GitHub Release was [Network Evidence Suite v1.2.0](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.0), exact commit `272856c94514f1579c0f77f8a301a46f73049561`, source tree `f4e4da5e50ddbdb837428b6ce5c571b67a9991d6`. The release includes a deterministic source archive and an owner-authenticated SSH source statement; no npm package, hosted MCP/Maps service, wallet transaction or deployment is released. A moderate transitive Hono advisory was disclosed. Do not treat this source as a hardened Internet-facing MCP service.
 
-**This file retains dated historical checkpoints below.** Any statements that v1.1.0 was the latest release, or that NE Suite v1 was not yet published, describe the *date of those checkpoints*, not today's publication status. A later security-patch worktree is a new **unpublished candidate**, not a modification of signed v1.2.0. See [Start here](docs/START_HERE.md) for a credential-free local test.
+**This file retains dated historical checkpoints below.** Any statements that v1.1.0 was the latest release, or that NE Suite v1 was not yet published, describe the *date of those checkpoints*, not today's publication status. The independently signed security-patch source was later published as `v1.2.1`, without modifying the immutable `v1.2.0` tag. See [Start here](docs/START_HERE.md) for a credential-free local test.
 
 ## Historical public v1.1.0 and pre-publication checkpoints (archived)
 

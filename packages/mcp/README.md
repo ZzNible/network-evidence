@@ -1,13 +1,13 @@
 # @nec/mcp — local, read-only Network Evidence MCP server
 
-> **Source checkpoint (13 November 2026):** [Network Evidence Suite v1.2.0](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.0) is **source-only**. The local default is three **offline**, read-only tools; the additional three live Base/Solana read-only tools exist in separately opt-in hosted-mode source, **not** in an independently verified public deployment of this release. The older Cloud Run endpoints and MCP Registry record refer to historical versions; their availability, privacy notices and code identity must be requalified before recommending them to agents.
+> **Current signed source release (13 November 2026):** [v1.2.1](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.1) is **source-only**. The default local HTTP MCP server offers three offline read-only tools. The separately opt-in live-mode implementation does not establish that a public endpoint is deployed. The official MCP Registry version 0.0.2 was **deprecated on 14 November 2026**; its old Cloud Run URL is not a verified current NE v1.2.1 service.
 
-> **Security:** v1.2.0 includes a disclosed moderate transitive Hono advisory. Do not expose its HTTP server on the public Internet. A separate security-patched candidate must pass tests and receive a new release authorization. For a credential-free local first run and client setup, use [Start here](../../docs/START_HERE.md).
+> **Security:** v1.2.0 had a moderate transitive Hono advisory. The signed v1.2.1 source resolves Hono to `4.13.18` (npm and Dependabot zero known advisories on 13 November 2026). No hardened public service is claimed. For a credential-free local first run, use [Start here](../../docs/START_HERE.md).
 
 > Historical deployment notes: [beta runbook](../../docs/distribution/CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md).
 > Historical launch checks: [distribution checklist](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md).
 >
-A Model Context Protocol server over public Network Evidence code. In its **default local and official Registry v0.0.2 OFFLINE mode**, it exposes
+A Model Context Protocol server over public Network Evidence code. In **default local mode** (as well as in the historical, now-deprecated registry v0.0.2 offline definition), it exposes
 three read-only tools and performs **no network I/O**. In the separate,
 hosted-only public beta mode it exposes **three more read-only source-fetching
 tools** for Base/Solana. Neither mode is a wallet, signer, funding/gas or
