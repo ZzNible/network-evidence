@@ -1,25 +1,25 @@
 # Network Evidence
 
-Independent network evidence for exact networks, capabilities and actions.
+**What does the blockchain itself actually support about this exact action?**
 
-Network Evidence provides deterministic evidence infrastructure for two
-related questions:
+Network Evidence (NE) gives AI agents and developers **read-only, reproducible network evidence** instead of treating an application claim or one RPC response as proof of settlement or finality. Works with exact Base and Solana cases, and clearly labels what is supported, contradicted, insufficient or ambiguous. It never signs, funds or submits a transaction.
 
-- Discovery: what can an exact network or deployment support, and what is
-  currently observable or usable with evidence?
-- Resolution: what does the underlying network itself independently support
-  about this exact action?
+**[Start here: first evidence in five minutes](docs/START_HERE.md)** · [Latest signed source release](https://github.com/ZzNible/network-evidence/releases/latest) · [Local MCP setup](packages/mcp/README.md) · [NE Maps cases](examples/ne-maps/)
 
-Discovery support is distinct from current availability. Manifest membership
-is not proof of current support or availability, and an unknown required
-capability is not eligible.
+### Try a real evidence pipeline locally
 
-Network Evidence observes, normalizes, replays, and evaluates evidence. It is
-not a wallet, signer, transaction-submission tool, or authority for an action.
-It reports explicit verdicts: `supported`, `contradicted`, `insufficient`, or
-`ambiguous`. Every conclusion records its evidence basis. Execution, observed
-effect, settlement, and finality are separate questions; support for one is
-not support for another.
+```bash
+git clone https://github.com/ZzNible/network-evidence.git
+cd network-evidence
+npm ci
+npm run -s demo:core-hub-lens
+```
+
+This first run **replays a reviewed public Base Sepolia ERC-4337 case**; it does not require a wallet, API key, or an online blockchain query. To let an agent read a reviewed case, run `npm run -s mcp:serve` and connect a **same-machine** MCP client to `http://127.0.0.1:4178/mcp`. The default local server exposes **three offline tools**, not the three extra live-source tools from the separately opt-in hosted implementation. See the [step-by-step agent guide](docs/START_HERE.md).
+
+**Release boundary:** v1.2.0 is a verified **source-only** release, not an operating public MCP endpoint. Its transitive Hono dependency had a disclosed moderate security advisory; do not deploy it on the public Internet. A security-patched source revision requires separate qualification and publication.
+
+NE handles two related questions: **Discovery** (what an exact network may support and what is presently observable) and **Resolution** (what the network independently supports about an exact action). A listed capability does not prove that it currently works. Execution, observed effects, settlement and finality must be assessed separately. Every claim retains its evidence basis; absent evidence is a result.
 
 ## Historical Base + Solana MCP beta (October 2026)
 
@@ -141,23 +141,11 @@ Then open `http://127.0.0.1:4177/`. `TARGET_CORE_MUTATIONS = 0`.
 
 ## Release and reproducibility
 
-> **NE Suite v1 source qualification is not a publication (8 November 2026).**
-> The currently published source release remains v1.1.0. A newer six-tool
-> integrated snapshot is being prepared separately; neither the historical
-> Cloud Run beta nor the official three-tool MCP Registry entry is asserted to
-> execute that unpublished snapshot. Validate any deployed executable against
-> its own dated SHA, not against the source checkout.
+**Release checkpoint (13 November 2026):** [Network Evidence Suite v1.2.0](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.0), tagged on 13 November 2026. Check [latest releases](https://github.com/ZzNible/network-evidence/releases/latest) for subsequent versions. It includes the source tree, an owner-signed provenance statement, a detached signature and an exact source archive. No npm package or hosted service was published. The prior v1.1.0 release (8 October 2026) is preserved.
 
-
-- [RELEASE.md](RELEASE.md) — release status, package/version inventory and
-  release artifacts. `v1.1.0` is the latest public source release, published
-  on 2026-10-08 from `de3ee11d08d22d2791d8b5acfe17c2e61df23e81`; no
-  package is published to npm and no hosted deployment is part of the release.
-- [docs/release/REPRODUCTION.md](docs/release/REPRODUCTION.md) — clean-machine
-  reproduction with expected test counts and output digests.
-- [docs/INTEGRABILITY_V1_1.md](docs/INTEGRABILITY_V1_1.md) — Hub/Lens/Maps
-  contracts and the BEFORE + Discovery completion summary.
-- [docs/release/DEPENDENCY_ADVISORIES.md](docs/release/DEPENDENCY_ADVISORIES.md)
-  — dated, commit-bound `npm audit` observations and locked dependency versions; no `npm audit` result is claimed for the current tree.
-- [SECURITY_BOUNDARIES.md](SECURITY_BOUNDARIES.md) — evidence boundaries and
-  the public/private boundary.
+- [First evidence / agent quickstart](docs/START_HERE.md) — offline evidence, local MCP and browser-based NE Maps.
+- [RELEASE.md](RELEASE.md) — historical release context and source inventory; dated checkpoints inside are not a current service-status claim.
+- [docs/release/REPRODUCTION.md](docs/release/REPRODUCTION.md) — independent, exact-source verification.
+- [docs/INTEGRABILITY_V1_1.md](docs/INTEGRABILITY_V1_1.md) — Hub/Lens/Maps contracts and BEFORE/Discovery.
+- [docs/release/DEPENDENCY_ADVISORIES.md](docs/release/DEPENDENCY_ADVISORIES.md) — dated, commit-bound `npm audit` observations and locked dependency versions; no `npm audit` result is claimed for the current tree.
+- [SECURITY_BOUNDARIES.md](SECURITY_BOUNDARIES.md) — trust and privacy boundaries.

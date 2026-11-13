@@ -180,7 +180,7 @@ describe("DEPENDENCY_ADVISORIES.md: named versions match the lockfile and manife
     for (const bullet of [
       "- `zod` is locked at `4.6.7`;",
       "- `@hono/node-server` is locked at `2.1.6`;",
-      "- `hono` is locked at `4.13.13`;",
+      "- `hono` is locked at `4.13.18`;",
     ]) expect(currentTree.filter((line) => line === bullet), bullet).toHaveLength(1);
     for (const { line, name, version, declared } of locked) {
       expect(lock.packages[`node_modules/${name}`]?.version, line).toBe(version);

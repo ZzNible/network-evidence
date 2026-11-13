@@ -1,11 +1,12 @@
-# @nec/mcp — local, read-only Network Evidence MCP server (v0)
+# @nec/mcp — local, read-only Network Evidence MCP server
 
-> **Current (2026-10-11):** the **original three-tool OFFLINE** public service remains at `https://network-evidence-mcp-jrkc26rjga-ew.a.run.app/mcp` and MCP Registry `io.github.ZzNible/network-evidence` v0.0.2. Its tools never fetch live RPC. The separately approved **six-tool Base + Solana public read-only beta** is LIVE at `https://network-evidence-mcp-beta-jrkc26rjga-ew.a.run.app/mcp`, Cloud Run revision `network-evidence-mcp-beta-00004-pwq` (100% public traffic; same executable image/source as the prior revision, ingress limit updated only), exactly four active profile declarations. This beta performs bounded source observations of exact actions via pinned public RPC endpoints. It is **not** a fully verified Core NetworkEvidenceResult or independent cryptographic settlement/finality certification. Use the [public agent quickstart](../../docs/distribution/MCP_BASE_SOLANA_PUBLIC_BETA_QUICKSTART.md); source release v1.1.0 and old Registry listing do not automatically publish the beta to ChatGPT or Claude directories.
+> **Source checkpoint (13 November 2026):** [Network Evidence Suite v1.2.0](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.0) is **source-only**. The local default is three **offline**, read-only tools; the additional three live Base/Solana read-only tools exist in separately opt-in hosted-mode source, **not** in an independently verified public deployment of this release. The older Cloud Run endpoints and MCP Registry record refer to historical versions; their availability, privacy notices and code identity must be requalified before recommending them to agents.
 
-> **Three hosted-only beta tools:** `resolve_transaction_evidence` (AFTER, optional original caller-supplied claim/OP Stack L2 block-finality), `discover_live_network_evidence` (BEFORE/Core Discovery from exact sources), and `preflight_live_network_evidence` (caller-selected native Core evidence preflight requiring **complete original input/policy**). There is no automatic network choice/ranking, wallet, signing, submission, settlement inference, Core schema replacement or manufactured full Core Result from fragments. Caller-supplied protocol terms are not independently authenticated. Public beta Cloud Run limits are **max one instance, concurrent request one, 24 HTTP `/mcp` admissions per 60 seconds per process (separate unchanged eight live-RPC acquisitions/minute/process)**, shared among all anonymous clients. These constraints are NOT the local default values shown below. Earlier IAM-private live canary remains IAM-private; the old original offline service remains separate for rollback.
+> **Security:** v1.2.0 includes a disclosed moderate transitive Hono advisory. Do not expose its HTTP server on the public Internet. A separate security-patched candidate must pass tests and receive a new release authorization. For a credential-free local first run and client setup, use [Start here](../../docs/START_HERE.md).
 
-> Full [beta deployment, exact source, tests and rollback](../../docs/distribution/CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md) and [distribution launch checklist](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md).
-
+> Historical deployment notes: [beta runbook](../../docs/distribution/CLOUD_RUN_FREE_PREVIEW_RUNBOOK.md).
+> Historical launch checks: [distribution checklist](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md).
+>
 A Model Context Protocol server over public Network Evidence code. In its **default local and official Registry v0.0.2 OFFLINE mode**, it exposes
 three read-only tools and performs **no network I/O**. In the separate,
 hosted-only public beta mode it exposes **three more read-only source-fetching
@@ -160,14 +161,13 @@ or excess bytes. No Response.clone tee buffering or provider error body leak.
 The SDK-only new Solana block signatures membership read is NOT admitted by
 the hosted method allowlist; the original three-tool public MCP endpoint remains OFFLINE; the separate Base + Solana public beta serves six tools with live read-only observations.
 
-**Public beta operational limit (not a blocker retroactively):** the approved
-six-tool Base/Solana beta is already LIVE with one Cloud Run instance and a
+**Historical beta limit (observation dated October 2026; not a current availability claim):** the approved
+six-tool Base/Solana beta was previously reported with one Cloud Run instance and a
 process-local shared 24 HTTP `/mcp` admissions/minute quota (with a separate eight/minute live-RPC acquisition ceiling). The deployed beta
 executable `f12f2ca` predates SEC-01 (`218489b`, not deployed): on that revision a non-POST GET answered with 405 was observed to also take one admission; at `218489b` a 405 does not consume it (guard order above). Additional instances or production-scale agent
 traffic would require independently justified cross-instance admission and
 provider/cost controls; do NOT widen quotas on the basis of beta success.
-The official 3-tool Registry listing remains offline until a separate
-full-result product/compliance release decision.
+The historic 3-tool Registry listing described offline behavior; it has not been verified as a current NE Suite v1.2.0 service.
 
 ## Tools
 

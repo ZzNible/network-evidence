@@ -93,7 +93,7 @@ development/test toolchain. The lockfile of this tree records:
 - `source-map-js` is locked at `1.2.2`;
 - `zod` is locked at `4.6.7`;
 - `@hono/node-server` is locked at `2.1.6`;
-- `hono` is locked at `4.13.13`;
+- `hono` is locked at `4.13.18`;
 - the previously reported `tinypool` package is not present in the lockfile.
 
 Third-party runtime dependencies declared in the `dependencies` of the workspace package manifests (`packages/*/package.json`) of this tree, `@nec/*` workspace packages excluded; the root `package.json` declares none:

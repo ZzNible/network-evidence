@@ -1,5 +1,13 @@
 # Release status
 
+## Published source release — v1.2.0 (13 November 2026)
+
+As verified on 13 November 2026, the public **source-only** GitHub Release was [Network Evidence Suite v1.2.0](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.0), exact commit `272856c94514f1579c0f77f8a301a46f73049561`, source tree `f4e4da5e50ddbdb837428b6ce5c571b67a9991d6`. The release includes a deterministic source archive and an owner-authenticated SSH source statement; no npm package, hosted MCP/Maps service, wallet transaction or deployment is released. A moderate transitive Hono advisory was disclosed. Do not treat this source as a hardened Internet-facing MCP service.
+
+**This file retains dated historical checkpoints below.** Any statements that v1.1.0 was the latest release, or that NE Suite v1 was not yet published, describe the *date of those checkpoints*, not today's publication status. A later security-patch worktree is a new **unpublished candidate**, not a modification of signed v1.2.0. See [Start here](docs/START_HERE.md) for a credential-free local test.
+
+## Historical public v1.1.0 and pre-publication checkpoints (archived)
+
 This file describes the **historical public v1.1.0 source release**,
 the separate **unpublished NE Suite v1 source candidate** and earlier
 independent MCP Cloud Run services. It is documentation only; it neither
@@ -59,7 +67,7 @@ The exact transaction, scope and limitations are recorded in
 Older offline BEFORE fixtures remain **simulated**. No current hosted MCP
 or independent economic settlement/finality is demonstrated.
 
-**This is an unpublished source-only candidate**, not an approved release.
+**At the 12 November checkpoint, this was an unpublished source-only candidate**; the exact source was subsequently published as v1.2.0 on 13 November 2026.
 Any source commit change requires fresh integrity identifiers and
 qualification. Publication, owner signing, tag, deployment and Registry
 registration remain unapproved and are not performed by this document.
