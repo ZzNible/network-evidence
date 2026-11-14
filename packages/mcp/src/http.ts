@@ -59,7 +59,7 @@ export interface NeMcpHttpOptions {
   readonly log?: (line: string) => void;
   /** Injected store (tests); default loads the shipped, pinned collection. */
   readonly cases?: ReviewedCaseStore;
-  /** Explicitly admitted read-only live RPC tool; forbidden in local mode. */
+  /** Explicitly admitted read-only live RPC tool; local mode remains loopback-only. */
   readonly liveEvidence?: MultichainTool;
   /**
    * Opt-in hosted mode. Requires a validated exact public origin; binds
@@ -193,7 +193,7 @@ function isJsonContentType(value: string | undefined): boolean {
 /** Start the MCP HTTP server (local by default). Fails closed on invalid configuration or unverified case data. */
 export async function startNeMcpHttpServer(options: NeMcpHttpOptions = {}): Promise<NeMcpHttpServer> {
   const { mode, host, port, maxBodyBytes, limits, allow } = validateHttpOptions(options);
-  if (options.liveEvidence !== undefined && mode !== "hosted") throw new NeMcpConfigError("live multichain RPC requires hosted mode");
+  // Explicitly injected live evidence is allowed with the loopback-only local guard.
   const cases = options.cases ?? loadReviewedCaseStore();
   const log = options.log ?? (() => {});
 

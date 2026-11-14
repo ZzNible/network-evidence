@@ -43,9 +43,6 @@ try {
   if (process.env.NE_MCP_MULTICHAIN_ENABLED !== undefined && !enableLiveRpc) {
     throw new NeMcpConfigError("NE_MCP_MULTICHAIN_ENABLED must be exactly 1 or absent");
   }
-  if (enableLiveRpc && config.mode !== "hosted") {
-    throw new NeMcpConfigError("live multichain RPC requires hosted mode");
-  }
   const server = await startNeMcpHttpServer({
     host: config.host,
     port: config.port,
@@ -61,8 +58,11 @@ try {
         `accepted public origin(s): ${[config.hosted!.publicOrigin, config.hosted!.customOrigin].filter(Boolean).join(", ")}; endpoint /mcp, health /health\n`,
     );
   } else {
+    const localScope = enableLiveRpc
+      ? "local, opt-in read-only live Base/Solana RPC; loopback only, no signing or submission"
+      : "local, read-only, offline";
     process.stdout.write(
-      `Network Evidence MCP v0 (local, read-only, offline) listening on ${server.mcpUrl}  health: ${server.url}/healthz\n`,
+      `Network Evidence MCP v0 (${localScope}) listening on ${server.mcpUrl}  health: ${server.url}/healthz\n`,
     );
   }
   const stop = () => {

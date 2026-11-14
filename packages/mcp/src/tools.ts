@@ -278,7 +278,9 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
   const instructions = deps.liveEvidence === undefined
     ? (deps.mode === "hosted" ? HOSTED_SERVER_INSTRUCTIONS : SERVER_INSTRUCTIONS)
     : [
-      "Network Evidence MCP: opt-in anonymous, read-only, non-production preview; EVM and Solana source evidence from four fixed network profiles.",
+      deps.mode === "hosted"
+        ? "Network Evidence MCP: opt-in anonymous, read-only, non-production hosted preview; EVM and Solana source evidence from four fixed network profiles."
+        : "Network Evidence MCP: opt-in local, loopback-only, read-only live source acquisition; EVM and Solana evidence from four fixed network profiles. No RPC server is hosted here.",
       "The three other tools remain offline; their historical, synthetic and caller-supplied observations do not become live.",
       "resolve_transaction_evidence obtains ONE source observation using an existing EVM or Solana resolver and returns an authentic Core partial fragment; only with an optional caller-returned evidenceContext does Core also build a NetworkEvidenceResult (preflight continuity, not precedence or policy satisfaction). Solana finalized commitment is source-reported; no cryptographic verification, protocol settlement, L1 withdrawal or economic finality assertion.",
       "discover_live_network_evidence probes 1-3 exact transactions (at most one per fixed profile), produces native Core capability snapshots and a Core-verified Discovery result. It never ranks or chooses networks. Availability applies only to the probed source, action and acquisition time.",

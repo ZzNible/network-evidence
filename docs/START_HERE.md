@@ -90,6 +90,16 @@ Now ask your agent:
 
 **Important:** this default local server intentionally exposes **three offline, read-only tools**. It does **not** independently access live RPC or expose the three separately hosted/opt-in live tools. Connecting an agent is not proof that the user has a hosted service.
 
+**Opt-in real-network investigation (requires Internet):** if you want to
+query an exact Base or Solana transaction instead of only reviewed examples,
+stop the first MCP server and restart it with
+\`NE_MCP_MULTICHAIN_ENABLED=1 npm run -s mcp:serve\`. The same localhost MCP URL
+then offers six read-only tools, including
+\`resolve_transaction_evidence\`. Only four fixed Base/Solana network
+profiles are supported; RPCs are third-party public services, not owned by
+Network Evidence. No wallet, gas payment, settlement or finality is inferred.
+See [local live mode](../packages/mcp/README.md#local-live-rpc-mode-opt-in-six-tools-read-only).
+
 ## 3 — View the same kind of evidence in NE Maps
 
 Stop the local MCP server or open another terminal; run:

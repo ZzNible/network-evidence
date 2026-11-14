@@ -8,9 +8,9 @@
 > Historical launch checks: [distribution checklist](../../docs/distribution/MCP_LAUNCH_CHECKLIST.md).
 >
 A Model Context Protocol server over public Network Evidence code. In **default local mode** (as well as in the historical, now-deprecated registry v0.0.2 offline definition), it exposes
-three read-only tools and performs **no network I/O**. In the separate,
-hosted-only public beta mode it exposes **three more read-only source-fetching
-tools** for Base/Solana. Neither mode is a wallet, signer, funding/gas or
+three read-only tools and performs **no network I/O**. With explicit **live RPC opt-in** in either local or hosted mode, it
+exposes **three more read-only source-fetching tools** for
+Base/Solana. Neither mode is a wallet, signer, funding/gas or
 transaction submission service; neither scores, ranks or chooses networks.
 
 - **BEFORE** asks: what can an exact network/deployment support, and what is
@@ -19,7 +19,7 @@ transaction submission service; neither scores, ranks or chooses networks.
   exact action?
 
 In default offline mode the server observes nothing and never answers
-"now". Hosted public beta sources can observe exact transactions in real time,
+"now". Opt-in live RPC sources can observe exact transactions in real time,
 but do not infer worldwide availability, consensus or settlement from one RPC.
 Current support is distinct from current availability. Manifest membership is
 not live availability. Archived replay keeps current availability `unknown`.
@@ -613,3 +613,39 @@ npx vitest run packages/mcp
   no live RPC admission for refused contexts, Core re-verification, OP Stack never merged,
   the once-measured final envelope; all BEFOREs `SIMULATED_REPLAY_CLOCK`;
 - static source boundaries (no outbound I/O primitives).
+
+## Local live RPC mode (opt-in, six tools, read-only)
+
+The default \`npm run mcp:serve\` remains OFFLINE (3 tools). A developer who
+wants to investigate **an exact Base or Solana transaction live** can opt in
+on their own machine, while retaining the existing loopback-only HTTP
+binding and the Host / Origin anti-rebinding guards:
+
+\`\`\`sh
+NE_MCP_MULTICHAIN_ENABLED=1 npm run -s mcp:serve
+# Connect your MCP client to http://127.0.0.1:4178/mcp
+# GET http://127.0.0.1:4178/healthz shows liveObservation=true and six tools
+\`\`\`
+
+The three additional tools are \`resolve_transaction_evidence\`,
+\`discover_live_network_evidence\`, and \`preflight_live_network_evidence\`.
+They use the existing, bounded read-only acquisitions on four **fixed**
+public networks: Base mainnet / Sepolia and Solana mainnet / devnet.
+**This version does not offer user-selected RPC URLs, authenticated
+bring-your-own endpoints, or general zkSYS live RPC**; do not imply otherwise.
+The upstream public RPC endpoints are operated by third parties. Developers
+must respect their terms, quotas and availability; they may be unavailable.
+A single provider response does not prove settlement, chain-level finality,
+worldwide availability or a physical/economic outcome.
+
+Local live mode uses no Cloud Run, no wallet and no NE-hosted credentials.
+It **requires Internet for those RPC reads**, while previously reviewed
+fixtures remain explicitly historical and never become live merely because
+this switch is set. Live and offline output evidence bases stay separate.
+The network budget remains process-local (8 calls/min, 2 concurrent with
+a 35 s whole-call deadline), in addition to the MCP HTTP limiter.
+
+**Security:** do not forward port 4178 to the Internet, disable the Host/Origin
+guards or place it behind a permissive public proxy. The server is a
+loopback-only development tool without user authentication. Do not use this
+opt-in mode to claim ownership of any third-party RPC provider.

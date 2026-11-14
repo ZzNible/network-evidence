@@ -66,7 +66,12 @@ describe("opt-in read-only live EVM source", () => {
       const health = await (await fetch(server.url + "/healthz")).json() as any;
       expect(health).toMatchObject({ liveObservation: false, networkIo: "none" });
       expect(health.tools).toHaveLength(3);
-      await expect(startNeMcpHttpServer({ port: 0, liveEvidence: createMultichainTool(provider().fetchFn) })).rejects.toThrow(/hosted mode/);
+      const localLive = await startNeMcpHttpServer({ port: 0, liveEvidence: createMultichainTool(provider().fetchFn) });
+      try {
+        const liveHealth = await (await fetch(localLive.url + "/healthz")).json() as any;
+        expect(liveHealth).toMatchObject({ mode: "local", liveObservation: true, networkIo: "bounded_evm_solana_rpc" });
+        expect(liveHealth.tools).toHaveLength(6);
+      } finally { await localLive.close(); }
     } finally { await server.close(); }
   });
 
