@@ -273,7 +273,7 @@ export interface NeMcpServerDeps {
   readonly liveEvidence?: MultichainTool;
 }
 
-/** Fresh stateless McpServer: three original tools plus one ONLY if opt-in. */
+/** Fresh stateless McpServer: three default tools plus three when liveEvidence is explicitly injected. */
 export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
   const instructions = deps.liveEvidence === undefined
     ? (deps.mode === "hosted" ? HOSTED_SERVER_INSTRUCTIONS : SERVER_INSTRUCTIONS)

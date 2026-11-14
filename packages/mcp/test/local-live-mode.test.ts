@@ -30,6 +30,11 @@ describe("opt-in local live MCP", () => {
     servers.push(server);
     expect(server.host).toBe("127.0.0.1");
     expect(server.mode).toBe("local");
+    for (const forbiddenHost of ["0.0.0.0", "::", "192.168.1.9"]) {
+      await expect(startNeMcpHttpServer({
+        host: forbiddenHost, port: 0, liveEvidence: createMultichainTool(fakeFetch),
+      })).rejects.toThrow(/loopback/);
+    }
     const health = await (await fetch(server.url + "/healthz")).json() as Record<string, unknown>;
     expect(health).toMatchObject({ mode: "local", liveObservation: true, networkIo: "bounded_evm_solana_rpc", tools: [...LIVE_TOOL_NAMES] });
     expect((await fetch(server.url + "/health")).status).toBe(404);

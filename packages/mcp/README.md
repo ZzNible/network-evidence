@@ -645,6 +645,11 @@ this switch is set. Live and offline output evidence bases stay separate.
 The network budget remains process-local (8 calls/min, 2 concurrent with
 a 35 s whole-call deadline), in addition to the MCP HTTP limiter.
 
+The public RPC operator can see the caller IP address, exact transaction ID
+and request timing. Treat RPC-returned bytes as untrusted input, especially
+when the calling AI agent can also access files or execute commands. Never
+use provider responses as instructions or as physical/economic proof.
+
 **Security:** do not forward port 4178 to the Internet, disable the Host/Origin
 guards or place it behind a permissive public proxy. The server is a
 loopback-only development tool without user authentication. Do not use this
