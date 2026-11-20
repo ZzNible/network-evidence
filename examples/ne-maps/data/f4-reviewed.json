@@ -1,0 +1,814 @@
+{
+  "schemaVersion": "ne-maps-case/v0.1",
+  "id": "zksys-genesis-20261118",
+  "display": {
+    "networkLabel": "zkSYS Genesis · public testnet",
+    "title": "Follow one real zkSYS Genesis transaction",
+    "shape": "Historical public testnet · five network steps · V8 MOCK proof · PoDA/ChainLock not established"
+  },
+  "exactAction": {
+    "networkId": "eip155:57057",
+    "id": "0xa018d61db50752eeda10c6d52b51fd1741cc8eb41db46d9b972677539d5fef0b",
+    "kind": "transaction",
+    "historicalBlock": "10968",
+    "edgeBatch": "10436",
+    "gatewayBatch": "9448",
+    "genesisSource": "Genesis public RPC; archive capture/genesis-receipt.response.json",
+    "gatewayNetworkId": "eip155:57001",
+    "gatewayTransaction": "0x321f5184dea2ff8026bc84b01df304c8936b139e64b25774ffd326853b2391d9",
+    "gatewayBlock": "31362",
+    "gatewaySource": "Public Gateway indexer; archive capture/gateway-execution-tx-index.response.json and gateway-execution-logs-index.response.json; no independent Gateway consensus",
+    "nevmNetworkId": "eip155:5700",
+    "nevmCommitTransaction": "0x4661a9f890147e1ceb4dc8647eeba801ec206d4a318b299083c291b89f9820f3",
+    "nevmCommitBlock": "1009176",
+    "nevmCommitSource": "NEVM public RPC; archive capture/nevm-range-receipt.response.json",
+    "nevmMockProofTransaction": "0xc82091801f6b0947db4bed5fb2400e07313e2730b0c37d389d2b3c5dba9fdde0",
+    "nevmMockProofBlock": "1009179",
+    "nevmMockProofSource": "NEVM public RPC; archive capture/nevm-proof-transaction.response.json and nevm-proof-receipt.response.json; MOCK V8 TYPE 3",
+    "nevmExecutionTransaction": "0x6498e1f4bd29000890343b377d9790b2a63db10e03d3d25fcd5ea1f9ed4f29e6",
+    "nevmExecutionBlock": "1009182",
+    "nevmExecutionSource": "NEVM public RPC; archive capture/nevm-execution-receipt.response.json"
+  },
+  "trailPropositionOrder": [
+    "f4:genesis.exact_transaction_execution",
+    "f4:genesis.batch_to_gateway_indexed_execution",
+    "f4:gateway.indexed_block_in_nevm_batch_range",
+    "f4:nevm.batch_mock_proof_acceptance",
+    "f4:nevm.batch_execution_commitment_match"
+  ],
+  "lens": {
+    "schemaVersion": "lens-case/v0.1",
+    "caseId": "zksys-genesis-20261118",
+    "namespace": "ne.zksys.f4",
+    "createdAt": "2026-11-20T11:18:21.683Z",
+    "constructionTimeMeaning": "Lens case construction time only; not source-event time.",
+    "artifacts": [
+      {
+        "artifactId": "network-evidence-result",
+        "artifactType": "network_evidence",
+        "sourceSchema": "network-evidence-result/v0.1",
+        "mediaType": "application/json",
+        "artifactDigest": null,
+        "artifactDigestVisibility": "withheld_by_browser_policy",
+        "locatorClass": "embedded_validated_result",
+        "locatorRef": null,
+        "availability": "available",
+        "limitations": []
+      },
+      {
+        "artifactId": "core-evidence:f4_genesis_receipt",
+        "artifactType": "network_evidence_source_ref",
+        "sourceSchema": "@nec/core/evidence-ref/v0.1",
+        "artifactDigest": null,
+        "artifactDigestVisibility": "withheld_by_browser_policy",
+        "locatorClass": "core_evidence_locator",
+        "locatorRef": null,
+        "availability": "unknown",
+        "limitations": []
+      },
+      {
+        "artifactId": "core-evidence:f4_genesis_transaction",
+        "artifactType": "network_evidence_source_ref",
+        "sourceSchema": "@nec/core/evidence-ref/v0.1",
+        "artifactDigest": null,
+        "artifactDigestVisibility": "withheld_by_browser_policy",
+        "locatorClass": "core_evidence_locator",
+        "locatorRef": null,
+        "availability": "unknown",
+        "limitations": []
+      },
+      {
+        "artifactId": "core-evidence:f4_genesis_block",
+        "artifactType": "network_evidence_source_ref",
+        "sourceSchema": "@nec/core/evidence-ref/v0.1",
+        "artifactDigest": null,
+        "artifactDigestVisibility": "withheld_by_browser_policy",
+        "locatorClass": "core_evidence_locator",
+        "locatorRef": null,
+        "availability": "unknown",
+        "limitations": []
+      },
+      {
+        "artifactId": "f4:original-public-source-archive",
+        "artifactType": "archived_readonly_rpc_and_index_records",
+        "sourceSchema": "ne-zksys-f4-public-HTTP-capture/v0.1",
+        "mediaType": "application/zip",
+        "artifactDigest": null,
+        "artifactDigestVisibility": "withheld_by_browser_policy",
+        "locatorClass": "bundled_pinned_source_archive",
+        "locatorRef": null,
+        "sourceObservedAt": "2026-11-20T11:18:21.683Z",
+        "availability": "available",
+        "limitations": [
+          "Archive digest binds public RPC and indexer observations; not a consensus/finality attestation."
+        ]
+      }
+    ],
+    "sourceClaims": [],
+    "propositions": [
+      {
+        "propositionId": "network.execution",
+        "domain": "network",
+        "statement": "Network Evidence execution assessment for the exact action.",
+        "kind": "network_evidence.execution",
+        "subjectRefs": [
+          "network-evidence-result"
+        ],
+        "assessments": [
+          {
+            "assessmentId": "assessment.network.execution",
+            "propositionId": "network.execution",
+            "evaluator": {
+              "type": "network_evidence",
+              "version": "0.1",
+              "buildRef": "sha256:8a2b072865ac7f737ad19e8dcab11114714d0387dd3f30f4dc98f8a9280eec8a",
+              "verificationMode": "preserved_core_result",
+              "provenanceClass": "validated_network_evidence_result"
+            },
+            "vocabulary": "network_evidence_verdict/v0.1",
+            "value": "supported",
+            "basis": [
+              "source_observation"
+            ],
+            "evidenceRefs": [
+              "core-evidence:f4_genesis_receipt"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": []
+          }
+        ],
+        "availability": "available",
+        "limitations": []
+      },
+      {
+        "propositionId": "network.dataBinding",
+        "domain": "network",
+        "statement": "Network Evidence data-binding assessment of the source resolver's specific evaluated proposition.",
+        "kind": "network_evidence.dataBinding",
+        "subjectRefs": [
+          "network-evidence-result"
+        ],
+        "assessments": [
+          {
+            "assessmentId": "assessment.network.dataBinding",
+            "propositionId": "network.dataBinding",
+            "evaluator": {
+              "type": "network_evidence",
+              "version": "0.1",
+              "buildRef": "sha256:8a2b072865ac7f737ad19e8dcab11114714d0387dd3f30f4dc98f8a9280eec8a",
+              "verificationMode": "preserved_core_result",
+              "provenanceClass": "validated_network_evidence_result"
+            },
+            "vocabulary": "network_evidence_verdict/v0.1",
+            "value": "supported",
+            "basis": [
+              "source_observation"
+            ],
+            "evidenceRefs": [
+              "core-evidence:f4_genesis_receipt",
+              "core-evidence:f4_genesis_transaction"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "Lens display caveat: this data-binding verdict covers only the source resolver's specific evaluated proposition, not the full requested action, its terms or authorization.",
+              "Lens display caveat: source resolver proposition metadata is not admitted for browser display and is withheld; this generic statement does not restate the evaluated proposition."
+            ]
+          }
+        ],
+        "availability": "available",
+        "limitations": [
+          "Lens display caveat: this data-binding verdict covers only the source resolver's specific evaluated proposition, not the full requested action, its terms or authorization.",
+          "Lens display caveat: source resolver proposition metadata is not admitted for browser display and is withheld; this generic statement does not restate the evaluated proposition."
+        ]
+      },
+      {
+        "propositionId": "network.settlement",
+        "domain": "network",
+        "statement": "Network Evidence settlement assessment for the exact action.",
+        "kind": "network_evidence.settlement",
+        "subjectRefs": [
+          "network-evidence-result"
+        ],
+        "assessments": [],
+        "availability": "unknown",
+        "limitations": [
+          "Source capture does not independently verify Gateway settlement or recipient effect."
+        ]
+      },
+      {
+        "propositionId": "network.finality",
+        "domain": "network",
+        "statement": "Network Evidence finality assessment for the exact action.",
+        "kind": "network_evidence.finality",
+        "subjectRefs": [
+          "network-evidence-result"
+        ],
+        "assessments": [],
+        "availability": "unknown",
+        "limitations": [
+          "No independent Syscoin Core ChainLock was observed."
+        ]
+      },
+      {
+        "propositionId": "f4:genesis.exact_transaction_execution",
+        "domain": "zkSYS historical testnet",
+        "statement": "Genesis transaction is recorded with a successful execution receipt at block 10968.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_0",
+            "propositionId": "f4:genesis.exact_transaction_execution",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "supported",
+            "basis": [
+              "source_observation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "Genesis RPC receipt+tx+block at 2026-11-20 capture",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "available",
+        "limitations": [
+          "Genesis RPC receipt+tx+block at 2026-11-20 capture"
+        ]
+      },
+      {
+        "propositionId": "f4:genesis.height_to_reported_batch",
+        "domain": "zkSYS historical testnet",
+        "statement": "Genesis providers report block 10968 as part of Edge batch 10436 (height-based lookup only).",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_1",
+            "propositionId": "f4:genesis.height_to_reported_batch",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "supported",
+            "basis": [
+              "deterministic_derivation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "Both Genesis batch RPCs returned the same source values at height 10968; no hash binding",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "available",
+        "limitations": [
+          "Both Genesis batch RPCs returned the same source values at height 10968; no hash binding"
+        ]
+      },
+      {
+        "propositionId": "f4:genesis.batch_to_gateway_indexed_execution",
+        "domain": "zkSYS historical testnet",
+        "statement": "A public Gateway index reports Edge batch 10436 with matching state and batch commitments.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_2",
+            "propositionId": "f4:genesis.batch_to_gateway_indexed_execution",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "supported",
+            "basis": [
+              "deterministic_derivation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "Gateway public index matches batch, emitter, state and commitment; NOT independent Gateway consensus",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "available",
+        "limitations": [
+          "Gateway public index matches batch, emitter, state and commitment; NOT independent Gateway consensus"
+        ]
+      },
+      {
+        "propositionId": "f4:gateway.indexed_block_in_nevm_batch_range",
+        "domain": "zkSYS historical testnet",
+        "statement": "A NEVM event records Gateway block 31362 inside batch 9448 range 31360–31362.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_3",
+            "propositionId": "f4:gateway.indexed_block_in_nevm_batch_range",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "supported",
+            "basis": [
+              "deterministic_derivation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "Gateway block 31362 within NEVM on-chain reported range 31360..31362",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "available",
+        "limitations": [
+          "Gateway block 31362 within NEVM on-chain reported range 31360..31362"
+        ]
+      },
+      {
+        "propositionId": "f4:nevm.batch_mock_proof_acceptance",
+        "domain": "zkSYS historical testnet",
+        "statement": "The NEVM verification transaction used V8 MOCK TYPE 3, not a real cryptographically checked ZK proof.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_4",
+            "propositionId": "f4:nevm.batch_mock_proof_acceptance",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "supported",
+            "basis": [
+              "deterministic_derivation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "Observed BlocksVerification and decoded V8 MOCK TYPE3 calldata; NOT cryptographic real proof",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "available",
+        "limitations": [
+          "Observed BlocksVerification and decoded V8 MOCK TYPE3 calldata; NOT cryptographic real proof"
+        ]
+      },
+      {
+        "propositionId": "f4:nevm.batch_execution_commitment_match",
+        "domain": "zkSYS historical testnet",
+        "statement": "NEVM batch 9448 execution event matches the earlier batch commit hash and commitment.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_5",
+            "propositionId": "f4:nevm.batch_execution_commitment_match",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "supported",
+            "basis": [
+              "deterministic_derivation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "NEVM receipt logs and explorer logs agree, matching BlockCommit hash+commitment",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "available",
+        "limitations": [
+          "NEVM receipt logs and explorer logs agree, matching BlockCommit hash+commitment"
+        ]
+      },
+      {
+        "propositionId": "f4:core.poda_bytes_and_canonical_inclusion",
+        "domain": "zkSYS historical testnet",
+        "statement": "Syscoin Core PoDA bytes match their commitment and are canonically included.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_6",
+            "propositionId": "f4:core.poda_bytes_and_canonical_inclusion",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "insufficient",
+            "basis": [
+              "source_observation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "No independently sufficient evidence in this exact F4 capture",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "unknown",
+        "limitations": [
+          "No independently sufficient evidence in this exact F4 capture"
+        ]
+      },
+      {
+        "propositionId": "f4:core.chainlock_finality",
+        "domain": "zkSYS historical testnet",
+        "statement": "Syscoin ChainLock finality is independently established for the relevant Core block.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_7",
+            "propositionId": "f4:core.chainlock_finality",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "insufficient",
+            "basis": [
+              "source_observation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "No independently sufficient evidence in this exact F4 capture",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "unknown",
+        "limitations": [
+          "No independently sufficient evidence in this exact F4 capture"
+        ]
+      },
+      {
+        "propositionId": "f4:nevm.historical_active_verifier_contract",
+        "domain": "zkSYS historical testnet",
+        "statement": "The active verifier at the historical proof block is independently identified.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_8",
+            "propositionId": "f4:nevm.historical_active_verifier_contract",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "insufficient",
+            "basis": [
+              "source_observation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "No independently sufficient evidence in this exact F4 capture",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "unknown",
+        "limitations": [
+          "No independently sufficient evidence in this exact F4 capture"
+        ]
+      },
+      {
+        "propositionId": "f4:zk.real_cryptographic_proof_verified",
+        "domain": "zkSYS historical testnet",
+        "statement": "A real ZK proof is independently cryptographically verified.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_9",
+            "propositionId": "f4:zk.real_cryptographic_proof_verified",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "insufficient",
+            "basis": [
+              "source_observation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "No independently sufficient evidence in this exact F4 capture",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "unknown",
+        "limitations": [
+          "No independently sufficient evidence in this exact F4 capture"
+        ]
+      },
+      {
+        "propositionId": "f4:destination.withdrawal_effect",
+        "domain": "zkSYS historical testnet",
+        "statement": "The exact action's recipient-chain withdrawal or destination effect is established.",
+        "kind": "external_source_bound_edge",
+        "subjectRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "sourceClaimRefs": [],
+        "assessments": [
+          {
+            "assessmentId": "f4_external_assessment_10",
+            "propositionId": "f4:destination.withdrawal_effect",
+            "evaluator": {
+              "type": "f4_external_offline_source_join",
+              "version": "0.1.0",
+              "verificationMode": "strict_archived_public_sources",
+              "provenanceClass": "public_rpc_and_indexer_capture"
+            },
+            "vocabulary": "f4_external_source_join/v0.1",
+            "value": "insufficient",
+            "basis": [
+              "source_observation"
+            ],
+            "evidenceRefs": [
+              "f4:original-public-source-archive"
+            ],
+            "evaluatedAt": "2026-11-20T11:18:21.683Z",
+            "limitations": [
+              "No independently sufficient evidence in this exact F4 capture",
+              "External case-level observation; this is NOT a Core dimension verdict or independent finality."
+            ]
+          }
+        ],
+        "availability": "unknown",
+        "limitations": [
+          "No independently sufficient evidence in this exact F4 capture"
+        ]
+      }
+    ],
+    "relations": [
+      {
+        "relationId": "f4_follow_1",
+        "fromRef": "f4:genesis.exact_transaction_execution",
+        "toRef": "f4:genesis.height_to_reported_batch",
+        "relationType": "archived_provenance_sequence",
+        "basis": "presentation_order_only",
+        "assertedBy": "external_f4_source_consumer",
+        "evidenceRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "limitations": [
+          "Following the five source records does not assert unproven causal chain linkage."
+        ]
+      },
+      {
+        "relationId": "f4_follow_2",
+        "fromRef": "f4:genesis.height_to_reported_batch",
+        "toRef": "f4:genesis.batch_to_gateway_indexed_execution",
+        "relationType": "archived_provenance_sequence",
+        "basis": "presentation_order_only",
+        "assertedBy": "external_f4_source_consumer",
+        "evidenceRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "limitations": [
+          "Following the five source records does not assert unproven causal chain linkage."
+        ]
+      },
+      {
+        "relationId": "f4_follow_3",
+        "fromRef": "f4:genesis.batch_to_gateway_indexed_execution",
+        "toRef": "f4:gateway.indexed_block_in_nevm_batch_range",
+        "relationType": "archived_provenance_sequence",
+        "basis": "presentation_order_only",
+        "assertedBy": "external_f4_source_consumer",
+        "evidenceRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "limitations": [
+          "Following the five source records does not assert unproven causal chain linkage."
+        ]
+      },
+      {
+        "relationId": "f4_follow_4",
+        "fromRef": "f4:gateway.indexed_block_in_nevm_batch_range",
+        "toRef": "f4:nevm.batch_mock_proof_acceptance",
+        "relationType": "archived_provenance_sequence",
+        "basis": "presentation_order_only",
+        "assertedBy": "external_f4_source_consumer",
+        "evidenceRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "limitations": [
+          "Following the five source records does not assert unproven causal chain linkage."
+        ]
+      },
+      {
+        "relationId": "f4_follow_5",
+        "fromRef": "f4:nevm.batch_mock_proof_acceptance",
+        "toRef": "f4:nevm.batch_execution_commitment_match",
+        "relationType": "archived_provenance_sequence",
+        "basis": "presentation_order_only",
+        "assertedBy": "external_f4_source_consumer",
+        "evidenceRefs": [
+          "f4:original-public-source-archive"
+        ],
+        "limitations": [
+          "Following the five source records does not assert unproven causal chain linkage."
+        ]
+      }
+    ],
+    "openQuestions": [
+      {
+        "questionId": "f4_missing_0",
+        "domain": "zkSYS historical testnet",
+        "statement": "What independent evidence would establish this claim? Syscoin Core PoDA bytes match their commitment and are canonically included.",
+        "status": "awaiting_evidence",
+        "relatedPropositionRefs": [
+          "f4:core.poda_bytes_and_canonical_inclusion"
+        ],
+        "reason": "No independently sufficient source for this proposition in the frozen F4 capture."
+      },
+      {
+        "questionId": "f4_missing_1",
+        "domain": "zkSYS historical testnet",
+        "statement": "What independent evidence would establish this claim? Syscoin ChainLock finality is independently established for the relevant Core block.",
+        "status": "awaiting_evidence",
+        "relatedPropositionRefs": [
+          "f4:core.chainlock_finality"
+        ],
+        "reason": "No independently sufficient source for this proposition in the frozen F4 capture."
+      },
+      {
+        "questionId": "f4_missing_2",
+        "domain": "zkSYS historical testnet",
+        "statement": "What independent evidence would establish this claim? The active verifier at the historical proof block is independently identified.",
+        "status": "awaiting_evidence",
+        "relatedPropositionRefs": [
+          "f4:nevm.historical_active_verifier_contract"
+        ],
+        "reason": "No independently sufficient source for this proposition in the frozen F4 capture."
+      },
+      {
+        "questionId": "f4_missing_3",
+        "domain": "zkSYS historical testnet",
+        "statement": "What independent evidence would establish this claim? A real ZK proof is independently cryptographically verified.",
+        "status": "awaiting_evidence",
+        "relatedPropositionRefs": [
+          "f4:zk.real_cryptographic_proof_verified"
+        ],
+        "reason": "No independently sufficient source for this proposition in the frozen F4 capture."
+      },
+      {
+        "questionId": "f4_missing_4",
+        "domain": "zkSYS historical testnet",
+        "statement": "What independent evidence would establish this claim? The exact action's recipient-chain withdrawal or destination effect is established.",
+        "status": "awaiting_evidence",
+        "relatedPropositionRefs": [
+          "f4:destination.withdrawal_effect"
+        ],
+        "reason": "No independently sufficient source for this proposition in the frozen F4 capture."
+      }
+    ],
+    "limitations": [
+      "Generic Lens projection only: Network Evidence semantics are preserved without a global case verdict.",
+      "Execution or observed effects do not imply settlement, finality, service delivery, physical-world truth, or policy/economic consequence.",
+      "Historical public testnet source observations, not current network state or independent consensus.",
+      "V8 MOCK TYPE 3 is not a real independently cryptographically verified ZK proof.",
+      "Gateway RPC was not queried; gateway event evidence originates from a public indexer.",
+      "PoDA raw bytes, canonical Core publication, ChainLock finality and recipient effects remain unverified.",
+      "All six source-join assessments are EXTERNAL, not Core-supported dimensions.",
+      "Do not interpret the mock proof, Gateway index or batch relationship as finality."
+    ],
+    "coreResultPreservation": {
+      "sourceSemanticDigest": "sha256:4292b9d4d975183628a5ca1fc210e8089447a499579896c78fc0cd089df67188",
+      "sourceArtifactDigest": "sha256:40439ba73256ccbd4cf864716a1d6396352bbfd976ca8d583f932e3679689a76",
+      "subject": {
+        "type": "transaction",
+        "networkId": "eip155:57057",
+        "txId": "0xa018d61db50752eeda10c6d52b51fd1741cc8eb41db46d9b972677539d5fef0b"
+      },
+      "resolver": {
+        "id": "external-f4-archived-genesis",
+        "version": "0.1.0",
+        "digest": "sha256:8a2b072865ac7f737ad19e8dcab11114714d0387dd3f30f4dc98f8a9280eec8a"
+      },
+      "observedEffectIds": [],
+      "warningCodes": [],
+      "conflictIds": []
+    },
+    "revisionDigest": null,
+    "revisionDigestVisibility": "withheld_by_browser_policy",
+    "TARGET_CORE_MUTATIONS": 0,
+    "projectionPolicy": "lens-browser/v0.1"
+  },
+  "extensions": {
+    "trailContextNote": "HISTORICAL REPLAY, not live. V8 MOCK TYPE 3 is NOT a cryptographically verified real ZK proof. Gateway source is a public indexer, not independent Gateway consensus. Core PoDA bytes, publication and ChainLock finality are NOT established; the five steps show navigation, not certain causality.",
+    "provenance": {
+      "sourceAuthority": "syscoin/sys-docs@6f14d9af42f5cc4412b79278b8e8380e78426b28",
+      "networkEvidenceSource": "ZzNible/network-evidence@90526c75ad869b46fc19a585f6cbccc083627890",
+      "originalCaptureSha256": "a223831d3a304737e0f9e5004b25ebc1e8f18a754679b13a4770e506462384d8",
+      "replayGuide": "examples/zksys-genesis-f4/README.md",
+      "sourceArchive": "examples/zksys-genesis-f4/ORIGINAL_PUBLIC_CAPTURE.zip",
+      "sourceVerdictsSha256": "c32b4fedb97d5e8366afc75604b4fae996129415c8f4f38612feef0929fad1fb",
+      "realityClass": "reviewed historical source-bound public testnet fixture",
+      "construction": "external Core->Hub->Lens plus deterministic source joins; no Core mutation",
+      "reviewScope": "Exact frozen public Genesis/NEVM RPC + indexed Gateway, six source joins and 11 tamper rejects",
+      "mockMode": "V8 MOCK TYPE 3, no real cryptographic ZK verification",
+      "missingEvidence": "Core PoDA / ChainLock / historical wrapper / withdrawal: insufficient"
+    }
+  }
+}

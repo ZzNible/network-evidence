@@ -20,7 +20,7 @@ function propositionAvailabilities(lens: any): string[] {
 
 describe("get_reviewed_evidence_case store", () => {
   it("serves exactly the shipped case ids, pinned by sha256", () => {
-    expect(store.caseIds).toEqual(["f1", "f2", "f3", "synthetic-local-core-golden"]);
+    expect(store.caseIds).toEqual(["f1", "f2", "f3", "synthetic-local-core-golden", "zksys-genesis-20261118"]);
     expect(createHash("sha256").update(bytes).digest("hex")).toBe(REVIEWED_COLLECTION_SHA256);
     for (const id of store.caseIds) {
       const out = store.get(id);

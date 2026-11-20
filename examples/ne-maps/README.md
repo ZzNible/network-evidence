@@ -19,12 +19,16 @@ It is deliberately a presentation layer:
 3. Solana mainnet x402-SVM partial case — supported execution/payment/source-observed RPC-finalized dimension, insufficient historical x402 correlation, settlement unavailable.
 4. **Synthetic / local fixture — not a network observation.** The LOT 2 integrability proof (Core golden literals -> `@nec/hub` -> `@nec/lens` -> `lens-browser/v0.1`): execution supported, one observed ERC-20 effect, data binding not applicable, settlement and finality unknown. Its EVM-shaped identifiers are fixture literals.
 
+5. zkSYS Genesis historical public testnet source trail: five network steps; the test verifier accepts a V8 MOCK TYPE 3 proof, NOT independently verified real ZK proof. Gateway event is a public index, and PoDA/ChainLock remain insufficient. No live RPC or wallet needed.
+
 Cases 1–3 come from the frozen reviewed export pinned to:
 
 - `ZzNible/agent-evidence-hub` `autonomy/authority-v1` at `586a81a39c8da4d3a0dc0e879b605aabfd3f8d1d`;
 - public Suite repo `ZzNible/network-evidence` at `e536ca1c63465ebb2de46c855a01bac71e4dc768`.
 
 `data/cases.json` is that frozen reviewed export (legacy `ne-maps/v0.1`, unchanged). Maps no longer loads it directly: `build-collection.ts` derives `data/collection.json` from it and from the LOT 2 fixture, carrying every nested Lens projection unchanged and moving only legacy presentation fields into the versioned envelope (`extensions.trailContextNote`, `extensions.reviewedSelectorOutcomes`, `extensions.provenance`). Display labels and Trail ordering are presentation metadata, not evidence.
+
+F4 is frozen as data/f4-reviewed.json + data/F4_REVIEWED.sha256. Its five navigation steps are source-bound external Lens assessments (not Core settlement/finality verdicts); original source digest is in provenance. The generic Maps app.js remains unchanged, and MCP reads the same pinned collection.
 
 ## Adding a case
 

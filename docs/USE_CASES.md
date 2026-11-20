@@ -1,6 +1,6 @@
-# Four evidence cases you can inspect
+# Five evidence cases you can inspect
 
-NE distinguishes **what exact network evidence supports** from assumptions made by apps and agents. The four cases in the generic NE Maps atlas are reviewed historical or synthetic fixtures, **not** fresh network lookups.
+NE distinguishes **what exact network evidence supports** from assumptions made by apps and agents. The five cases in the generic NE Maps atlas are reviewed historical or synthetic fixtures, **not** fresh network lookups.
 
 ## Open the cases
 
@@ -19,6 +19,9 @@ Open http://127.0.0.1:4177/ on the **same machine**. No wallet, API key or live 
 | **Base Sepolia ERC-4337 v0.6** | Exact UserOperation selection and reviewed selector outcomes | Bundler provenance and finality |
 | **Solana mainnet x402-SVM partial** | Specific execution/payment observations; source-reported RPC-finalized dimension | Historical x402 correlation and settlement; the RPC signal is not an independent finality proof |
 | **Synthetic / local integrability** | Local Core -> Hub -> Lens consistency and one synthetic effect | **Not a real on-chain observation.** Settlement and finality remain unknown |
+| **zkSYS Genesis public testnet** | Six narrow source observations/joins across five historical records | **MOCK V8 TYPE 3**, no real ZK verification; Core PoDA, ChainLock, historical verifier and withdrawal insufficient |
+
+[Replay the bundled Genesis sources offline](../examples/zksys-genesis-f4/README.md).
 
 See the [source-bound NE Maps inventory](../examples/ne-maps/README.md). Lens, Trail and exact-action views are presentation handoffs, not new consensus checks.
 

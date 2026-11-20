@@ -106,6 +106,29 @@ function syntheticCase(): NeMapsCaseEnvelopeV01 {
   };
 }
 
+function fifthHistoricalCase(): NeMapsCaseEnvelopeV01 {
+  const bytes = readFileSync(resolve(DATA, "f4-reviewed.json"));
+  if (readFileSync(resolve(DATA, "F4_REVIEWED.sha256"), "utf8") !== sha256(bytes) + "  f4-reviewed.json\n") throw new Error("F4 pin mismatch");
+  const f4 = JSON.parse(bytes.toString("utf8")) as NeMapsCaseEnvelopeV01;
+  if (f4.id !== "zksys-genesis-20261118" || f4.exactAction.networkId !== "eip155:57057") throw new Error("F4 identity mismatch");
+  if (f4.extensions?.provenance?.realityClass !== "reviewed historical source-bound public testnet fixture") throw new Error("F4 reality mismatch");
+  if (f4.extensions.provenance.originalCaptureSha256 !== "a223831d3a304737e0f9e5004b25ebc1e8f18a754679b13a4770e506462384d8") throw new Error("F4 capture pin mismatch");
+  if (f4.lens.coreResultPreservation?.sourceSemanticDigest !== "sha256:4292b9d4d975183628a5ca1fc210e8089447a499579896c78fc0cd089df67188") throw new Error("F4 Core digest mismatch");
+  if (f4.trailPropositionOrder.length !== 5) throw new Error("F4 Trail must show five steps");
+  const items = f4.lens.propositions.filter((p) => p.propositionId.startsWith("f4:"));
+  if (items.length !== 11) throw new Error("F4 source inventory mismatch");
+  if (items.some((p) => p.assessments.length !== 1 ||
+      p.assessments[0]?.vocabulary !== "f4_external_source_join/v0.1" ||
+      p.assessments[0]?.evaluator.type !== "f4_external_offline_source_join")) throw new Error("F4 cannot impersonate Core");
+  const byId = (id: string) => items.find((p) => p.propositionId === id);
+  if (byId("f4:zk.real_cryptographic_proof_verified")?.assessments[0]?.value !== "insufficient" ||
+      byId("f4:core.chainlock_finality")?.assessments[0]?.value !== "insufficient" ||
+      byId("f4:nevm.batch_mock_proof_acceptance")?.assessments[0]?.value !== "supported" ||
+      !byId("f4:nevm.batch_mock_proof_acceptance")?.statement.includes("MOCK")) throw new Error("F4 proof/finality mismatch");
+  validateLensBrowserSafeCaseV01(f4.lens);
+  return f4;
+}
+
 export function buildNeMapsCollectionV01(): NeMapsCaseCollectionV01 {
   const legacyBytes = readFileSync(resolve(DATA, "cases.json"));
   if (sha256(legacyBytes) !== LEGACY_EXPORT_SHA256) throw new Error("reviewed legacy export digest mismatch");
@@ -134,7 +157,7 @@ export function buildNeMapsCollectionV01(): NeMapsCaseCollectionV01 {
       ...legacy.nonClaims,
       "Synthetic/local cases are fixtures for integrability, not network observations.",
     ],
-    cases: [...historical, syntheticCase()],
+    cases: [...historical, syntheticCase(), fifthHistoricalCase()],
   };
   validateNeMapsCollectionV01(collection, { validateLens: (lens) => validateLensBrowserSafeCaseV01(lens) });
   return collection;

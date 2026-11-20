@@ -38,3 +38,9 @@ The F1/F2/F3 migration is envelope-only. The legacy collection-level `sourceAuth
 Pinned collection digest is stored in `data/COLLECTION.sha256`.
 
 `TARGET_CORE_MUTATIONS = 0`.
+
+## F4 historical Genesis sources
+
+The fifth case is built from the [bundled original source archive and offline verifier](../zksys-genesis-f4/README.md). Archive SHA-256: `a223831d3a304737e0f9e5004b25ebc1e8f18a754679b13a4770e506462384d8`. It contains 19 public RPC/indexer responses; the deterministic report has six narrowly supported joins, five insufficient claims and 11 rejected tamper controls. The consumer pins that report's complete bytes. Each Genesis source uses its own observed timestamp and exact transaction/block locator. Maps/MCP show all five transaction IDs and their three networks.
+
+The V8 MOCK TYPE 3 proof does not establish real ZK verification. PoDA, ChainLock finality, the historical active verifier and withdrawal remain insufficient. Core settlement/finality stay unknown; `app.js` and Core are unchanged. The four previous cases remain intact.

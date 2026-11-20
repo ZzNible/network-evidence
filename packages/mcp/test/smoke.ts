@@ -72,7 +72,7 @@ for (const mode of ["legacy", "auto"] as const) {
     }
     check("discovery ok, liveObservation=false, re-verified by Core", !discovery.isError && d.liveObservation === false && d.coreVerification.reverifiedAtMcpBoundary === true);
 
-    for (const caseId of ["f1", "synthetic-local-core-golden"]) {
+    for (const caseId of ["f1", "synthetic-local-core-golden", "zksys-genesis-20261118"]) {
       const c = (await client.callTool({ name: "get_reviewed_evidence_case", arguments: { caseId } })).structuredContent as any;
       out(`  case ${caseId}: ${c.evidenceClass} liveObservation=${c.liveObservation} currentAvailability=${c.currentAvailability}`);
       out(`    label: ${c.label}`);

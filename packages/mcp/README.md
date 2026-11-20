@@ -291,12 +291,12 @@ are rejected by the SDK input validation before the handler runs.
 
 ### 3. `get_reviewed_evidence_case`
 
-Input: `{ "caseId": "f1" | "f2" | "f3" | "synthetic-local-core-golden" }` (exact
+Input: `{ "caseId": "f1" | "f2" | "f3" | "synthetic-local-core-golden" | "zksys-genesis-20261118" }` (exact
 enum; no paths, prefixes or case folding).
 
 Reads only the fixed file `examples/ne-maps/data/collection.json`. At startup
 the bytes must match SHA-256
-`e10250b3f4714883f54c96003f1cdb5f1c2ed36cb7bd18dcf3f94b194139fa49` (pinned here
+`2dbc0468a8aab185cbc0e970be9498f4950286471b7ed0c6562d36e81fd9e8eb` (pinned here
 and in `data/COLLECTION.sha256`). They are then strictly parsed by Core and
 validated by the shipped Maps validator plus `@nec/lens`
 `validateLensBrowserSafeCaseV01`. On any mismatch the server refuses to start.
@@ -304,11 +304,11 @@ validated by the shipped Maps validator plus `@nec/lens`
 Output `ne-mcp-reviewed-case/v0.1`: `evidenceClass` + `label`
 (`historical-reviewed-public-network-fixture` for f1–f3 — **HISTORICAL**, past
 observations at pinned commits; `synthetic-local-fixture` — **SYNTHETIC, not a
-network observation**), `liveObservation: false`,
+network observation**; `historical-source-bound-public-testnet-fixture` for F4 — historical Genesis/NEVM RPC plus a public Gateway index, **MOCK V8 TYPE 3**, PoDA and ChainLock insufficient), `liveObservation: false`,
 `currentAvailability: "unknown"`, `source` (path, sha256, pins, validators),
 `caseProvenance`, `collectionNonClaims`, `serverNonClaims`, and the `envelope`
 **verbatim**. All limitations, open questions, unavailable/unknown states and
-extensions are preserved.
+extensions are preserved. F4 includes a [bundled offline source replay](../../examples/zksys-genesis-f4/README.md); its supported source joins do not establish a real ZK proof or finality.
 
 ## Hosted live tools: failure modes
 

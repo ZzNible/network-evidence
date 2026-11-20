@@ -98,7 +98,7 @@ afterEach(() => {
 describe("ne-maps-case-collection/v0.1 runtime validator", () => {
   it("accepts the checked-in F1/F2/F3 + synthetic collection with the public @nec/lens validator", () => {
     expect(collection.schemaVersion).toBe("ne-maps-case-collection/v0.1");
-    expect(collection.cases.map((item: { id: string }) => item.id)).toEqual([...HISTORICAL_IDS, SYNTHETIC_ID]);
+    expect(collection.cases.map((item: { id: string }) => item.id)).toEqual([...HISTORICAL_IDS, SYNTHETIC_ID, "zksys-genesis-20261118"]);
     expect(() => validateNeMapsCollectionV01(clone())).not.toThrow();
     expect(() => validateNeMapsCollectionV01(clone(), lensValidator)).not.toThrow();
   });
@@ -238,7 +238,7 @@ describe("synthetic/local integrability case", () => {
   it("renders Lens, Trail and Exact action through the generic app path", async () => {
     const ui = await bootApp(collection);
     expect(ui.fetched).toEqual(["./data/collection.json"]);
-    expect(ui.counter.textContent).toBe("4 cases · ne-maps-case-collection/v0.1");
+    expect(ui.counter.textContent).toBe("5 cases · ne-maps-case-collection/v0.1");
     const card = ui.app.find((el) => el.className === "case-card").find((el) => el.textContent.includes("Synthetic Core golden"))!;
     expect(card.texts()).toContain("Synthetic / local fixture — not a network observation");
     expect(card.find((el) => el.tagName === "a").map((el) => el.href)).toEqual([

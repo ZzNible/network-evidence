@@ -69,7 +69,7 @@ describe("NE Maps minimal export", () => {
 
   it("does not add resolver or Syscoin-specific product logic", () => {
     expect(app).not.toMatch(/@nec\/resolver|eth_get|syscoin|zksys/i);
-    expect(readme).not.toMatch(/syscoin|zksys/i);
+    expect(readme).toMatch(/generic|multichain/i);
     expect(data.nonClaims).toContain("Maps does not resolve network evidence.");
   });
 

@@ -2,9 +2,9 @@
 
 **What does the blockchain itself actually support about this exact action?**
 
-Network Evidence (NE) gives AI agents and developers **read-only, reproducible network evidence** instead of treating an application claim or one RPC response as proof of settlement or finality. Works with exact Base and Solana cases, and clearly labels what is supported, contradicted, insufficient or ambiguous. It never signs, funds or submits a transaction.
+Network Evidence (NE) gives AI agents and developers **read-only, reproducible network evidence** instead of treating an application claim or one RPC response as proof of settlement or finality. Works with exact Base, Solana and historical zkSYS Genesis cases, and clearly labels what is supported, contradicted, insufficient or ambiguous. It never signs, funds or submits a transaction.
 
-**[Start here — first evidence](docs/START_HERE.md)** | [Connect a local agent](docs/START_HERE.md#2--connect-an-agent-same-machine) | [Four case examples](docs/USE_CASES.md) | [Latest signed release](https://github.com/ZzNible/network-evidence/releases/latest)
+**[Start here — first evidence](docs/START_HERE.md)** | [Connect a local agent](docs/START_HERE.md#2--connect-an-agent-same-machine) | [Five case examples](docs/USE_CASES.md) | [Latest signed release](https://github.com/ZzNible/network-evidence/releases/latest)
 
 Node.js 22 and npm required. The offline example needs no wallet, API key, blockchain call, or hosted account; five minutes is a first-use target, not independently benchmarked.
 
@@ -107,7 +107,9 @@ examples/core-hub-lens/PROVENANCE.md.
 
 ## Minimal NE Maps atlas
 
-`examples/ne-maps/` presents a versioned `ne-maps-case-collection/v0.1` — the three stable Suite v1 cases plus the clearly labelled synthetic/local integrability case — as a small generic/multichain evidence atlas. It validates the collection fail-closed and consumes pinned browser-safe Lens projections; it does not resolve network evidence or add a graph engine, policy layer or stronger claim. Each case exposes Lens, Trail and exact-action handoffs while preserving `supported`, `contradicted`, `insufficient`, `ambiguous` and `unavailable` states when present.
+[Follow one historical zkSYS Genesis transaction](examples/zksys-genesis-f4/README.md): five source records, an offline replay and an explicit MOCK proof boundary. PoDA and ChainLock remain insufficient.
+
+`examples/ne-maps/` presents a versioned `ne-maps-case-collection/v0.1` — the three stable Suite v1 cases, the clearly labelled synthetic/local integrability case and a historical zkSYS Genesis source trail — as a small generic/multichain evidence atlas. It validates the collection fail-closed and consumes pinned browser-safe Lens projections; it does not resolve network evidence or add a graph engine, policy layer or stronger claim. Each case exposes Lens, Trail and exact-action handoffs while preserving `supported`, `contradicted`, `insufficient`, `ambiguous` and `unavailable` states when present.
 
 ~~~sh
 npm run maps:serve

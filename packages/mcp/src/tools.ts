@@ -232,7 +232,7 @@ const discoverOutputSchema = z.object({
 const caseOutputSchema = z.object({
   schema: z.literal("ne-mcp-reviewed-case/v0.1"),
   caseId: z.string(),
-  evidenceClass: z.enum(["historical-reviewed-public-network-fixture", "synthetic-local-fixture"]),
+  evidenceClass: z.enum(["historical-reviewed-public-network-fixture", "historical-source-bound-public-testnet-fixture", "synthetic-local-fixture"]),
   label: z.string(),
   liveObservation: z.literal(false),
   currentAvailability: z.literal("unknown"),
@@ -334,7 +334,7 @@ export function createNeMcpServer(deps: NeMcpServerDeps): McpServer {
     {
       title: "Read one shipped reviewed NE Maps case",
       description:
-        `Returns ONE case by exact id (${deps.cases.caseIds.join(", ")}) from the shipped, checksum-pinned examples/ne-maps/data/collection.json: the browser-safe Lens envelope verbatim (all limitations, unavailable/unknown states and nonClaims preserved), its source provenance and an explicit label. f1/f2/f3 are HISTORICAL reviewed exports of past public-network observations; synthetic-local-core-golden is a SYNTHETIC fixture, not a network observation. No case is live evidence.`,
+        `Returns ONE case by exact id (${deps.cases.caseIds.join(", ")}) from the shipped, checksum-pinned examples/ne-maps/data/collection.json: the browser-safe Lens envelope verbatim (all limitations, unavailable/unknown states and nonClaims preserved), its source provenance and an explicit label. f1/f2/f3 are HISTORICAL reviewed exports of past public-network observations; synthetic-local-core-golden is a SYNTHETIC fixture, not a network observation; zksys-genesis-20261118 is a HISTORICAL public-testnet source-bound case with MOCK type-3 proof, not real ZK verification or independent Core finality. No case is live evidence.`,
       inputSchema: z
         .object({ caseId: z.enum(caseIds).describe("Exact case id; no paths, no prefixes, no fuzzy matching.") })
         .strict(),

@@ -31,11 +31,11 @@ export const REVIEWED_CASE_SCHEMA = "ne-mcp-reviewed-case/v0.1";
 export const REVIEWED_COLLECTION_PATH = "examples/ne-maps/data/collection.json";
 export const REVIEWED_COLLECTION_PIN_PATH = "examples/ne-maps/data/COLLECTION.sha256";
 /** SHA-256 of the shipped collection bytes this server version was reviewed against. */
-export const REVIEWED_COLLECTION_SHA256 = "e10250b3f4714883f54c96003f1cdb5f1c2ed36cb7bd18dcf3f94b194139fa49";
+export const REVIEWED_COLLECTION_SHA256 = "2dbc0468a8aab185cbc0e970be9498f4950286471b7ed0c6562d36e81fd9e8eb";
 
 const REPO_ROOT = new URL("../../../", import.meta.url);
 
-export type EvidenceClass = "historical-reviewed-public-network-fixture" | "synthetic-local-fixture";
+export type EvidenceClass = "historical-reviewed-public-network-fixture" | "historical-source-bound-public-testnet-fixture" | "synthetic-local-fixture";
 
 interface ClassLabel {
   readonly evidenceClass: EvidenceClass;
@@ -50,6 +50,13 @@ const CLASS_BY_REALITY: ReadonlyMap<string, ClassLabel> = new Map([
       evidenceClass: "historical-reviewed-public-network-fixture",
       label:
         "HISTORICAL — frozen reviewed export of PAST public-network observations at pinned commits. Not a live observation; the current network state and current availability are unknown. Partial: read limitations and openQuestions.",
+    },
+  ],
+  [
+    "reviewed historical source-bound public testnet fixture",
+    {
+      evidenceClass: "historical-source-bound-public-testnet-fixture",
+      label: "HISTORICAL PUBLIC TESTNET — exact Genesis/NEVM RPC and public Gateway index. V8 MOCK TYPE 3 is NOT a real cryptographically verified ZK proof. Core PoDA and ChainLock remain insufficient. Not a live observation; current availability unknown.",
     },
   ],
   [

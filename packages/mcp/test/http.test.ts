@@ -184,7 +184,7 @@ describe("raw MCP JSON-RPC (Inspector-style): initialize -> tools/list -> tools/
     expect(discover.inputSchema.properties.candidates.maxItems).toBe(16);
     expect(discover.inputSchema.properties.candidates.items.required).toEqual(["id", "environment", "network", "manifest", "snapshot"]);
     const caseTool = tools.find((t) => t.name === "get_reviewed_evidence_case");
-    expect(caseTool.inputSchema.properties.caseId.enum).toEqual(["f1", "f2", "f3", "synthetic-local-core-golden"]);
+    expect(caseTool.inputSchema.properties.caseId.enum).toEqual(["f1", "f2", "f3", "synthetic-local-core-golden", "zksys-genesis-20261118"]);
   });
 
   it("tools/call positive: profiles, discovery and a synthetic case", async () => {
