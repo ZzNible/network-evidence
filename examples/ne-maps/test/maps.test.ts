@@ -47,9 +47,10 @@ describe("NE Maps minimal export", () => {
       const propositionIds = new Set(item.lens.propositions.map((p: { propositionId: string }) => p.propositionId));
       for (const id of item.trailPropositionOrder) expect(propositionIds.has(id)).toBe(true);
     }
-    expect(app).toContain("#/case/${item.id}/lens");
-    expect(app).toContain("#/case/${item.id}/trail");
-    expect(app).toContain("#/case/${item.id}/action");
+    expect(app).toContain('`#/case/${item.id}`');
+    expect(app).toContain('caseHref(item, scope, "lens")');
+    expect(app).toContain('caseHref(item, scope, "trail")');
+    expect(app).toContain('caseHref(item, scope, "action")');
   });
 
   it("preserves all reviewed verdict and unavailable states without scoring", () => {
