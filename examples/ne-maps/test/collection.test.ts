@@ -397,7 +397,7 @@ describe("application-owned collection is isolated from examples", () => {
     const trail = ui.navigate("#/case/f2/trail");
     expect(trail.texts()).toContain("Assessment 1: supported");
     expect(trail.texts()).toContain("Assessment 2: supported");
-    expect(trail.texts()).toContain("basis: cryptographic_verification");
+    expect(trail.textContent).toContain("basis: cryptographic_verification");
     expect(trail.texts()).toContain("limit: TEST-ONLY SECOND-ASSESSMENT-LIMIT");
     expect(trail.find((el) => el.className === "trail-step")).toHaveLength(data.cases[0].trailPropositionOrder.length);
   });
