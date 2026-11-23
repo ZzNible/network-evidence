@@ -84,14 +84,14 @@ function card(item, scope) {
 
 function libraryTabs(context, scope) {
   const nav = node("nav", "library-tabs");
-  nav.setAttribute("aria-label", "Case collections");
+  nav.ariaLabel = "Case collections";
   const labels = [
     ["mine", "My cases", context.mine?.cases.length ?? 0],
     ["examples", "Examples", context.examples.cases.length],
   ];
   for (const [id, title, count] of labels) {
     const tab = link("library-tab" + (scope === id ? " active" : ""), title + " · " + count, "#/" + id);
-    if (scope === id) tab.setAttribute("aria-current", "page");
+    if (scope === id) tab.ariaCurrent = "page";
     nav.append(tab);
   }
   return nav;
@@ -103,7 +103,7 @@ function renderAtlas(context, scope) {
   const items = scope === "mine" ? (context.mine?.cases ?? []) : context.examples.cases;
   const message = scope === "mine"
     ? "Your application cases are loaded from a separate, optional browser-safe collection. Built-in example fixtures do not appear here."
-    : "Reviewed historical and synthetic examples for offline exploration. These are not live observations or your application cases.";
+    : "Reviewed historical and illustrative cases for offline exploration. These are not live observations or your application cases.";
   wrap.append(node("p", "collection-intro", message));
   if (scope === "mine" && context.mineError) {
     wrap.append(node("p", "error", "Application case collection rejected: " + context.mineError));
@@ -204,7 +204,7 @@ function detailShell(item, mode, scope) {
 
 function renderRelationDiagram(item) {
   const panel = node("section", "relation-panel");
-  panel.append(node("h3", "relation-heading", "Declared evidence relations"));
+  panel.append(node("h2", "relation-heading", "Declared evidence relations"));
   panel.append(node("p", "relation-disclaimer", "These links reproduce case relations. Direction is source → target, not a claim of chronology, causation, settlement or finality."));
   const graph = node("div", "relation-graph");
   const relations = item.lens.relations ?? [];
@@ -212,13 +212,13 @@ function renderRelationDiagram(item) {
   for (const relation of relations) {
     const edge = node("article", "relation-edge");
     const from = node("div", "relation-ref mono", relation.fromRef);
-    from.setAttribute("title", relation.fromRef);
+    from.title = relation.fromRef;
     const middle = node("div", "relation-type");
     middle.append(node("span", "relation-arrow", "→"));
     middle.append(node("span", "relation-name mono", relation.relationType));
     middle.append(node("span", "relation-basis mono", "basis: " + (relation.basis ?? "not supplied")));
     const to = node("div", "relation-ref mono", relation.toRef);
-    to.setAttribute("title", relation.toRef);
+    to.title = relation.toRef;
     edge.append(from, middle, to);
     if (relation.limitations?.length) {
       const limits = node("details", "relation-limits");
@@ -239,7 +239,7 @@ function renderLens(item, scope) {
 
   const grid = node("div", "detail-grid");
   const left = node("div", "stack");
-  left.append(node("h3", "section-label", "Propositions and evidence bases"));
+  left.append(node("h2", "section-label", "Propositions and evidence bases"));
   for (const proposition of item.lens.propositions ?? []) left.append(propositionItem(proposition));
 
   const right = node("aside", "stack");
@@ -364,7 +364,7 @@ async function boot() {
     window.addEventListener("hashchange", render);
     render();
   } catch (error) {
-    app.replaceChildren(node("p", "error", "NE Maps could not load the reviewed example collection: " + error.message));
+    app.replaceChildren(node("p", "error", "NE Maps could not load the case collection: " + error.message));
   }
 }
 
