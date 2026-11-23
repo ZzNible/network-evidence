@@ -382,7 +382,9 @@ async function boot() {
     }
 
     const counter = document.querySelector("#case-count");
-    if (counter) counter.textContent = (mineError ? "Application collection rejected" : (mine?.cases.length ?? 0) + " application cases") + " · " + examples.cases.length + " examples";
+    const ownCount = mine?.cases.length ?? 0;
+    const exampleCount = examples.cases.length;
+    if (counter) counter.textContent = (mineError ? "Application collection rejected" : ownCount + (ownCount === 1 ? " application case" : " application cases")) + " · " + exampleCount + (exampleCount === 1 ? " example" : " examples");
     const context = { examples, mine, mineError };
     const render = () => app.replaceChildren(route(context));
     window.addEventListener("hashchange", render);
