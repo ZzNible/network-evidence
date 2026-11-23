@@ -68,6 +68,9 @@ jobs:
             sleep 0.5
           done
           curl -fsS http://127.0.0.1:4177/ >/dev/null
+          # The browser module must be served, and the optional private collection must truly be absent.
+          curl -fsS http://127.0.0.1:4177/ui-navigation.js | grep -Fq "parseCaseHash"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4177/data/my-collection.json)" = 404
           capture() {
             name="$1"; hash="$2"; width="$3"; height="$4"; expected="$5"
             url="http://127.0.0.1:4177/$hash"
