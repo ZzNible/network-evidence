@@ -59,9 +59,11 @@ describe("NE Maps presentation: cases, Lens and Trail", () => {
   });
 
   it("renders Trail from existing proposition ids, with visible omitted Lens context", () => {
-    expect(app).toContain("for (const [index, id] of item.trailPropositionOrder.entries())");
+    expect(app).toContain("for (const id of item.trailPropositionOrder)");
     expect(app).toContain("const proposition = byId.get(id)");
     expect(app).toContain("additional Lens-only proposition(s)");
+    expect(app).toContain("propositionEvidence(proposition)");
+    expect(app).toContain("renderedIds.has(id)");
     expect(app).toContain("not a verified chronological sequence or causal route");
     expect(styles).toContain(".trail-steps");
     expect(styles).toContain(".relation-graph");
