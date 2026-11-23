@@ -372,9 +372,10 @@ describe("application-owned collection is isolated from examples", () => {
     const edges = lens.find((el) => el.className === "relation-edge");
     expect(edges).toHaveLength(caseF1.lens.relations.length);
     for (const [index, relation] of caseF1.lens.relations.entries()) {
-      expect(edges[index].textContent).toContain(relation.fromRef);
-      expect(edges[index].textContent).toContain(relation.toRef);
-      expect(edges[index].textContent).toContain(relation.relationType);
+      const edge = edges[index]!;
+      expect(edge.textContent).toContain(relation.fromRef);
+      expect(edge.textContent).toContain(relation.toRef);
+      expect(edge.textContent).toContain(relation.relationType);
     }
     const trail = ui.navigate("#/case/f1/trail");
     expect(trail.find((el) => el.className === "trail-step")).toHaveLength(caseF1.trailPropositionOrder.length);
