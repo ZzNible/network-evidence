@@ -103,7 +103,7 @@ footer { border-top: 1px solid var(--line); padding: 22px 0 36px; color: var(--m
 .relation-empty { color:var(--muted); margin:0; }
 .trail-steps { list-style:none; padding:8px 0 0; margin:0; counter-reset:none; display:grid; }
 .trail-step { display:grid; grid-template-columns:48px minmax(0,1fr); gap:13px; position:relative; padding:0 0 18px; min-width:0; }
-.trail-step:not(:last-child)::before { content:""; position:absolute; width:1px; top:40px; bottom:0; left:23px; background:#4a7189; }
+.trail-step:not(:last-child)::before { content:""; position:absolute; width:1px; top:44px; bottom:0; left:23px; background:#4a7189; }
 .trail-number { border:1px solid #5a8aa6; color:#c0e1f1; background:#172b39; height:44px; width:44px; display:grid; place-items:center; border-radius:11px; font:700 16px/1 ui-monospace,monospace; }
 .trail-body { min-width:0; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
 .trail-heading { display:flex; justify-content:space-between; align-items:start; gap:12px; }
@@ -129,3 +129,9 @@ footer { border-top: 1px solid var(--line); padding: 22px 0 36px; color: var(--m
   .trail-body { padding:12px; }
   .library-tab { flex:1; justify-content:center; }
 }
+
+/* Retain the complete reviewable assessment text in both views. */
+.proposition-evidence { display:grid; gap:7px; padding-top:7px; color:var(--muted); font-size:12px; line-height:1.55; min-width:0; }
+.proposition-evidence p { margin:0; overflow-wrap:anywhere; }
+.assessment-index { font-weight:700; color:var(--text); }
+.trail-body .proposition-evidence { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
