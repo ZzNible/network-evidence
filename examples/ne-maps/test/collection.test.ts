@@ -64,7 +64,7 @@ class FakeElement {
   }
 }
 
-async function bootApp(data: unknown) {
+async function bootApp(data: unknown, ownCollection?: unknown) {
   const app = new FakeElement("main");
   const counter = new FakeElement("span");
   const listeners: Array<() => void> = [];
@@ -78,7 +78,11 @@ async function bootApp(data: unknown) {
   vi.stubGlobal("location", location);
   vi.stubGlobal("fetch", async (url: string) => {
     fetched.push(url);
-    return { ok: true, json: async () => structuredClone(data) };
+    if (url === "./data/my-collection.json") {
+      if (ownCollection === undefined) return { ok: false, status: 404 };
+      return { ok: true, status: 200, json: async () => structuredClone(ownCollection) };
+    }
+    return { ok: true, status: 200, json: async () => structuredClone(data) };
   });
   vi.resetModules();
   await import(/* @vite-ignore */ new URL("../app.js", import.meta.url).href);
@@ -237,8 +241,11 @@ describe("synthetic/local integrability case", () => {
 
   it("renders Lens, Trail and Exact action through the generic app path", async () => {
     const ui = await bootApp(collection);
-    expect(ui.fetched).toEqual(["./data/collection.json"]);
-    expect(ui.counter.textContent).toBe("5 cases · ne-maps-case-collection/v0.1");
+    expect(ui.fetched).toEqual(["./data/collection.json", "./data/my-collection.json"]);
+    expect(ui.counter.textContent).toBe("0 application cases · 5 examples");
+    expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(0);
+    expect(ui.app.texts()).toContain("No application cases loaded");
+    ui.navigate("#/examples");
     const card = ui.app.find((el) => el.className === "case-card").find((el) => el.textContent.includes("Synthetic Core golden"))!;
     expect(card.texts()).toContain("Synthetic / local fixture — not a network observation");
     expect(card.find((el) => el.tagName === "a").map((el) => el.href)).toEqual([
@@ -282,7 +289,7 @@ describe("no structural exactly-three assumption", () => {
     [[SYNTHETIC_ID, "f3", "f2", "f1"]],
   ])("renders one card per case for %j", async (ids) => {
     const ui = await bootApp(withCases(ids));
-    const cards = ui.app.find((el) => el.className === "case-card");
+    const cards = ui.navigate("#/examples").find((el) => el.className === "case-card");
     expect(cards.map((card) => card.find((el) => el.tagName === "h2")[0]!.textContent)).toEqual(
       ids.map((id) => byId(collection, id).display.title),
     );
@@ -304,12 +311,38 @@ describe("no structural exactly-three assumption", () => {
     expect(appSource).not.toMatch(/@nec\/|resolver|\brpc\b|eth_|https?:\/\//i);
     expect(appSource).not.toMatch(/caseVerdict|confidence|trustScore|score|rank/i);
     expect(appSource).not.toMatch(/\.(value|verdict|assessments|availability)\s*=[^=]/);
-    expect(appSource.match(/fetch\(/g)).toHaveLength(1);
+    expect(appSource.match(/fetch\(/g)).toHaveLength(2);
     expect(appSource).toContain("fetch(COLLECTION_URL");
-    expect([...appSource.matchAll(/^import .* from "([^"]+)";$/gm)].map((m) => m[1])).toEqual(["./collection.js"]);
+    expect(appSource).toContain("fetch(MY_COLLECTION_URL");
+    expect([...appSource.matchAll(/^import .* from "([^"]+)";$/gm)].map((m) => m[1])).toEqual(["./collection.js", "./ui-navigation.js"]);
     expect(appSource).toContain("validateNeMapsCollectionV01(await response.json())");
     expect(indexHtml).toContain('<script type="module" src="./app.js"></script>');
     expect(indexHtml).not.toMatch(/3 reviewed cases/);
+  });
+});
+
+describe("application-owned collection is isolated from examples", () => {
+  it("defaults to no fixtures and renders user-supplied cases without cross-scope id collision", async () => {
+    const owned = withCases(["f2"]);
+    owned.cases[0].display.title = "My application case";
+    const ui = await bootApp(collection, owned);
+    expect(ui.app.find((el) => el.className === "case-card").map((el) => el.textContent)).toEqual([
+      expect.stringContaining("My application case"),
+    ]);
+    const exampleAtlas = ui.navigate("#/examples");
+    expect(exampleAtlas.find((el) => el.className === "case-card")).toHaveLength(5);
+    const myDetail = ui.navigate("#/mine/f2/lens");
+    expect(myDetail.textContent).toContain("My application case");
+    const exampleDetail = ui.navigate("#/case/f2/lens");
+    expect(exampleDetail.textContent).toContain("ERC-4337 — exact UserOperation");
+    expect(exampleDetail.textContent).not.toContain("My application case");
+  });
+
+  it("rejects malformed application evidence without substituting reviewed examples", async () => {
+    const ui = await bootApp(collection, { schemaVersion: "invalid", cases: [] });
+    expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(0);
+    expect(ui.app.find((el) => el.className === "error")[0]!.textContent).toMatch(/Application case collection rejected: ne-maps:/);
+    expect(ui.navigate("#/examples").find((el) => el.className === "case-card")).toHaveLength(5);
   });
 });
 
