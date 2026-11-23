@@ -86,7 +86,7 @@ function libraryTabs(context, scope) {
   const nav = node("nav", "library-tabs");
   nav.ariaLabel = "Case collections";
   const labels = [
-    ["mine", "My cases", context.mine?.cases.length ?? 0],
+    ["mine", "My cases", context.mineError ? "rejected" : (context.mine?.cases.length ?? 0)],
     ["examples", "Examples", context.examples.cases.length],
   ];
   for (const [id, title, count] of labels) {
@@ -111,13 +111,20 @@ function renderAtlas(context, scope) {
   }
   if (!items.length) {
     const empty = node("section", "empty-collection");
-    empty.append(node("h2", "", "No application cases loaded"));
-    empty.append(node("p", "", "To display your own evidence, supply a validated ne-maps-case-collection/v0.1 at data/my-collection.json. Examples remain available in their own tab."));
-    empty.append(link("back", "Explore reviewed examples", "#/examples"));
+    if (scope === "mine") {
+      empty.append(node("h2", "", "No application cases loaded"));
+      empty.append(node("p", "", "To display your own evidence, supply a validated ne-maps-case-collection/v0.1 at data/my-collection.json. Examples remain available in their own tab."));
+      empty.append(link("back", "Explore reviewed examples", "#/examples"));
+    } else {
+      empty.append(node("h2", "", "No reviewed examples packaged"));
+      empty.append(node("p", "", "This standalone application does not include the optional example collection. No example claims are inferred."));
+      empty.append(link("back", "Back to my cases", "#/mine"));
+    }
     wrap.append(empty);
     return wrap;
   }
-  wrap.append(node("p", "collection-meta", caseCount({ cases: items }) + " · ne-maps-case-collection/v0.1"));
+  const activeCollection = scope === "mine" ? context.mine : context.examples;
+  wrap.append(node("p", "collection-meta", caseCount({ cases: items }) + " · " + activeCollection.schemaVersion));
   const grid = node("div", "atlas-grid");
   for (const item of items) grid.append(card(item, scope));
   wrap.append(grid);
@@ -142,6 +149,30 @@ function assessmentMeta(assessment) {
   return bits.join(" · ");
 }
 
+function propositionEvidence(proposition) {
+  const content = node("div", "proposition-evidence");
+  const assessments = proposition.assessments ?? [];
+  if (assessments.length) {
+    for (const [index, assessment] of assessments.entries()) {
+      if (assessments.length > 1) {
+        content.append(node("p", "assessment-index mono", "Assessment " + (index + 1) + ": " + assessment.value));
+      }
+      const meta = assessmentMeta(assessment);
+      if (meta) content.append(node("p", "assessment-meta mono", meta));
+    }
+  } else if (proposition.availability) {
+    content.append(node("p", "", "availability: " + proposition.availability));
+  } else {
+    content.append(node("p", "", "No independent assessment in this projection."));
+  }
+  const limitations = [...new Set([
+    ...(proposition.limitations ?? []),
+    ...assessments.flatMap(assessment => assessment.limitations ?? []),
+  ])];
+  for (const limitation of limitations) content.append(node("p", "", "limit: " + limitation));
+  return content;
+}
+
 function propositionItem(proposition) {
   const box = node("article", "item");
   const top = node("div", "item-top");
@@ -149,21 +180,9 @@ function propositionItem(proposition) {
   title.append(node("div", "case-kicker", proposition.domain ?? "proposition"));
   title.append(node("h3", "", proposition.statement ?? proposition.propositionId));
   top.append(title);
-  const status = propositionStatus(proposition);
+  const status = (proposition.assessments?.length ?? 0) > 1 ? null : propositionStatus(proposition);
   if (status) top.append(badge(status));
-  box.append(top);
-
-  const assessment = proposition.assessments?.[0];
-  if (assessment) {
-    const meta = assessmentMeta(assessment);
-    if (meta) box.append(node("p", "", meta));
-  } else if (proposition.availability) {
-    box.append(node("p", "", "availability: " + proposition.availability));
-  } else {
-    box.append(node("p", "", "No independent assessment in this projection."));
-  }
-  const limitations = [...new Set([...(proposition.limitations ?? []), ...(assessment?.limitations ?? [])])];
-  for (const limitation of limitations) box.append(node("p", "", "limit: " + limitation));
+  box.append(top, propositionEvidence(proposition));
   return box;
 }
 
@@ -260,40 +279,34 @@ function renderLens(item, scope) {
 
 function renderTrail(item, scope) {
   const section = detailShell(item, "Trail", scope);
-  section.append(node("p", "view-intro", "A guided reading order of existing propositions, not a verified chronological sequence or causal route."));
+  section.append(node("p", "view-intro", "A guided reading order of existing propositions, not a verified chronological sequence or causal route. This is not a Hub-provided Trail route and creates neither a causal edge nor a stronger verdict."));
   if (item.extensions?.trailContextNote) section.append(node("div", "notice", item.extensions.trailContextNote));
 
   const byId = new Map((item.lens.propositions ?? []).map(p => [p.propositionId, p]));
   const ordered = node("ol", "trail-steps");
-  for (const [index, id] of item.trailPropositionOrder.entries()) {
+  const renderedIds = new Set();
+  let stepNumber = 0;
+  for (const id of item.trailPropositionOrder) {
     const proposition = byId.get(id);
-    if (!proposition) continue;
+    if (!proposition || renderedIds.has(id)) continue;
+    renderedIds.add(id);
+    stepNumber += 1;
     const step = node("li", "trail-step");
-    step.append(node("div", "trail-number", String(index + 1)));
+    step.append(node("div", "trail-number", String(stepNumber)));
     const body = node("div", "trail-body");
     const heading = node("div", "trail-heading");
     const title = node("div");
     title.append(node("div", "case-kicker", proposition.domain ?? "proposition"));
     title.append(node("h3", "", proposition.statement ?? proposition.propositionId));
     heading.append(title);
-    const status = propositionStatus(proposition);
+    const status = (proposition.assessments?.length ?? 0) > 1 ? null : propositionStatus(proposition);
     if (status) heading.append(badge(status));
-    body.append(heading);
-    const assessment = proposition.assessments?.[0];
-    const meta = assessmentMeta(assessment);
-    body.append(node("p", "trail-meta mono", meta || ("availability: " + (proposition.availability ?? "not assessed"))));
-    const limitations = [...new Set([...(proposition.limitations ?? []), ...(assessment?.limitations ?? [])])];
-    if (limitations.length) {
-      const details = node("details", "trail-limits");
-      details.append(node("summary", "", "Evidence limitations (" + limitations.length + ")"));
-      for (const limitation of limitations) details.append(node("p", "", limitation));
-      body.append(details);
-    }
+    body.append(heading, propositionEvidence(proposition));
     step.append(body);
     ordered.append(step);
   }
   section.append(ordered);
-  const omitted = (item.lens.propositions ?? []).length - item.trailPropositionOrder.length;
+  const omitted = [...byId.keys()].filter(id => !renderedIds.has(id)).length;
   if (omitted > 0) section.append(node("p", "trail-omitted", omitted + " additional Lens-only proposition(s) are intentionally outside this Trail."));
   return section;
 }
@@ -343,8 +356,11 @@ function route(context) {
 async function boot() {
   try {
     const response = await fetch(COLLECTION_URL, { cache: "no-store" });
-    if (!response.ok) throw new Error("reviewed example collection unavailable");
-    const examples = validateNeMapsCollectionV01(await response.json());
+    let examples = { schemaVersion: "ne-maps-case-collection/v0.1", cases: [] };
+    if (response.status !== 404) {
+      if (!response.ok) throw new Error("reviewed example collection unavailable");
+      examples = validateNeMapsCollectionV01(await response.json());
+    }
     let mine = null;
     let mineError = null;
     try {
@@ -358,7 +374,7 @@ async function boot() {
     }
 
     const counter = document.querySelector("#case-count");
-    if (counter) counter.textContent = (mine?.cases.length ?? 0) + " application cases · " + examples.cases.length + " examples";
+    if (counter) counter.textContent = (mineError ? "Application collection rejected" : (mine?.cases.length ?? 0) + " application cases") + " · " + examples.cases.length + " examples";
     const context = { examples, mine, mineError };
     const render = () => app.replaceChildren(route(context));
     window.addEventListener("hashchange", render);
