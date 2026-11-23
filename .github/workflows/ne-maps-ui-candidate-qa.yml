@@ -39,3 +39,54 @@ jobs:
         run: npm run -s typecheck
       - name: Local read-only MCP smoke
         run: npm run -s mcp:smoke
+
+  capture:
+    name: Capture genuine browser views for reviewed public cases
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Capture snapshots with local Chrome only
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$browser" || { echo "No Chrome/Chromium binary on runner"; exit 1; }
+          mkdir -p screenshots
+          npm run -s maps:serve > "$RUNNER_TEMP/ne-maps-serve.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4177/ >/dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:4177/ >/dev/null
+          capture() {
+            name="$1"; hash="$2"; width="$3"; height="$4"; expected="$5"
+            url="http://127.0.0.1:4177/$hash"
+            dom="$("$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=4500 --dump-dom "$url" 2>/dev/null)"
+            printf '%s' "$dom" | grep -Fq "$expected" || { echo "DOM missing expected text for $name"; exit 1; }
+            "$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=4500 "--window-size=$width,$height" "--screenshot=screenshots/$name.png" "$url" >/dev/null 2>&1
+            test -s "screenshots/$name.png"
+          }
+          capture "my-cases-desktop" "#/" 1440 960 "No application cases loaded"
+          capture "examples-desktop" "#/examples" 1440 960 "Synthetic Core golden"
+          capture "genesis-lens-desktop" "#/case/zksys-genesis-20261118/lens" 1440 960 "Declared evidence relations"
+          capture "genesis-trail-desktop" "#/case/zksys-genesis-20261118/trail" 1440 960 "trail-steps"
+          capture "genesis-lens-mobile" "#/case/zksys-genesis-20261118/lens" 390 900 "Declared evidence relations"
+          capture "genesis-trail-mobile" "#/case/zksys-genesis-20261118/trail" 390 900 "trail-steps"
+          printf '%s\n' "$GITHUB_SHA" > screenshots/COMMIT_SHA.txt
+          sha256sum screenshots/*.png > screenshots/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ne-maps-reviewed-ui-screenshots
+          path: screenshots/
+          if-no-files-found: error
+          retention-days: 14
