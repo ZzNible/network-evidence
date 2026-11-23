@@ -64,7 +64,7 @@ class FakeElement {
   }
 }
 
-async function bootApp(data: unknown, ownCollection?: unknown) {
+async function bootApp(data: unknown, ownCollection?: unknown, exampleStatus = 200) {
   const app = new FakeElement("main");
   const counter = new FakeElement("span");
   const listeners: Array<() => void> = [];
@@ -78,6 +78,9 @@ async function bootApp(data: unknown, ownCollection?: unknown) {
   vi.stubGlobal("location", location);
   vi.stubGlobal("fetch", async (url: string) => {
     fetched.push(url);
+    if (url === "./data/collection.json" && exampleStatus !== 200) {
+      return { ok: false, status: exampleStatus };
+    }
     if (url === "./data/my-collection.json") {
       if (ownCollection === undefined) return { ok: false, status: 404 };
       return { ok: true, status: 200, json: async () => structuredClone(ownCollection) };
@@ -342,7 +345,61 @@ describe("application-owned collection is isolated from examples", () => {
     const ui = await bootApp(collection, { schemaVersion: "invalid", cases: [] });
     expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(0);
     expect(ui.app.find((el) => el.className === "error")[0]!.textContent).toMatch(/Application case collection rejected: ne-maps:/);
+    expect(ui.counter.textContent).toContain("Application collection rejected");
     expect(ui.navigate("#/examples").find((el) => el.className === "case-card")).toHaveLength(5);
+  });
+
+  it("shows the application cases even without the optional reviewed example collection", async () => {
+    const own = withCases(["f2"]);
+    own.cases[0].display.title = "App-only case";
+    const ui = await bootApp(collection, own, 404);
+    expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(1);
+    expect(ui.app.textContent).toContain("App-only case");
+    expect(ui.navigate("#/examples").texts()).toContain("No reviewed examples packaged");
+    expect(ui.navigate("#/mine/f2/action").textContent).toContain("App-only case");
+  });
+
+  it("does not mask errors other than missing reviewed examples", async () => {
+    const ui = await bootApp(collection, withCases(["f2"]), 403);
+    expect(ui.app.find((el) => el.className === "error")[0]!.textContent).toContain("reviewed example collection unavailable");
+    expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(0);
+  });
+
+  it("renders exactly declared Lens relations, existing Trail steps and omitted Lens-only context", async () => {
+    const caseF1 = byId(collection, "f1");
+    const ui = await bootApp(collection);
+    const lens = ui.navigate("#/case/f1/lens");
+    const edges = lens.find((el) => el.className === "relation-edge");
+    expect(edges).toHaveLength(caseF1.lens.relations.length);
+    for (const [index, relation] of caseF1.lens.relations.entries()) {
+      expect(edges[index].textContent).toContain(relation.fromRef);
+      expect(edges[index].textContent).toContain(relation.toRef);
+      expect(edges[index].textContent).toContain(relation.relationType);
+    }
+    const trail = ui.navigate("#/case/f1/trail");
+    expect(trail.find((el) => el.className === "trail-step")).toHaveLength(caseF1.trailPropositionOrder.length);
+    expect(trail.find((el) => el.className === "trail-number").map((el) => el.textContent))
+      .toEqual(caseF1.trailPropositionOrder.map((_: unknown, index: number) => String(index + 1)));
+    expect(trail.find((el) => el.className === "trail-omitted")).toHaveLength(1);
+    expect(trail.textContent).toContain("not a Hub-provided Trail route");
+    expect(trail.find((el) => el.className === "relation-edge")).toHaveLength(0);
+  });
+
+  it("presents every assessment in a test-only multi-assessment proposition without inventing a case verdict", async () => {
+    const data = withCases(["f2"]);
+    const proposition = data.cases[0].lens.propositions.find((p: any) => (p.assessments ?? []).length > 0)!;
+    const second = structuredClone(proposition.assessments[0]);
+    second.assessmentId = "test-only-second-assessment";
+    second.basis = ["cryptographic_verification"];
+    second.limitations = ["TEST-ONLY SECOND-ASSESSMENT-LIMIT"];
+    proposition.assessments.push(second);
+    const ui = await bootApp(data);
+    const trail = ui.navigate("#/case/f2/trail");
+    expect(trail.texts()).toContain("Assessment 1: supported");
+    expect(trail.texts()).toContain("Assessment 2: supported");
+    expect(trail.texts()).toContain("basis: cryptographic_verification");
+    expect(trail.texts()).toContain("limit: TEST-ONLY SECOND-ASSESSMENT-LIMIT");
+    expect(trail.find((el) => el.className === "trail-step")).toHaveLength(data.cases[0].trailPropositionOrder.length);
   });
 });
 
