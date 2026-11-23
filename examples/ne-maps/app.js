@@ -33,10 +33,17 @@ function propositionStatus(proposition) {
 }
 
 function caseStatuses(item) {
+  // Atlas badges summarize the distinct exported assessment values, not a case verdict.
+  // A single proposition can carry several independent assessments, including disagreement.
   const found = new Set();
   for (const proposition of item.lens.propositions ?? []) {
-    const value = propositionStatus(proposition);
-    if (value) found.add(value);
+    const assessments = proposition.assessments ?? [];
+    for (const assessment of assessments) {
+      if (STATUS_SET.has(assessment.value)) found.add(assessment.value);
+    }
+    if (!assessments.length && proposition.availability === "unavailable") {
+      found.add("unavailable");
+    }
   }
   return STATUS_ORDER.filter(value => found.has(value));
 }
@@ -71,6 +78,7 @@ function card(item, scope) {
   article.append(actionBlock(item));
 
   const statuses = node("div", "status-row");
+  statuses.ariaLabel = "Distinct proposition assessment verdicts, not a global case verdict";
   for (const value of caseStatuses(item)) statuses.append(badge(value));
   article.append(statuses);
 
