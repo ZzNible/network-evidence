@@ -80,8 +80,10 @@ jobs:
           capture "examples-desktop" "#/examples" 1440 960 "Synthetic Core golden"
           capture "genesis-lens-desktop" "#/case/zksys-genesis-20261118/lens" 1440 960 "Declared evidence relations"
           capture "genesis-trail-desktop" "#/case/zksys-genesis-20261118/trail" 1440 960 "trail-steps"
-          capture "genesis-lens-mobile" "#/case/zksys-genesis-20261118/lens" 390 900 "Declared evidence relations"
-          capture "genesis-trail-mobile" "#/case/zksys-genesis-20261118/trail" 390 900 "trail-steps"
+          capture "genesis-lens-mobile" "#/case/zksys-genesis-20261118/lens" 390 1900 "Declared evidence relations"
+          capture "genesis-trail-mobile" "#/case/zksys-genesis-20261118/trail" 390 1900 "trail-steps"
+          capture "genesis-lens-320" "#/case/zksys-genesis-20261118/lens" 320 1700 "Declared evidence relations"
+          capture "genesis-trail-320" "#/case/zksys-genesis-20261118/trail" 320 1700 "trail-steps"
           printf '%s\n' "$GITHUB_SHA" > screenshots/COMMIT_SHA.txt
           sha256sum screenshots/*.png > screenshots/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
