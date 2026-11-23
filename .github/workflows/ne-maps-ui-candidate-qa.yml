@@ -1,0 +1,41 @@
+name: NE Maps UI candidate QA
+
+on:
+  push:
+    branches:
+      - feat/ne-maps-lens-trail-case-separation-20261123
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ne-maps-ui-candidate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify maps and unchanged evidence contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Parse browser scripts
+        run: |
+          node --check examples/ne-maps/app.js
+          node --check examples/ne-maps/ui-navigation.js
+          node --check examples/ne-maps/collection.js
+      - name: Maps regressions (reviewed examples + isolated UI)
+        run: npm run -s test:maps
+      - name: Frozen collection must remain byte-identical
+        run: npm run -s maps:collection
+      - name: Full project TypeScript validation
+        run: npm run -s typecheck
+      - name: Local read-only MCP smoke
+        run: npm run -s mcp:smoke
