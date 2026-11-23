@@ -325,6 +325,31 @@ describe("no structural exactly-three assumption", () => {
 });
 
 describe("application-owned collection is isolated from examples", () => {
+  it("shows every distinct per-proposition assessment value in atlas badges, without a global case verdict", async () => {
+    // TEST-ONLY contradictory second assessment; this is not a network finding.
+    const owned = withCases(["f2"]);
+    const proposition = owned.cases[0].lens.propositions.find((p: any) => p.assessments?.length);
+    expect(proposition).toBeDefined();
+    const second = structuredClone(proposition.assessments[0]);
+    second.assessmentId = "test-only-contradicted-second-assessment";
+    second.value = "contradicted";
+    second.limitations = ["TEST ONLY - conflicting display assessment, not a network observation"];
+    proposition.assessments.push(second);
+
+    const ui = await bootApp(collection, owned);
+    const card = ui.app.find((el) => el.className === "case-card")[0]!;
+    const statuses = card.find((el) => el.className === "status-row")[0]!;
+    expect(statuses.find((el) => el.className.startsWith("badge ")).map((el) => el.textContent))
+      .toEqual(["supported", "contradicted"]);
+    const lens = ui.navigate("#/mine/f2/lens");
+    expect(lens.texts()).toContain("Assessment 1: supported");
+    expect(lens.texts()).toContain("Assessment 2: contradicted");
+    const trail = ui.navigate("#/mine/f2/trail");
+    expect(trail.texts()).toContain("Assessment 1: supported");
+    expect(trail.texts()).toContain("Assessment 2: contradicted");
+    expect(trail.textContent).toContain("TEST ONLY - conflicting display assessment");
+  });
+
   it("defaults to no fixtures and renders user-supplied cases without cross-scope id collision", async () => {
     const owned = withCases(["f2"]);
     owned.cases[0].display.title = "My application case";
