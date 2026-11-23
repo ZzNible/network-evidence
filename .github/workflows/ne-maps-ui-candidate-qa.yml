@@ -41,7 +41,7 @@ jobs:
         run: npm run -s mcp:smoke
 
   capture:
-    name: Capture genuine browser views for reviewed public cases
+    name: Capture examples and TEST-ONLY application case views
     needs: verify
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -62,7 +62,7 @@ jobs:
           mkdir -p screenshots
           npm run -s maps:serve > "$RUNNER_TEMP/ne-maps-serve.log" 2>&1 &
           server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          trap 'if test -f "$RUNNER_TEMP/ne-maps-frozen-examples.json"; then mv "$RUNNER_TEMP/ne-maps-frozen-examples.json" examples/ne-maps/data/collection.json; fi; rm -f examples/ne-maps/data/my-collection.json; kill "$server_pid" 2>/dev/null || true' EXIT
           for attempt in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:4177/ >/dev/null; then break; fi
             sleep 0.5
@@ -87,6 +87,52 @@ jobs:
           capture "genesis-trail-mobile" "#/case/zksys-genesis-20261118/trail" 390 1900 "trail-steps"
           capture "genesis-lens-320" "#/case/zksys-genesis-20261118/lens" 320 1700 "Declared evidence relations"
           capture "genesis-trail-320" "#/case/zksys-genesis-20261118/trail" 320 1700 "trail-steps"
+          # Independent consumer scenario: use a disposable, explicitly TEST-ONLY copy
+          # of the already reviewed historical F2 envelope. No new network claim.
+          umask 077
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const source = JSON.parse(readFileSync('examples/ne-maps/data/collection.json', 'utf8'));
+          const copy = structuredClone(source.cases.find(c => c.id === 'f2'));
+          if (!copy) throw new Error('Pinned historical F2 case absent');
+          copy.display.title = 'TEST ONLY - application-owned historical F2 copy';
+          copy.display.shape = 'TEST ONLY: copied reviewed historical evidence for browser routing QA; no fresh observation.';
+          writeFileSync('examples/ne-maps/data/my-collection.json',
+            JSON.stringify({ ...source, cases: [copy] }) + '\n', { flag: 'wx', mode: 0o600 });
+          NODE
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4177/data/my-collection.json)" = 200
+          capture "qa-test-only-my-cases-desktop" "#/mine" 1440 960 "TEST ONLY - application-owned historical F2 copy"
+          capture "qa-test-only-my-lens-mobile" "#/mine/f2/lens" 390 1900 "TEST ONLY - application-owned historical F2 copy"
+          capture "qa-test-only-my-trail-mobile" "#/mine/f2/trail" 390 1900 "TEST ONLY - application-owned historical F2 copy"
+          # Same case ID in Examples must resolve to different presentation data.
+          example_dom="$("$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=4500 --dump-dom "http://127.0.0.1:4177/#/case/f2/lens" 2>/dev/null)"
+          printf '%s' "$example_dom" | grep -Fq "ERC-4337"
+          if [[ "$example_dom" == *"TEST ONLY - application-owned historical F2 copy"* ]]; then
+            echo "Cross-collection leakage: reviewed example rendered application data"
+            exit 1
+          fi
+          # A malformed application collection must report failure, never fall back to examples.
+          printf '%s\n' '{"schemaVersion":"invalid","cases":[]}' > examples/ne-maps/data/my-collection.json
+          capture "qa-test-only-invalid-collection" "#/mine" 1440 960 "Application case collection rejected:"
+          # Restore the valid app-owned case, then prove it works without packaged examples.
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const source = JSON.parse(readFileSync('examples/ne-maps/data/collection.json', 'utf8'));
+          const copy = structuredClone(source.cases.find(c => c.id === 'f2'));
+          if (!copy) throw new Error('Pinned historical F2 case absent');
+          copy.display.title = 'TEST ONLY - application-owned historical F2 copy';
+          copy.display.shape = 'TEST ONLY: copied reviewed historical evidence for browser routing QA; no fresh observation.';
+          writeFileSync('examples/ne-maps/data/my-collection.json',
+            JSON.stringify({ ...source, cases: [copy] }) + '\n', { mode: 0o600 });
+          NODE
+          mv examples/ne-maps/data/collection.json "$RUNNER_TEMP/ne-maps-frozen-examples.json"
+          capture "qa-test-only-no-examples" "#/mine" 1440 960 "TEST ONLY - application-owned historical F2 copy"
+          no_examples_dom="$("$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=4500 --dump-dom "http://127.0.0.1:4177/#/examples" 2>/dev/null)"
+          printf '%s' "$no_examples_dom" | grep -Fq "No reviewed examples packaged"
+          mv "$RUNNER_TEMP/ne-maps-frozen-examples.json" examples/ne-maps/data/collection.json
+          rm -f examples/ne-maps/data/my-collection.json
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4177/data/my-collection.json)" = 404
+          test -z "$(git status --porcelain --untracked-files=all)"
           printf '%s\n' "$GITHUB_SHA" > screenshots/COMMIT_SHA.txt
           sha256sum screenshots/*.png > screenshots/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
