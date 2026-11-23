@@ -337,6 +337,7 @@ describe("application-owned collection is isolated from examples", () => {
     proposition.assessments.push(second);
 
     const ui = await bootApp(collection, owned);
+    expect(ui.counter.textContent).toBe("1 application case · 5 examples");
     const card = ui.app.find((el) => el.className === "case-card")[0]!;
     const statuses = card.find((el) => el.className === "status-row")[0]!;
     expect(statuses.find((el) => el.className.startsWith("badge ")).map((el) => el.textContent))
