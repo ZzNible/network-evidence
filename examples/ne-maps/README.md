@@ -101,8 +101,8 @@ server_pid=$!
 trap 'kill "$server_pid" 2>/dev/null || true' EXIT
 ready=0
 for i in $(seq 1 40); do
-  if curl -fsS --max-time 2 http://127.0.0.1:4177/ui-navigation.js 2>/dev/null |
-     grep -Fq "parseCaseHash"; then
+  if response="$(curl -fsS --max-time 2 http://127.0.0.1:4177/ui-navigation.js 2>/dev/null)" &&
+     [[ "$response" == *"parseCaseHash"* ]]; then
     ready=1
     break
   fi
