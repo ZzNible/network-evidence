@@ -47,6 +47,48 @@ npm run maps:collection     # verify data/collection.json + data/COLLECTION.sha2
 npx tsx examples/ne-maps/build-collection.ts --write   # deliberate regeneration; review changed bytes
 ~~~
 
+## Case workspace vs reviewed examples (candidate UI)
+
+The default browser landing page `#/` / `#/mine` is now **My cases**. It is intentionally empty until the integrating application supplies its own `data/my-collection.json` with the same strict `ne-maps-case-collection/v0.1` format. This second file is **optional** (absence means zero application cases); a present but malformed file yields an explicit validation failure, visibly marked as rejected. The generic collection contract still requires 1–64 cases, so an empty document is not treated as valid.
+
+The five reviewed historical/synthetic cases remain unchanged under the separate **Examples** tab at `#/examples` in the public demo. Integrators may omit `data/collection.json` entirely; the app-owned collection still loads, and Examples shows an explicit empty state on HTTP 404. Malformed or otherwise inaccessible reviewed data fails closed. The old `#/case/{id}/{lens|trail|action}` deep links still target the examples; `#/mine/{id}/{view}` only resolves from the app-owned collection. Duplicate case IDs across the two sources are not silently merged. The demo does not provide persistence, upload, accounts or a live ingest API. The local input path `data/my-collection.json` is git-ignored by default; never force-add confidential projections to the public demo repository.
+
+**Lens** displays declared relation endpoints, relation type, basis and limits in directional relationship cards alongside the complete set of propositions. **Trail** displays an ordered, numbered reading sequence of existing propositions, **including all exported per-proposition assessments, evidence bases and limitations**, not a verified chronological or causal chain; omitted Lens-only context is signposted. The Trail order comes from Maps presentation metadata, not Hub. For scope, architecture, test and release gates, see [the case/Lens/Trail specification](../../docs/NE_MAPS_CASES_LENS_TRAIL_V1_SPEC.md). This candidate UI is not a new NE Core assertion or release.
+
+## Native macOS Safari: operator-gated QA
+
+Chromium CDP CI covers 320/390/1440px layouts, real keyboard Tab/Enter transitions and full-page scrolling. This does **not** certify native Safari, Safari on iOS, VoiceOver or usability with an independent developer.
+
+A native Safari WebDriver smoke is available at test/safari-native-qa.py. It uses Apple's **/usr/bin/safaridriver** (not Playwright WebKit or a substituted Chromium session), Python's standard library and a local-only NE Maps HTTP server. It tests six historical/empty views, source-labelled rendering, actual macOS Safari window width, horizontal overflow, ability to reach the footer, and writes PNG screenshots plus a SHA-bound report.
+
+**Gate observed, 24 Nov 2026:** the public macOS-15 GitHub-hosted runner has Safari 27.2, but /usr/bin/safaridriver --enable requested an interactive macOS password and exited with code 1. No Safari session was created; the attempted CI is [here](https://github.com/ZzNible/network-evidence/actions/runs/45296818668). Running it with elevated privileges noninteractively was **not** authorized or attempted. The Safari job was removed from automatic CI so a permissions failure cannot mask product QA. The Python test is only syntax-checked automatically.
+
+To qualify on an owner-approved interactive Mac, independently pin the exact candidate SHA from [the private NE Ops status](https://github.com/ZzNible/network-evidence-ops/blob/main/STATUS.md) before running:
+
+~~~sh
+git clone --single-branch --branch feat/ne-maps-lens-trail-case-separation-20261123 \
+  https://github.com/ZzNible/network-evidence.git /tmp/ne-maps-safari-source
+cd /tmp/ne-maps-safari-source
+git rev-parse HEAD
+git status --short
+node --version
+npm ci
+
+# Explicit macOS owner action, if desired:
+# In Safari > Develop > Developer Settings, enable "Allow Remote Automation",
+# or run /usr/bin/safaridriver --enable interactively and approve its prompt.
+# Do not bypass macOS permissions or put a password in a CI secret.
+
+/usr/bin/safaridriver --enable
+npm run -s maps:serve &
+server_pid=$!
+trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+NE_SAFARI_QA_OUT="$HOME/ne-maps-safari-qa" \
+  python3 examples/ne-maps/test/safari-native-qa.py
+~~~
+
+**PASS evidence required:** SAFARI_NATIVE_SESSION with real Safari version, six SAFARI_NATIVE_PASS records, SAFARI_NATIVE_QA_PASS 6/6, safari-qa/REPORT.json, two PNG screenshots and matching checksums, plus exact Git SHA and a clean source tree. These outcomes **have not yet been obtained**. On a Safari session/permission failure, record the error and stop; do not report QA green. Never include private source evidence in screenshots or logs.
+
 ## Run
 
 From the repository root:

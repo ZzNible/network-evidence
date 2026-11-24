@@ -1,0 +1,233 @@
+name: NE Maps UI candidate QA
+
+on:
+  push:
+    branches:
+      - feat/ne-maps-lens-trail-case-separation-20261123
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ne-maps-ui-candidate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify maps and unchanged evidence contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Parse browser scripts
+        run: |
+          node --check examples/ne-maps/app.js
+          node --check examples/ne-maps/ui-navigation.js
+          node --check examples/ne-maps/collection.js
+      - name: Parse optional native Safari WebDriver check without running it
+        run: python3 -c 'import ast, pathlib; ast.parse(pathlib.Path("examples/ne-maps/test/safari-native-qa.py").read_text())'
+      - name: Maps regressions (reviewed examples + isolated UI)
+        run: npm run -s test:maps
+      - name: Frozen collection must remain byte-identical
+        run: npm run -s maps:collection
+      - name: Full project TypeScript validation
+        run: npm run -s typecheck
+      - name: Local read-only MCP smoke
+        run: npm run -s mcp:smoke
+
+  cold-start:
+    name: Full NE Suite v1 regression on exact UI candidate
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout candidate source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Node.js 22 security baseline
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.23.5'
+      - name: Exact source and clean checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          node --version
+          npm --version
+          python3 --version
+      - name: Fresh exact-lock install
+        run: npm ci --no-audit --no-fund
+      - name: Full product regression
+        run: npm test -- --reporter=dot
+      - name: Evidence demos and historical F4 replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run -s demo:core-hub-lens
+          npm run -s demo:discovery
+          npm run -s demo:integrability
+          python3 -I -B examples/zksys-genesis-f4/replay.py
+      - name: MCP genuine local HTTP smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run -s mcp:serve > "$RUNNER_TEMP/ne-mcp-candidate.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 35); do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:4178/healthz >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then
+            tail -n 50 "$RUNNER_TEMP/ne-mcp-candidate.log"
+            exit 1
+          fi
+          npm run -s mcp:smoke -- --url http://127.0.0.1:4178/mcp
+          echo MCP_CANDIDATE_LOOPBACK_PASS
+      - name: Exact frozen collection from local HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run -s maps:serve > "$RUNNER_TEMP/ne-maps-candidate.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 35); do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:4177/ > /dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then
+            tail -n 50 "$RUNNER_TEMP/ne-maps-candidate.log"
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 10 \
+            http://127.0.0.1:4177/data/collection.json \
+            -o "$RUNNER_TEMP/ne-maps-collection.json"
+          cmp examples/ne-maps/data/collection.json "$RUNNER_TEMP/ne-maps-collection.json"
+          echo MAPS_CANDIDATE_HTTP_IDENTICAL
+      - name: Repository unmodified by QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git diff --exit-code
+
+  capture:
+    name: Capture examples and TEST-ONLY application case views
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Capture snapshots with local Chrome only
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          test -n "$browser" || { echo "No Chrome/Chromium binary on runner"; exit 1; }
+          mkdir -p screenshots
+          npm run -s maps:serve > "$RUNNER_TEMP/ne-maps-serve.log" 2>&1 &
+          server_pid=$!
+          trap 'if test -f "$RUNNER_TEMP/ne-maps-frozen-examples.json"; then mv "$RUNNER_TEMP/ne-maps-frozen-examples.json" examples/ne-maps/data/collection.json; fi; rm -f examples/ne-maps/data/my-collection.json; kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4177/ >/dev/null; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:4177/ >/dev/null
+          # The browser module must be served, and the optional private collection must truly be absent.
+          curl -fsS http://127.0.0.1:4177/ui-navigation.js | grep -Fq "parseCaseHash"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4177/data/my-collection.json)" = 404
+          # CDP emulates exact physical widths; CLI screenshots can clamp small viewports.
+          # Assert document/body widths and reach the footer by actual scroll, not just PNG existence.
+          NE_MAPS_BROWSER="$browser" NE_MAPS_BASE_URL="http://127.0.0.1:4177/" \
+            NE_MAPS_SCREENSHOT_DIR="screenshots" \
+            node examples/ne-maps/test/browser-viewport-check.mjs
+
+          capture() {
+            name="$1"; hash="$2"; width="$3"; height="$4"; expected="$5"
+            url="http://127.0.0.1:4177/$hash"
+            dom="$("$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=4500 --dump-dom "$url" 2>/dev/null)"
+            printf '%s' "$dom" | grep -Fq "$expected" || { echo "DOM missing expected text for $name"; exit 1; }
+            "$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars --virtual-time-budget=4500 "--window-size=$width,$height" "--screenshot=screenshots/$name.png" "$url" >/dev/null 2>&1
+            test -s "screenshots/$name.png"
+          }
+          capture "my-cases-desktop" "#/" 1440 960 "No application cases loaded"
+          capture "examples-desktop" "#/examples" 1440 960 "Synthetic Core golden"
+          capture "genesis-lens-desktop" "#/case/zksys-genesis-20261118/lens" 1440 960 "Declared evidence relations"
+          capture "genesis-trail-desktop" "#/case/zksys-genesis-20261118/trail" 1440 960 "trail-steps"
+          capture "genesis-lens-mobile" "#/case/zksys-genesis-20261118/lens" 390 1900 "Declared evidence relations"
+          capture "genesis-trail-mobile" "#/case/zksys-genesis-20261118/trail" 390 1900 "trail-steps"
+          capture "genesis-lens-320" "#/case/zksys-genesis-20261118/lens" 320 1700 "Declared evidence relations"
+          capture "genesis-trail-320" "#/case/zksys-genesis-20261118/trail" 320 1700 "trail-steps"
+          # Independent consumer scenario: use a disposable, explicitly TEST-ONLY copy
+          # of the already reviewed historical F2 envelope. No new network claim.
+          umask 077
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const source = JSON.parse(readFileSync('examples/ne-maps/data/collection.json', 'utf8'));
+          const copy = structuredClone(source.cases.find(c => c.id === 'f2'));
+          if (!copy) throw new Error('Pinned historical F2 case absent');
+          copy.display.title = 'TEST ONLY - application-owned historical F2 copy';
+          copy.display.shape = 'TEST ONLY: copied reviewed historical evidence for browser routing QA; no fresh observation.';
+          writeFileSync('examples/ne-maps/data/my-collection.json',
+            JSON.stringify({ ...source, cases: [copy] }) + '\n', { flag: 'wx', mode: 0o600 });
+          NODE
+          cp examples/ne-maps/data/my-collection.json "$RUNNER_TEMP/ne-maps-test-only-owned.json"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4177/data/my-collection.json)" = 200
+          capture "qa-test-only-my-cases-desktop" "#/mine" 1440 960 "TEST ONLY - application-owned historical F2 copy"
+          capture "qa-test-only-my-lens-mobile" "#/mine/f2/lens" 390 1900 "TEST ONLY - application-owned historical F2 copy"
+          capture "qa-test-only-my-trail-mobile" "#/mine/f2/trail" 390 1900 "TEST ONLY - application-owned historical F2 copy"
+          # Same case ID in Examples must resolve to different presentation data.
+          example_dom="$("$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=4500 --dump-dom "http://127.0.0.1:4177/#/case/f2/lens" 2>/dev/null)"
+          printf '%s' "$example_dom" | grep -Fq "ERC-4337"
+          if [[ "$example_dom" == *"TEST ONLY - application-owned historical F2 copy"* ]]; then
+            echo "Cross-collection leakage: reviewed example rendered application data"
+            exit 1
+          fi
+          # A malformed application collection must report failure, never fall back to examples.
+          printf '%s\n' '{"schemaVersion":"invalid","cases":[]}' > examples/ne-maps/data/my-collection.json
+          capture "qa-test-only-invalid-collection" "#/mine" 1440 960 "Application case collection rejected:"
+          # Restore the valid app-owned case, then prove it works without packaged examples.
+          cp "$RUNNER_TEMP/ne-maps-test-only-owned.json" examples/ne-maps/data/my-collection.json
+          mv examples/ne-maps/data/collection.json "$RUNNER_TEMP/ne-maps-frozen-examples.json"
+          capture "qa-test-only-no-examples" "#/mine" 1440 960 "TEST ONLY - application-owned historical F2 copy"
+          no_examples_dom="$("$browser" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=4500 --dump-dom "http://127.0.0.1:4177/#/examples" 2>/dev/null)"
+          printf '%s' "$no_examples_dom" | grep -Fq "No reviewed examples packaged"
+          mv "$RUNNER_TEMP/ne-maps-frozen-examples.json" examples/ne-maps/data/collection.json
+          rm -f examples/ne-maps/data/my-collection.json
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4177/data/my-collection.json)" = 404
+          # Screenshots are intentionally untracked; only the source data area must be clean.
+          test -z "$(git status --porcelain --untracked-files=all -- examples/ne-maps/data)"
+          printf '%s\n' "$GITHUB_SHA" > screenshots/COMMIT_SHA.txt
+          sha256sum screenshots/*.png > screenshots/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ne-maps-reviewed-ui-screenshots
+          path: screenshots/
+          if-no-files-found: error
+          retention-days: 14
+

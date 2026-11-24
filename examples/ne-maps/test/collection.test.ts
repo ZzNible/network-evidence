@@ -36,6 +36,9 @@ function rejects(mutate: (value: any) => void, pattern: RegExp): void {
 class FakeElement {
   className = "";
   href = "";
+  tabIndex = 0;
+  focused = false;
+  focus() { this.focused = true; }
   style: Record<string, string> = {};
   children: FakeElement[] = [];
   #text = "";
@@ -64,7 +67,7 @@ class FakeElement {
   }
 }
 
-async function bootApp(data: unknown) {
+async function bootApp(data: unknown, ownCollection?: unknown, exampleStatus = 200) {
   const app = new FakeElement("main");
   const counter = new FakeElement("span");
   const listeners: Array<() => void> = [];
@@ -78,7 +81,14 @@ async function bootApp(data: unknown) {
   vi.stubGlobal("location", location);
   vi.stubGlobal("fetch", async (url: string) => {
     fetched.push(url);
-    return { ok: true, json: async () => structuredClone(data) };
+    if (url === "./data/collection.json" && exampleStatus !== 200) {
+      return { ok: false, status: exampleStatus };
+    }
+    if (url === "./data/my-collection.json") {
+      if (ownCollection === undefined) return { ok: false, status: 404 };
+      return { ok: true, status: 200, json: async () => structuredClone(ownCollection) };
+    }
+    return { ok: true, status: 200, json: async () => structuredClone(data) };
   });
   vi.resetModules();
   await import(/* @vite-ignore */ new URL("../app.js", import.meta.url).href);
@@ -237,8 +247,11 @@ describe("synthetic/local integrability case", () => {
 
   it("renders Lens, Trail and Exact action through the generic app path", async () => {
     const ui = await bootApp(collection);
-    expect(ui.fetched).toEqual(["./data/collection.json"]);
-    expect(ui.counter.textContent).toBe("5 cases · ne-maps-case-collection/v0.1");
+    expect(ui.fetched).toEqual(["./data/collection.json", "./data/my-collection.json"]);
+    expect(ui.counter.textContent).toBe("0 application cases · 5 examples");
+    expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(0);
+    expect(ui.app.texts()).toContain("No application cases loaded");
+    ui.navigate("#/examples");
     const card = ui.app.find((el) => el.className === "case-card").find((el) => el.textContent.includes("Synthetic Core golden"))!;
     expect(card.texts()).toContain("Synthetic / local fixture — not a network observation");
     expect(card.find((el) => el.tagName === "a").map((el) => el.href)).toEqual([
@@ -282,7 +295,7 @@ describe("no structural exactly-three assumption", () => {
     [[SYNTHETIC_ID, "f3", "f2", "f1"]],
   ])("renders one card per case for %j", async (ids) => {
     const ui = await bootApp(withCases(ids));
-    const cards = ui.app.find((el) => el.className === "case-card");
+    const cards = ui.navigate("#/examples").find((el) => el.className === "case-card");
     expect(cards.map((card) => card.find((el) => el.tagName === "h2")[0]!.textContent)).toEqual(
       ids.map((id) => byId(collection, id).display.title),
     );
@@ -304,12 +317,130 @@ describe("no structural exactly-three assumption", () => {
     expect(appSource).not.toMatch(/@nec\/|resolver|\brpc\b|eth_|https?:\/\//i);
     expect(appSource).not.toMatch(/caseVerdict|confidence|trustScore|score|rank/i);
     expect(appSource).not.toMatch(/\.(value|verdict|assessments|availability)\s*=[^=]/);
-    expect(appSource.match(/fetch\(/g)).toHaveLength(1);
+    expect(appSource.match(/fetch\(/g)).toHaveLength(2);
     expect(appSource).toContain("fetch(COLLECTION_URL");
-    expect([...appSource.matchAll(/^import .* from "([^"]+)";$/gm)].map((m) => m[1])).toEqual(["./collection.js"]);
+    expect(appSource).toContain("fetch(MY_COLLECTION_URL");
+    expect([...appSource.matchAll(/^import .* from "([^"]+)";$/gm)].map((m) => m[1])).toEqual(["./collection.js", "./ui-navigation.js"]);
     expect(appSource).toContain("validateNeMapsCollectionV01(await response.json())");
     expect(indexHtml).toContain('<script type="module" src="./app.js"></script>');
     expect(indexHtml).not.toMatch(/3 reviewed cases/);
+  });
+});
+
+describe("application-owned collection is isolated from examples", () => {
+  it("shows every distinct per-proposition assessment value in atlas badges, without a global case verdict", async () => {
+    // TEST-ONLY contradictory second assessment; this is not a network finding.
+    const owned = withCases(["f2"]);
+    const proposition = owned.cases[0].lens.propositions.find((p: any) => p.assessments?.length);
+    expect(proposition).toBeDefined();
+    const second = structuredClone(proposition.assessments[0]);
+    second.assessmentId = "test-only-contradicted-second-assessment";
+    second.value = "contradicted";
+    second.limitations = ["TEST ONLY - conflicting display assessment, not a network observation"];
+    proposition.assessments.push(second);
+
+    const ui = await bootApp(collection, owned);
+    expect(ui.counter.textContent).toBe("1 application case · 5 examples");
+    const card = ui.app.find((el) => el.className === "case-card")[0]!;
+    const statuses = card.find((el) => el.className === "status-row")[0]!;
+    expect(statuses.find((el) => el.className.startsWith("badge ")).map((el) => el.textContent))
+      .toEqual(["supported", "contradicted", "unavailable"]);
+    const lens = ui.navigate("#/mine/f2/lens");
+    expect(lens.texts()).toContain("Assessment 1: supported");
+    expect(lens.texts()).toContain("Assessment 2: contradicted");
+    const trail = ui.navigate("#/mine/f2/trail");
+    expect(trail.texts()).toContain("Assessment 1: supported");
+    expect(trail.texts()).toContain("Assessment 2: contradicted");
+    expect(trail.textContent).toContain("TEST ONLY - conflicting display assessment");
+  });
+
+  it("restores keyboard focus to the main region after replacing a hash route", async () => {
+    const ui = await bootApp(collection);
+    expect(ui.app.focused).toBe(false);
+    ui.navigate("#/examples");
+    expect(ui.app.focused).toBe(true);
+    expect(ui.app.tabIndex).toBe(-1);
+    expect(ui.app.textContent).toContain("Synthetic Core golden");
+    ui.navigate("#/case/f1/lens");
+    expect(ui.app.textContent).toContain("Declared evidence relations");
+  });
+
+  it("defaults to no fixtures and renders user-supplied cases without cross-scope id collision", async () => {
+    const owned = withCases(["f2"]);
+    owned.cases[0].display.title = "My application case";
+    const ui = await bootApp(collection, owned);
+    expect(ui.app.find((el) => el.className === "case-card").map((el) => el.textContent)).toEqual([
+      expect.stringContaining("My application case"),
+    ]);
+    const exampleAtlas = ui.navigate("#/examples");
+    expect(exampleAtlas.find((el) => el.className === "case-card")).toHaveLength(5);
+    const myDetail = ui.navigate("#/mine/f2/lens");
+    expect(myDetail.textContent).toContain("My application case");
+    const exampleDetail = ui.navigate("#/case/f2/lens");
+    expect(exampleDetail.textContent).toContain("ERC-4337 — exact UserOperation");
+    expect(exampleDetail.textContent).not.toContain("My application case");
+  });
+
+  it("rejects malformed application evidence without substituting reviewed examples", async () => {
+    const ui = await bootApp(collection, { schemaVersion: "invalid", cases: [] });
+    expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(0);
+    expect(ui.app.find((el) => el.className === "error")[0]!.textContent).toMatch(/Application case collection rejected: ne-maps:/);
+    expect(ui.counter.textContent).toContain("Application collection rejected");
+    expect(ui.navigate("#/examples").find((el) => el.className === "case-card")).toHaveLength(5);
+  });
+
+  it("shows the application cases even without the optional reviewed example collection", async () => {
+    const own = withCases(["f2"]);
+    own.cases[0].display.title = "App-only case";
+    const ui = await bootApp(collection, own, 404);
+    expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(1);
+    expect(ui.app.textContent).toContain("App-only case");
+    expect(ui.navigate("#/examples").texts()).toContain("No reviewed examples packaged");
+    expect(ui.navigate("#/mine/f2/action").textContent).toContain("App-only case");
+  });
+
+  it("does not mask errors other than missing reviewed examples", async () => {
+    const ui = await bootApp(collection, withCases(["f2"]), 403);
+    expect(ui.app.find((el) => el.className === "error")[0]!.textContent).toContain("reviewed example collection unavailable");
+    expect(ui.app.find((el) => el.className === "case-card")).toHaveLength(0);
+  });
+
+  it("renders exactly declared Lens relations, existing Trail steps and omitted Lens-only context", async () => {
+    const caseF1 = byId(collection, "f1");
+    const ui = await bootApp(collection);
+    const lens = ui.navigate("#/case/f1/lens");
+    const edges = lens.find((el) => el.className === "relation-edge");
+    expect(edges).toHaveLength(caseF1.lens.relations.length);
+    for (const [index, relation] of caseF1.lens.relations.entries()) {
+      const edge = edges[index]!;
+      expect(edge.textContent).toContain(relation.fromRef);
+      expect(edge.textContent).toContain(relation.toRef);
+      expect(edge.textContent).toContain(relation.relationType);
+    }
+    const trail = ui.navigate("#/case/f1/trail");
+    expect(trail.find((el) => el.className === "trail-step")).toHaveLength(caseF1.trailPropositionOrder.length);
+    expect(trail.find((el) => el.className === "trail-number").map((el) => el.textContent))
+      .toEqual(caseF1.trailPropositionOrder.map((_: unknown, index: number) => String(index + 1)));
+    expect(trail.find((el) => el.className === "trail-omitted")).toHaveLength(1);
+    expect(trail.textContent).toContain("not a Hub-provided Trail route");
+    expect(trail.find((el) => el.className === "relation-edge")).toHaveLength(0);
+  });
+
+  it("presents every assessment in a test-only multi-assessment proposition without inventing a case verdict", async () => {
+    const data = withCases(["f2"]);
+    const proposition = data.cases[0].lens.propositions.find((p: any) => (p.assessments ?? []).length > 0)!;
+    const second = structuredClone(proposition.assessments[0]);
+    second.assessmentId = "test-only-second-assessment";
+    second.basis = ["cryptographic_verification"];
+    second.limitations = ["TEST-ONLY SECOND-ASSESSMENT-LIMIT"];
+    proposition.assessments.push(second);
+    const ui = await bootApp(data);
+    const trail = ui.navigate("#/case/f2/trail");
+    expect(trail.texts()).toContain("Assessment 1: supported");
+    expect(trail.texts()).toContain("Assessment 2: supported");
+    expect(trail.textContent).toContain("basis: cryptographic_verification");
+    expect(trail.texts()).toContain("limit: TEST-ONLY SECOND-ASSESSMENT-LIMIT");
+    expect(trail.find((el) => el.className === "trail-step")).toHaveLength(data.cases[0].trailPropositionOrder.length);
   });
 });
 
