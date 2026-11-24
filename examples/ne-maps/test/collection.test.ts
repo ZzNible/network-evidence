@@ -36,6 +36,9 @@ function rejects(mutate: (value: any) => void, pattern: RegExp): void {
 class FakeElement {
   className = "";
   href = "";
+  tabIndex = 0;
+  focused = false;
+  focus() { this.focused = true; }
   style: Record<string, string> = {};
   children: FakeElement[] = [];
   #text = "";
@@ -349,6 +352,17 @@ describe("application-owned collection is isolated from examples", () => {
     expect(trail.texts()).toContain("Assessment 1: supported");
     expect(trail.texts()).toContain("Assessment 2: contradicted");
     expect(trail.textContent).toContain("TEST ONLY - conflicting display assessment");
+  });
+
+  it("restores keyboard focus to the main region after replacing a hash route", async () => {
+    const ui = await bootApp(collection);
+    expect(ui.app.focused).toBe(false);
+    ui.navigate("#/examples");
+    expect(ui.app.focused).toBe(true);
+    expect(ui.app.tabIndex).toBe(-1);
+    expect(ui.app.textContent).toContain("Synthetic Core golden");
+    ui.navigate("#/case/f1/lens");
+    expect(ui.app.textContent).toContain("Declared evidence relations");
   });
 
   it("defaults to no fixtures and renders user-supplied cases without cross-scope id collision", async () => {
