@@ -1,6 +1,6 @@
 # NE Maps v1 — case isolation, Lens and Trail presentation
 
-**Status:** candidate UI implementation; not an NE Core change, not a hosted deployment, not a new source release. Base: public main `e557ac5502e02f3712cecd1506f1670344300c7a`.
+**Status (24 Nov 2026):** source-only UI integrated by [PR #13](https://github.com/ZzNible/network-evidence/pull/13) into public `main` at `2ce1bd46c8cab20c2c620613d49032702f2ccaaa`, parent `e557ac5502e02f3712cecd1506f1670344300c7a`. **Not** an NE Core change, signed release, hosted deployment or new evidence source. The reviewed UI tree is identical to the green candidate `62c4ac2408bbaec535ae4a0d2f89a958d655e927`.
 
 ## Goal and scope
 
@@ -26,7 +26,7 @@ All verdicts remain per proposition; `supported`, `contradicted`, `insufficient`
 4. **Lens:** draws only `lens.relations[]` with exact `fromRef`, `relationType`, `toRef`, `basis` and limitations. Directional arrows show *declared source-to-target relations*, not a causal route. All propositions remain available outside the relationship view.
 5. **Trail:** ordered, numbered steps render only `trailPropositionOrder[]` with **all** existing per-proposition assessments, evidence bases and limitations. Omitted Lens propositions are signposted. Step numbers and connectors are navigation only, not inferred temporal edges.
 6. **Safety:** strings enter the DOM via `textContent` and not `innerHTML`; the existing `validateNeMapsCollectionV01` runs before display. Malformed application data is rejected and reported rather than substituted with examples; reviewed examples are unaffected. No new evidence authority, storage, fetch from arbitrary origin, Core mutation or scoring.
-7. **Responsive and keyboard:** stacked relations and Trail columns remain readable at 320/390px; semantic headings, details and normal anchor focus states. Screenshot/Chromium QA is required before merge.
+7. **Responsive and keyboard:** stacked relations and Trail columns remain readable at 320/390px; semantic headings, details and keyboard focus restoration. Actual Chromium QA completed before merge (51/51 Maps, 10/10 exact viewports and full scrolling, Tab/Enter flow). Native macOS Safari and assistive screen readers are **not** thereby qualified.
 
 ## Integration
 
@@ -36,12 +36,12 @@ Start `npm run maps:serve`, then open `http://127.0.0.1:4177/`. The `#/` landing
 
 To add a new real-world case (e.g., Locutus M2), have an authorized external consumer produce a validated browser-safe Lens projection and a versioned Maps case envelope with exact source provenance; copying an RPC transaction summary alone is not enough to claim Gateway settlement or finality.
 
-## Validation and stop conditions
+## Validation completed and remaining gates
 
 1. `node --check examples/ne-maps/app.js` and `node --check examples/ne-maps/ui-navigation.js`.
 2. `npm run -s test:maps` (baseline Maps tests and new presentation/route cases).
 3. `npm run -s maps:collection` (frozen collection remains byte-identical).
 4. Browser QA on 1440px, 390px and 320px for `#/`, `#/examples`, `#/case/f2/lens`, `#/case/f2/trail`, `#/case/zksys-genesis-20261118/lens`, `#/case/zksys-genesis-20261118/trail`. Confirm all incomplete links and MOCK boundaries remain visible.
-5. Verify the current GitHub source SHA before review. Only when a separate operator-approved branch push has occurred, verify its remote SHA; **no merge, public deployment or release** as part of this candidate.
+5. **Promotion complete:** authorized PR #13 was squash-merged as `2ce1bd46c8cab20c2c620613d49032702f2ccaaa`; the merge tree SHA matches the green candidate tree exactly (`a24654dc592ea20b45142e2a649aacfa33abd995`). The [full Suite CI](https://github.com/ZzNible/network-evidence/actions/runs/45298674684) passed 1,859 tests plus one expected failure, Core/Hub/Lens/F4 demos and real local MCP HTTP. A merge is **not** a signed source release or server publication. Safari macOS, VoiceOver and independent first-time tester reports remain unqualified and require separate evidence.
 
 **Known limitation:** relation diagrams are deterministic **edge cards**, not a force-directed graph engine. Real provenance-preserving graph layouts or personal case ingestion must not be added unless further independently justified. This fulfills visual separation without inventing a new evidence model.
