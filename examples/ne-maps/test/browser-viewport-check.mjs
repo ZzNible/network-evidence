@@ -24,7 +24,8 @@ let socket;
 
 try {
   let port;
-  for (let attempt = 0; attempt < 120; attempt += 1) {
+  // GitHub-hosted runner first-run Chrome startup may exceed 12 seconds.
+  for (let attempt = 0; attempt < 400; attempt += 1) {
     if (child.exitCode !== null) throw new Error("Chromium exited: " + browserLog);
     try {
       port = Number((await readFile(join(profile, "DevToolsActivePort"), "utf8")).split("\n")[0]);
@@ -32,7 +33,8 @@ try {
     if (port) break;
     await sleep(100);
   }
-  if (!port) throw new Error("Chromium CDP endpoint missing: " + browserLog);
+  if (!port) throw new Error("Chromium CDP endpoint missing after 40s (pid " +
+    child.pid + ", exit " + child.exitCode + "): " + browserLog);
   const response = await fetch("http://127.0.0.1:" + port + "/json/new?about:blank", { method: "PUT" });
   if (!response.ok) throw new Error("Chromium local CDP tab creation failed: HTTP " + response.status);
   const target = await response.json();
