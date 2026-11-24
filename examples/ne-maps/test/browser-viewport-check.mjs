@@ -160,6 +160,112 @@ try {
     console.log("VIEWPORT_PASS " + id + " width=" + width +
       " pageHeight=" + metrics.pageHeight + " scrollBottom=" + bottom.scrollY);
   }
+
+  // Real CDP keyboard events, with focus and navigation observed in the browser.
+  // This catches route changes that accidentally discard the keyboard focus.
+  const pressKey = async key => {
+    const vk = key === "Tab" ? 9 : 13;
+    const params = { key, code: key, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk };
+    await command("Input.dispatchKeyEvent", { type: "keyDown", ...params });
+    await command("Input.dispatchKeyEvent", { type: "keyUp", ...params });
+  };
+  const focusInfo = () => evaluate(() => {
+    const el = document.activeElement;
+    return {
+      tag: el?.tagName ?? "",
+      id: el?.id ?? "",
+      className: typeof el?.className === "string" ? el.className : "",
+      href: el?.getAttribute("href") ?? null,
+      focusVisible: !!el?.matches?.(":focus-visible"),
+      hash: location.hash,
+      content: (document.querySelector("#app")?.textContent ?? "").slice(0, 1700),
+    };
+  });
+  await command("Emulation.setDeviceMetricsOverride", {
+    width: 320, height: 900, deviceScaleFactor: 1, mobile: true,
+  });
+  await command("Page.navigate", { url: new URL("#/", base).toString() });
+  let entryReady = false;
+  for (let attempt = 0; attempt < 70; attempt += 1) {
+    const state = await focusInfo();
+    if (state.content.includes("No application cases loaded")) { entryReady = true; break; }
+    await sleep(80);
+  }
+  if (!entryReady) throw new Error("KEYBOARD: empty application workspace did not render");
+  await pressKey("Tab");
+  const firstTab = await focusInfo();
+  if (firstTab.href !== "#/mine" || !firstTab.focusVisible) {
+    throw new Error("KEYBOARD: first tab should focus visible My cases link: " + JSON.stringify(firstTab));
+  }
+  await pressKey("Tab");
+  const secondTab = await focusInfo();
+  if (secondTab.href !== "#/examples" || !secondTab.focusVisible) {
+    throw new Error("KEYBOARD: second tab should focus visible Examples link: " + JSON.stringify(secondTab));
+  }
+  await pressKey("Enter");
+  let examplesOpened = false;
+  for (let attempt = 0; attempt < 70; attempt += 1) {
+    const state = await focusInfo();
+    if (state.hash === "#/examples" && state.content.includes("Synthetic Core golden")) {
+      examplesOpened = true;
+      break;
+    }
+    await sleep(70);
+  }
+  if (!examplesOpened) throw new Error("KEYBOARD: Enter did not activate Examples and render the cases");
+  const afterNavigation = await focusInfo();
+  if (afterNavigation.id !== "app") {
+    throw new Error("KEYBOARD: view replacement lost focus (expected main #app): " +
+      JSON.stringify(afterNavigation));
+  }
+  await pressKey("Tab");
+  const fromMain = await focusInfo();
+  if (fromMain.href !== "#/mine" || !fromMain.focusVisible) {
+    throw new Error("KEYBOARD: Tab after route focus must reach collection tabs: " +
+      JSON.stringify(fromMain));
+  }
+  await pressKey("Tab");
+  await pressKey("Tab");
+  const firstCard = await focusInfo();
+  if (firstCard.href !== "#/case/f1/lens" || !firstCard.focusVisible) {
+    throw new Error("KEYBOARD: Lens link not reachable by Tab: " + JSON.stringify(firstCard));
+  }
+  await pressKey("Enter");
+  let lensOpened = false;
+  for (let attempt = 0; attempt < 70; attempt += 1) {
+    const state = await focusInfo();
+    if (state.hash === "#/case/f1/lens" && state.content.includes("Declared evidence relations")) {
+      lensOpened = true;
+      break;
+    }
+    await sleep(70);
+  }
+  if (!lensOpened) throw new Error("KEYBOARD: Enter did not open case Lens");
+  if ((await focusInfo()).id !== "app") {
+    throw new Error("KEYBOARD: opening Lens lost focus from main");
+  }
+  await pressKey("Tab");
+  await pressKey("Tab");
+  await pressKey("Tab");
+  const trailLink = await focusInfo();
+  if (trailLink.href !== "#/case/f1/trail" || !trailLink.focusVisible) {
+    throw new Error("KEYBOARD: Trail navigation not reachable by Tab: " + JSON.stringify(trailLink));
+  }
+  await pressKey("Enter");
+  let trailOpened = false;
+  for (let attempt = 0; attempt < 70; attempt += 1) {
+    const state = await focusInfo();
+    if (state.hash === "#/case/f1/trail" && state.content.includes("guided reading order")) {
+      trailOpened = true;
+      break;
+    }
+    await sleep(70);
+  }
+  if (!trailOpened || (await focusInfo()).id !== "app") {
+    throw new Error("KEYBOARD: Trail keyboard activation or focus handoff failed");
+  }
+  console.log("KEYBOARD_QA_PASS 320px: visible Tab focus, Enter navigation, focus handoff, Lens/Trail");
+
   if (screenshots) {
     await writeFile(join(screenshots, "VIEWPORT_QA.json"),
       JSON.stringify({ schema: "ne-maps-viewport-qa/v0.1", scenarios: reports }, null, 2) + "\n");
