@@ -21,6 +21,8 @@ This first run **replays a reviewed public Base Sepolia ERC-4337 case**; it does
 
 **Current source release:** [v1.2.1](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.1) is owner-signed and source-only, with Hono 4.13.18 fixing the earlier advisory. Date-current npm/Dependabot audits showed zero known alerts on 13 November 2026. **There is no independently verified public v1.2.1 MCP service.** The historical MCP Registry version 0.0.2 is now marked **deprecated** (14 November 2026); it is not a current hosted service.
 
+**NE Suite v1 source-complete on `main` (24 November 2026):** the newer source contains Core, Hub, Lens, local MCP and the generic NE Maps case atlas with Lens/Trail. Exact-source CI and native desktop Safari 6/6 have passed; independent external tester/agent-client reports have **not** been obtained and are not a prerequisite for the owner's source-only closeout. This new UI is **not** part of the older signed `v1.2.1` archive. Read the [scope, evidence and remaining release boundary](docs/release/NE_SUITE_V1_SOURCE_CLOSEOUT_20261124.md).
+
 NE handles two related questions: **Discovery** (what an exact network may support and what is presently observable) and **Resolution** (what the network independently supports about an exact action). A listed capability does not prove that it currently works. Execution, observed effects, settlement and finality must be assessed separately. Every claim retains its evidence basis; absent evidence is a result.
 
 This source capsule contains `@nec/core`, `@nec/resolver-evm`,
