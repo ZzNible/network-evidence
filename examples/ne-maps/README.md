@@ -83,7 +83,7 @@ npm ci
 npm run -s maps:serve &
 server_pid=$!
 trap 'kill "$server_pid" 2>/dev/null || true' EXIT
-NE_SAFARI_QA_OUT="$PWD/safari-qa" \
+NE_SAFARI_QA_OUT="$HOME/ne-maps-safari-qa" \
   python3 examples/ne-maps/test/safari-native-qa.py
 ~~~
 
