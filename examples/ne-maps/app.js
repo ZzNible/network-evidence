@@ -387,7 +387,13 @@ async function boot() {
     if (counter) counter.textContent = (mineError ? "Application collection rejected" : ownCount + (ownCount === 1 ? " application case" : " application cases")) + " · " + exampleCount + (exampleCount === 1 ? " example" : " examples");
     const context = { examples, mine, mineError };
     const render = () => app.replaceChildren(route(context));
-    window.addEventListener("hashchange", render);
+    window.addEventListener("hashchange", () => {
+      render();
+      // Route replacement detaches the activated link. Keep keyboard/screen-reader
+      // navigation within the new view, without adding a permanent Tab stop.
+      app.tabIndex = -1;
+      if (typeof app.focus === "function") app.focus();
+    });
     render();
   } catch (error) {
     app.replaceChildren(node("p", "error", "NE Maps could not load the case collection: " + error.message));
