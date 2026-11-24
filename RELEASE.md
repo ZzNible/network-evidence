@@ -1,5 +1,41 @@
 # Release status
 
+## Current signed source release — v1.3.0 (24 November 2026)
+
+[Network Evidence v1.3.0](https://github.com/ZzNible/network-evidence/releases/tag/v1.3.0)
+is the current **owner-signed, source-only** release (GitHub Release ID
+`457381244`, published 24 November 2026). The *annotated* Git tag object
+`18a5d7f3616d6603dbb1334e24dc3a9a0719ae7d` peels to exact source
+commit `48576823a5af175c0bd7b16b565c4339ba9f8785`, Git tree
+`6bc5bd805312c32c132e15c2c8d4e37f786abb8a`.
+
+The release contains **four** assets: `network-evidence-v1.3.0-source.tar`
+(SHA256 `d54375b926ddb969656735d5a1552656228db66960637020079c670b0edd339f`),
+`NE-v1.3.0-owner-source-attestation.txt` (SHA256
+`5aba8f36de2d43b6c99adacf3cce5d86681d209b20682d3fdae0eb5e86cefea0`),
+its detached ED25519 signature (SHA256
+`87b428e5cb53cb7bb1416e36c21af8105e3137ca1228401567110724bcbd05d1`),
+and `SHA256SUMS` (SHA256
+`b50256b2ec833eaaa9424fef18bf6a252c95fc283e935d5757f112f78db8b60c`).
+Root `package-lock.json` SHA256 is
+`08a20e7ffb758d9bd52ccd4a444f30ef596f9505d3892ea9dc15a2b4b4bda7ca`.
+The owner reported clean download/replay, byte comparison and
+`ssh-keygen -Y verify` against the previously authenticated `ne-owner`
+SSH public key; GitHub REST independently reported all four asset digests
+and tag-to-commit binding. Independently authenticate the owner's signing
+public key out of band; GitHub co-location is not an authentication root.
+
+Release scope: **NE Core + Hub + Lens + read-only local MCP + generic multichain
+NE Maps**, including Lens/Trail and historical zkSYS Genesis testnet replay.
+The historical MOCK proof is not cryptographically verified finality; neither
+MCP hosting nor live blockchain settlement is established by this release.
+**No npm, OCI, public hosted service, MCP Registry update or on-chain action.**
+The source qualification includes exact-product CI, Chromium QA, and native
+macOS Safari WebDriver 6/6; **no independent external beta report** was
+received. See [source-only closeout](docs/release/NE_SUITE_V1_SOURCE_CLOSEOUT_20261124.md).
+
+## Prior signed source release — v1.2.1 (13 November 2026)
+
 ## NE Suite v1 source-only closeout — 24 November 2026
 
 The public `main` branch integrates Core, Hub, Lens, local MCP and the
@@ -13,15 +49,12 @@ beta reports**: zero were observed, and independent novice/agent-client QA
 is **not claimed**. See the [dated, source-bound closeout](docs/release/NE_SUITE_V1_SOURCE_CLOSEOUT_20261124.md)
 for the complete evidence and limits.
 
-**This is not a new release:** the latest authenticated, signed source
-release remains `v1.2.1`, which predates the latest NE Maps UI. A new
-tag/source archive/owner signature/GitHub Release remains a **separate**
-exact-commit owner action. No npm/OCI/registry package or hosted deployment
-is implied.
+**Historical closeout checkpoint:** source completion preceded the separately
+owner-signed and published `v1.3.0` GitHub Release described above. The earlier
+`v1.2.1` archive remains immutable and does not contain the newer NE Maps UI.
+Neither source publication includes npm/OCI/registry packages or hosted services.
 
-## Current signed source release — v1.2.1 (13 November 2026)
-
-[v1.2.1](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.1) is the current **source-only** release. Exact commit `7d8a9730a26ebd89a1ba2c4e2222a78bc76f5d9a`; Git tree `56cf0559ccb9c8e2fcfac2361285f0c80d68d27d`. Hono is locked at `4.13.18`, and the update includes the [first-evidence quickstart](docs/START_HERE.md). The release includes a deterministic source archive and an owner-signed SSH source statement. **No npm, hosted MCP service or registry update** is part of v1.2.1. Earlier snapshots below are historical.
+[v1.2.1](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.1) is a prior **source-only** release. Exact commit `7d8a9730a26ebd89a1ba2c4e2222a78bc76f5d9a`; Git tree `56cf0559ccb9c8e2fcfac2361285f0c80d68d27d`. Hono is locked at `4.13.18`, and the update includes the [first-evidence quickstart](docs/START_HERE.md). The release includes a deterministic source archive and an owner-signed SSH source statement. **No npm, hosted MCP service or registry update** is part of v1.2.1. Earlier snapshots below are historical.
 
 ## Prior signed source release — v1.2.0 (13 November 2026)
 

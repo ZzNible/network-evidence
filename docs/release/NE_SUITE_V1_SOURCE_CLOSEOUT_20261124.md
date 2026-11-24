@@ -1,5 +1,7 @@
 # Network Evidence Suite v1 — source-only closeout (24 November 2026)
 
+**Postscript (24 November 2026):** The owner subsequently signed and published [source-only release `v1.3.0`](https://github.com/ZzNible/network-evidence/releases/tag/v1.3.0) at this closeout's exact final commit `48576823a5af175c0bd7b16b565c4339ba9f8785`, with a deterministic source archive, signed statement, detached signature and `SHA256SUMS`. See [current release status](../../RELEASE.md). Statements below about `v1.2.1` being the latest signed release refer to the *earlier closeout checkpoint*, not the post-publication state. No hosted MCP, npm or OCI deployment followed from this release.
+
 **Status: source-complete on `main`. This document is not a signed release
 statement, tag, registry listing or hosted-service attestation.** No package,
 fixture, resolver, Core, Hub, Lens or MCP behavior changes are made by this
