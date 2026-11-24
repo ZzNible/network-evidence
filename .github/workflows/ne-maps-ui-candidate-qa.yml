@@ -42,6 +42,94 @@ jobs:
       - name: Local read-only MCP smoke
         run: npm run -s mcp:smoke
 
+  cold-start:
+    name: Full NE Suite v1 regression on exact UI candidate
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout candidate source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Node.js 22 security baseline
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.23.5'
+      - name: Exact source and clean checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          node --version
+          npm --version
+          python3 --version
+      - name: Fresh exact-lock install
+        run: npm ci --no-audit --no-fund
+      - name: Full product regression
+        run: npm test -- --reporter=dot
+      - name: Evidence demos and historical F4 replay
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run -s demo:core-hub-lens
+          npm run -s demo:discovery
+          npm run -s demo:integrability
+          python3 -I -B examples/zksys-genesis-f4/replay.py
+      - name: MCP genuine local HTTP smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run -s mcp:serve > "$RUNNER_TEMP/ne-mcp-candidate.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 35); do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:4178/healthz >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then
+            tail -n 50 "$RUNNER_TEMP/ne-mcp-candidate.log"
+            exit 1
+          fi
+          npm run -s mcp:smoke -- --url http://127.0.0.1:4178/mcp
+          echo MCP_CANDIDATE_LOOPBACK_PASS
+      - name: Exact frozen collection from local HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run -s maps:serve > "$RUNNER_TEMP/ne-maps-candidate.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 35); do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:4177/ > /dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then
+            tail -n 50 "$RUNNER_TEMP/ne-maps-candidate.log"
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 10 \
+            http://127.0.0.1:4177/data/collection.json \
+            -o "$RUNNER_TEMP/ne-maps-collection.json"
+          cmp examples/ne-maps/data/collection.json "$RUNNER_TEMP/ne-maps-collection.json"
+          echo MAPS_CANDIDATE_HTTP_IDENTICAL
+      - name: Repository unmodified by QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain --untracked-files=all)"
+          git diff --exit-code
+
   capture:
     name: Capture examples and TEST-ONLY application case views
     needs: verify
