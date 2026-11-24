@@ -140,3 +140,46 @@ jobs:
           path: screenshots/
           if-no-files-found: error
           retention-days: 14
+
+  safari:
+    name: Native macOS Safari smoke (no browser substitution)
+    needs: verify
+    runs-on: macos-15
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install lockfile dependencies
+        run: npm ci
+      - name: Verify Apple driver availability
+        shell: bash
+        run: |
+          set -euo pipefail
+          sw_vers
+          test -x /usr/bin/safaridriver
+          /usr/bin/safaridriver --version
+          /usr/bin/safaridriver --enable
+      - name: Exercise actual macOS Safari on loopback-only example server
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p safari-qa
+          npm run -s maps:serve > "$RUNNER_TEMP/ne-maps-safari-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 45); do
+            if curl -fsS http://127.0.0.1:4177/ >/dev/null 2>&1; then break; fi
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:4177/ >/dev/null
+          NE_SAFARI_QA_OUT=safari-qa python3 examples/ne-maps/test/safari-native-qa.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ne-maps-native-safari-qa
+          path: safari-qa/
+          if-no-files-found: warn
+          retention-days: 7
