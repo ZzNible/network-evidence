@@ -341,7 +341,7 @@ describe("application-owned collection is isolated from examples", () => {
     const card = ui.app.find((el) => el.className === "case-card")[0]!;
     const statuses = card.find((el) => el.className === "status-row")[0]!;
     expect(statuses.find((el) => el.className.startsWith("badge ")).map((el) => el.textContent))
-      .toEqual(["supported", "contradicted"]);
+      .toEqual(["supported", "contradicted", "unavailable"]);
     const lens = ui.navigate("#/mine/f2/lens");
     expect(lens.texts()).toContain("Assessment 1: supported");
     expect(lens.texts()).toContain("Assessment 2: contradicted");
