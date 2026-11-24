@@ -71,6 +71,12 @@ jobs:
           # The browser module must be served, and the optional private collection must truly be absent.
           curl -fsS http://127.0.0.1:4177/ui-navigation.js | grep -Fq "parseCaseHash"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4177/data/my-collection.json)" = 404
+          # CDP emulates exact physical widths; CLI screenshots can clamp small viewports.
+          # Assert document/body widths and reach the footer by actual scroll, not just PNG existence.
+          NE_MAPS_BROWSER="$browser" NE_MAPS_BASE_URL="http://127.0.0.1:4177/" \
+            NE_MAPS_SCREENSHOT_DIR="screenshots" \
+            node examples/ne-maps/test/browser-viewport-check.mjs
+
           capture() {
             name="$1"; hash="$2"; width="$3"; height="$4"; expected="$5"
             url="http://127.0.0.1:4177/$hash"
