@@ -1,5 +1,24 @@
 # Release status
 
+## NE Suite v1 source-only closeout — 24 November 2026
+
+The public `main` branch integrates Core, Hub, Lens, local MCP and the
+generic/multichain NE Maps case viewer, including Lens and Trail. The product
+source was merged in [PR #13](https://github.com/ZzNible/network-evidence/pull/13)
+at `2ce1bd46c8cab20c2c620613d49032702f2ccaaa`; documentation-only
+[PR #14](https://github.com/ZzNible/network-evidence/pull/14) followed.
+Exact-source candidate CI and native macOS Safari **6/6** have been checked.
+The owner accepts closing the source-only milestone **without independent
+beta reports**: zero were observed, and independent novice/agent-client QA
+is **not claimed**. See the [dated, source-bound closeout](docs/release/NE_SUITE_V1_SOURCE_CLOSEOUT_20261124.md)
+for the complete evidence and limits.
+
+**This is not a new release:** the latest authenticated, signed source
+release remains `v1.2.1`, which predates the latest NE Maps UI. A new
+tag/source archive/owner signature/GitHub Release remains a **separate**
+exact-commit owner action. No npm/OCI/registry package or hosted deployment
+is implied.
+
 ## Current signed source release — v1.2.1 (13 November 2026)
 
 [v1.2.1](https://github.com/ZzNible/network-evidence/releases/tag/v1.2.1) is the current **source-only** release. Exact commit `7d8a9730a26ebd89a1ba2c4e2222a78bc76f5d9a`; Git tree `56cf0559ccb9c8e2fcfac2361285f0c80d68d27d`. Hono is locked at `4.13.18`, and the update includes the [first-evidence quickstart](docs/START_HERE.md). The release includes a deterministic source archive and an owner-signed SSH source statement. **No npm, hosted MCP service or registry update** is part of v1.2.1. Earlier snapshots below are historical.
